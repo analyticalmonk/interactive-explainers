@@ -530,6 +530,8 @@ input[type="range"]::-webkit-slider-thumb {
   .article-header { padding-top: 3rem; }
   .comparison-grid { grid-template-columns: 1fr; }
   .figure-controls { gap: 0.4rem; }
+  .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .figure-canvas-wrap canvas { min-width: 500px; }
 }
 
 /* ============================================
@@ -654,7 +656,7 @@ input[type="range"]::-webkit-slider-thumb {
       <div class="figure" id="prediction-demo">
         <div class="figure-label">Figure 2 &mdash; Predict, Then Verify</div>
         <div class="figure-canvas-wrap">
-          <canvas id="canvas-predict" width="720" height="340"></canvas>
+          <canvas id="canvas-predict" width="720" height="360"></canvas>
         </div>
         <div class="figure-controls">
           <button class="ctrl-btn" id="pred-up">&uarr;</button>
@@ -1046,8 +1048,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   const COLS = Math.floor(w / CELL);
   const ROWS = Math.floor(h / CELL);
 
-  let ball = { x: 6, y: 1, vy: 0 };
-  let predicted = { x: 6, y: 2 };
+  let ball = { x: 9, y: 1, vy: 0 };
+  let predicted = { x: 9, y: 2 };
   let step = 0;
   let playing = false;
   let playInterval = null;
@@ -1178,8 +1180,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   }
 
   function reset() {
-    ball = { x: 6, y: 1, vy: 0 };
-    predicted = { x: 6, y: 2 };
+    ball = { x: 11, y: 1, vy: 0 };
+    predicted = { x: 11, y: 2 };
     trail = [];
     step = 0;
     if (playing) { clearInterval(playInterval); playing = false; document.getElementById('gravity-play').textContent = 'Play'; }
