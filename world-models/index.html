@@ -603,7 +603,7 @@ input[type="range"]::-webkit-slider-thumb {
       <div class="figure" id="fig-gravity">
         <div class="figure-label">Figure 1 &mdash; A Tiny Physics World</div>
         <div class="figure-canvas-wrap">
-          <canvas id="canvas-gravity" width="720" height="320"></canvas>
+          <canvas id="canvas-gravity" width="720" height="384"></canvas>
         </div>
         <div class="figure-controls">
           <button class="ctrl-btn primary" id="gravity-step">Step</button>
@@ -1046,20 +1046,22 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   const COLS = Math.floor(w / CELL);
   const ROWS = Math.floor(h / CELL);
 
-  let ball = { x: 4, y: 1, vy: 0 };
-  let predicted = { x: 4, y: 2 };
+  let ball = { x: 6, y: 1, vy: 0 };
+  let predicted = { x: 6, y: 2 };
   let step = 0;
   let playing = false;
   let playInterval = null;
+  let trail = []; // Track ball positions for trail
 
   // Static obstacles
   const obstacles = new Set();
   // Ground
   for (let c = 0; c < COLS; c++) obstacles.add(`${c},${ROWS - 1}`);
-  // Platforms
-  for (let c = 8; c < 14; c++) obstacles.add(`${c},7`);
-  for (let c = 2; c < 6; c++) obstacles.add(`${c},5`);
-  for (let c = 14; c < 18; c++) obstacles.add(`${c},4`);
+  // Platforms - staircase pattern for interesting bouncing
+  for (let c = 3; c < 8; c++) obstacles.add(`${c},8`);
+  for (let c = 10; c < 15; c++) obstacles.add(`${c},6`);
+  for (let c = 16; c < 20; c++) obstacles.add(`${c},9`);
+  for (let c = 4; c < 7; c++) obstacles.add(`${c},4`);
 
   function isObstacle(x, y) { return obstacles.has(`${x},${y}`); }
 
@@ -1068,25 +1070,30 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     let pvy = ball.vy + 1;
     py += pvy;
     if (py >= ROWS - 1 || isObstacle(ball.x, py)) {
+      // Ball would hit something - predict it stays
       py = ball.y;
-      pvy = 0;
     }
     predicted = { x: ball.x, y: py };
   }
 
   function advance() {
+    trail.push({ x: ball.x, y: ball.y });
+    if (trail.length > 8) trail.shift();
+
     ball.vy += 1;
     let ny = ball.y + ball.vy;
     if (ny >= ROWS - 1 || isObstacle(ball.x, ny)) {
-      ny = Math.min(ball.y, ROWS - 2);
-      // Check if resting on something
-      if (isObstacle(ball.x, ny + 1) || ny + 1 >= ROWS - 1) {
-        ball.vy = 0;
-      } else {
-        ball.vy = 0;
+      // Find landing position
+      let landY = ball.y;
+      for (let check = ball.y + 1; check <= ny; check++) {
+        if (check >= ROWS - 1 || isObstacle(ball.x, check)) break;
+        landY = check;
       }
+      ball.y = landY;
+      ball.vy = 0;
+    } else {
+      ball.y = ny;
     }
-    ball.y = ny;
     step++;
     predict();
     draw();
@@ -1097,7 +1104,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.clearRect(0, 0, w, h);
 
     // Background grid
-    ctx.strokeStyle = '#E8E4DC';
+    ctx.strokeStyle = '#EBE7E0';
     ctx.lineWidth = 0.5;
     for (let c = 0; c <= COLS; c++) {
       ctx.beginPath(); ctx.moveTo(c * CELL, 0); ctx.lineTo(c * CELL, h); ctx.stroke();
@@ -1106,42 +1113,76 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       ctx.beginPath(); ctx.moveTo(0, r * CELL); ctx.lineTo(w, r * CELL); ctx.stroke();
     }
 
-    // Obstacles
-    ctx.fillStyle = '#D4CFC5';
+    // Obstacles with slight 3D effect
     for (const key of obstacles) {
       const [cx, cy] = key.split(',').map(Number);
-      ctx.fillRect(cx * CELL + 1, cy * CELL + 1, CELL - 2, CELL - 2);
+      const ox = cx * CELL;
+      const oy = cy * CELL;
+      ctx.fillStyle = '#D4CFC5';
+      ctx.fillRect(ox + 1, oy + 1, CELL - 2, CELL - 2);
+      // Top highlight
+      ctx.fillStyle = '#E0DCD4';
+      ctx.fillRect(ox + 1, oy + 1, CELL - 2, 3);
+    }
+
+    // Trail
+    for (let i = 0; i < trail.length; i++) {
+      const t = trail[i];
+      const alpha = (i + 1) / (trail.length + 1) * 0.2;
+      ctx.fillStyle = `rgba(44, 44, 44, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(t.x * CELL + CELL / 2, t.y * CELL + CELL / 2, CELL / 2 - 6, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     // Prediction ghost
-    ctx.fillStyle = 'rgba(194, 65, 12, 0.25)';
+    const px = predicted.x * CELL + CELL / 2;
+    const py = predicted.y * CELL + CELL / 2;
+    ctx.fillStyle = 'rgba(194, 65, 12, 0.2)';
     ctx.beginPath();
-    ctx.arc(predicted.x * CELL + CELL / 2, predicted.y * CELL + CELL / 2, CELL / 2 - 4, 0, Math.PI * 2);
+    ctx.arc(px, py, CELL / 2 - 2, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = 'rgba(194, 65, 12, 0.5)';
     ctx.lineWidth = 2;
     ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(px, py, CELL / 2 - 2, 0, Math.PI * 2);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Ball
-    ctx.fillStyle = '#2C2C2C';
+    // Ball with gradient
+    const bx = ball.x * CELL + CELL / 2;
+    const by = ball.y * CELL + CELL / 2;
+    const br = CELL / 2 - 2;
+    const ballGrad = ctx.createRadialGradient(bx - 3, by - 3, 0, bx, by, br);
+    ballGrad.addColorStop(0, '#555');
+    ballGrad.addColorStop(1, '#2C2C2C');
+    ctx.fillStyle = ballGrad;
     ctx.beginPath();
-    ctx.arc(ball.x * CELL + CELL / 2, ball.y * CELL + CELL / 2, CELL / 2 - 4, 0, Math.PI * 2);
+    ctx.arc(bx, by, br, 0, Math.PI * 2);
     ctx.fill();
 
-    // Labels
+    // Labels - position to the right, offset if overlapping
+    const labelOffX = CELL + 6;
     ctx.font = '11px -apple-system, sans-serif';
     ctx.fillStyle = '#2C2C2C';
-    ctx.fillText('Actual', ball.x * CELL + CELL + 4, ball.y * CELL + CELL / 2 + 4);
-    ctx.fillStyle = 'rgba(194, 65, 12, 0.8)';
-    ctx.fillText('Predicted', predicted.x * CELL + CELL + 4, predicted.y * CELL + CELL / 2 + 4);
+    ctx.fillText('Actual', bx + labelOffX - CELL / 2, by + 4);
+    // Only show predicted label if not overlapping with actual
+    if (Math.abs(ball.y - predicted.y) > 0) {
+      ctx.fillStyle = 'rgba(194, 65, 12, 0.8)';
+      ctx.fillText('Predicted', px + labelOffX - CELL / 2, py + 4);
+    } else {
+      ctx.fillStyle = 'rgba(194, 65, 12, 0.8)';
+      ctx.fillText('Predicted (same)', bx + labelOffX - CELL / 2, by + 18);
+    }
   }
 
   function reset() {
-    ball = { x: 4, y: 1, vy: 0 };
+    ball = { x: 6, y: 1, vy: 0 };
+    predicted = { x: 6, y: 2 };
+    trail = [];
     step = 0;
-    if (playing) { clearInterval(playInterval); playing = false; }
+    if (playing) { clearInterval(playInterval); playing = false; document.getElementById('gravity-play').textContent = 'Play'; }
     predict();
     draw();
     document.getElementById('gravity-info').textContent = `Step: 0`;
@@ -1408,7 +1449,13 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.fillStyle = '#86EFAC';
     ctx.fillRect(fx + 1, fy + FRAME_H * 0.7, FRAME_W - 2, FRAME_H * 0.3);
 
-    // Simple mountains
+    // Sun
+    ctx.fillStyle = '#FDE68A';
+    ctx.beginPath();
+    ctx.arc(fx + FRAME_W - 20, fy + 16, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mountains
     ctx.fillStyle = '#93C5FD';
     ctx.beginPath();
     ctx.moveTo(fx + 10, fy + FRAME_H * 0.7);
@@ -1420,6 +1467,15 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.moveTo(fx + 50, fy + FRAME_H * 0.7);
     ctx.lineTo(fx + 80, fy + 30);
     ctx.lineTo(fx + 110, fy + FRAME_H * 0.7);
+    ctx.fill();
+
+    // Tree
+    const groundY = fy + FRAME_H * 0.7;
+    ctx.fillStyle = '#7C5C3C';
+    ctx.fillRect(fx + 95, groundY - 14, 4, 14);
+    ctx.fillStyle = '#22C55E';
+    ctx.beginPath();
+    ctx.arc(fx + 97, groundY - 18, 8, 0, Math.PI * 2);
     ctx.fill();
 
     // Player
