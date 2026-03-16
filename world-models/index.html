@@ -748,7 +748,7 @@ input[type="range"]::-webkit-slider-thumb {
           <div class="ctrl-separator"></div>
           <button class="ctrl-btn" id="genie-reset">Reset</button>
           <div class="ctrl-separator"></div>
-          <span class="ctrl-label" id="genie-info">Frame 1 / 12</span>
+          <span class="ctrl-label" id="genie-info">Frame 1 of 12</span>
         </div>
         <div class="figure-caption">
           Each action generates the next frame. The filmstrip shows your trajectory through the
@@ -771,10 +771,10 @@ input[type="range"]::-webkit-slider-thumb {
           Two encoders map observations into embeddings. A predictor module then learns to
           predict the <em>target</em> embedding from the <em>context</em> embedding:
         </p>
-        <div class="equation">
-          s<sub>x</sub> = Encoder(x) &nbsp;&nbsp;|&nbsp;&nbsp;
-          s<sub>y</sub> = Encoder(y) &nbsp;&nbsp;|&nbsp;&nbsp;
-          s&#770;<sub>y</sub> = Predictor(s<sub>x</sub>)
+        <div class="equation" style="font-size:0.82rem;">
+          s<sub>x</sub> = Enc(x) &nbsp;&middot;&nbsp;
+          s<sub>y</sub> = Enc(y) &nbsp;&middot;&nbsp;
+          s&#770;<sub>y</sub> = Predict(s<sub>x</sub>)
         </div>
         <p>
           The loss minimizes the distance between the predicted and actual target embeddings.
@@ -1047,7 +1047,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   const ROWS = Math.floor(h / CELL);
 
   let ball = { x: 4, y: 1, vy: 0 };
-  let predicted = { x: 4, y: 1 };
+  let predicted = { x: 4, y: 2 };
   let step = 0;
   let playing = false;
   let playInterval = null;
@@ -1057,8 +1057,9 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   // Ground
   for (let c = 0; c < COLS; c++) obstacles.add(`${c},${ROWS - 1}`);
   // Platforms
-  for (let c = 6; c < 12; c++) obstacles.add(`${c},6`);
-  for (let c = 2; c < 7; c++) obstacles.add(`${c},4`);
+  for (let c = 8; c < 14; c++) obstacles.add(`${c},7`);
+  for (let c = 2; c < 6; c++) obstacles.add(`${c},5`);
+  for (let c = 14; c < 18; c++) obstacles.add(`${c},4`);
 
   function isObstacle(x, y) { return obstacles.has(`${x},${y}`); }
 
@@ -1364,6 +1365,9 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     return { playerX: s.playerX, playerY: s.playerY, grounded: s.grounded };
   }
 
+  // Start with an initial frame
+  frames.push({ ...stateToFrame(state), action: null });
+
   function applyAction(action) {
     const s = { ...state };
     switch (action) {
@@ -1382,14 +1386,14 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     state = s;
     frames.push({ ...stateToFrame(s), action });
     draw();
-    document.getElementById('genie-info').textContent = `Frame ${frames.length} / ${MAX_FRAMES}`;
+    document.getElementById('genie-info').textContent = `Frame ${frames.length} of ${MAX_FRAMES}`;
   }
 
   function drawFrame(fx, fy, frame, index, isCurrent) {
     // Frame border
     ctx.fillStyle = isCurrent ? '#FFF8F0' : '#FEFEFE';
     ctx.fillRect(fx, fy, FRAME_W, FRAME_H);
-    ctx.strokeStyle = isCurrent ? 'var(--genie-primary)' : '#D4CFC5';
+    ctx.strokeStyle = isCurrent ? '#2563EB' : '#D4CFC5';
     ctx.lineWidth = isCurrent ? 2 : 1;
     ctx.strokeRect(fx, fy, FRAME_W, FRAME_H);
 
@@ -1500,10 +1504,10 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   }
 
   function reset() {
-    frames = [];
     state = { playerX: 30, playerY: 50, velY: 0, grounded: true };
+    frames = [{ ...stateToFrame(state), action: null }];
     draw();
-    document.getElementById('genie-info').textContent = 'Frame 0 / 12';
+    document.getElementById('genie-info').textContent = 'Frame 1 of 12';
   }
 
   document.querySelectorAll('.genie-action').forEach(btn => {
