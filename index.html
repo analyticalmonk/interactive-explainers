@@ -4,228 +4,371 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Interactive Explainers</title>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #FAF8F4;
-  --text: #2C2C2C;
-  --text-secondary: #6B6560;
-  --text-tertiary: #9B9590;
-  --border: #E0DCD4;
-  --accent: #C2410C;
-  --font-serif: 'Crimson Pro', Georgia, serif;
-  --font-sans: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --text: rgba(0, 0, 0, 0.8);
+  --text-secondary: rgba(0, 0, 0, 0.54);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --link: #004276;
+  --border: rgba(0, 0, 0, 0.08);
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 html {
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   font-family: var(--font-sans);
-  background: var(--bg);
+  background: #fff;
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
-.container {
-  max-width: 700px;
+/* Header bar */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  margin-bottom: 48px;
+}
+
+.site-header-inner {
+  max-width: 900px;
   margin: 0 auto;
-  padding: 80px 24px 120px;
-}
-
-h1 {
-  font-family: var(--font-serif);
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  margin-bottom: 1.25rem;
-  animation: fadeInUp 0.5s ease both;
-}
-
-.intro {
-  font-size: 1.1rem;
-  color: var(--text-secondary);
-  line-height: 1.65;
-  margin-bottom: 3rem;
-  max-width: 560px;
-  animation: fadeInUp 0.5s ease 0.1s both;
-}
-
-.intro a {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.cards {
+  padding: 0 24px;
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
   gap: 24px;
 }
 
-.card {
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fff;
-  border: 1px solid var(--border);
-  text-decoration: none;
-  color: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  animation: fadeInUp 0.5s ease 0.2s both;
-}
-
-.card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-}
-
-.card-hero {
-  height: 150px;
-  display: flex;
-  align-items: flex-end;
-  padding: 20px 24px;
-  position: relative;
-  overflow: hidden;
-}
-
-.card-hero h2 {
-  font-family: var(--font-serif);
-  font-size: 1.55rem;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 8px rgba(0,0,0,0.25);
-  line-height: 1.2;
-  position: relative;
-  z-index: 1;
-}
-
-.card-hero .card-tag {
-  position: absolute;
-  top: 14px;
-  left: 20px;
+.site-title {
   font-family: var(--font-sans);
-  font-size: 0.65rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.85);
-  background: rgba(255,255,255,0.15);
-  padding: 3px 10px;
-  border-radius: 3px;
-  backdrop-filter: blur(4px);
-  z-index: 1;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
 }
 
-.card-body {
-  padding: 18px 24px 20px;
+.site-nav a {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
 }
 
-.card-body p {
+.site-nav a:hover {
+  color: var(--text);
+}
+
+/* Main content */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px 100px;
+}
+
+.page-title {
+  font-family: var(--font-serif);
+  font-size: 2.6rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.page-subtitle {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 48px;
+  max-width: 620px;
+}
+
+/* Article list */
+.article-list {
+  list-style: none;
+}
+
+.article-entry {
+  padding: 32px 0;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 32px;
+  align-items: start;
+}
+
+.article-entry:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.article-content {
+  min-width: 0;
+}
+
+.article-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.article-title a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.article-title a:hover {
+  color: var(--link);
+}
+
+.article-excerpt {
   font-size: 0.92rem;
   color: var(--text-secondary);
-  line-height: 1.55;
-  margin-bottom: 10px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  max-width: 520px;
 }
 
-.card-meta {
-  font-size: 0.78rem;
+.article-meta {
+  font-size: 0.8rem;
   color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-/* Gradients */
-.gradient-world-models {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2563EB 40%, #7C3AED 70%, #EC4899 100%);
+.article-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--link);
+  background: rgba(0, 66, 118, 0.06);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+/* Thumbnail */
+.article-thumbnail {
+  width: 240px;
+  height: 140px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f4f4f4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.article-thumbnail canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 /* Footer */
-.footer {
-  margin-top: 4rem;
-  padding-top: 2rem;
-  border-top: 1px solid var(--border);
-  font-size: 0.82rem;
+.site-footer {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 24px 48px;
+  font-size: 0.8rem;
   color: var(--text-tertiary);
   line-height: 1.7;
-  animation: fadeInUp 0.5s ease 0.3s both;
 }
 
-.footer a {
+.site-footer a {
   color: var(--text-secondary);
   text-decoration: none;
 }
 
-.footer a:hover {
+.site-footer a:hover {
   text-decoration: underline;
 }
 
-/* Coming soon card */
-.card.coming-soon {
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-.card.coming-soon .card-hero {
-  filter: grayscale(0.5);
-}
-
-/* Animations */
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 /* Responsive */
-@media (max-width: 600px) {
-  .container { padding: 48px 18px 80px; }
-  h1 { font-size: 2.2rem; }
-  .intro { font-size: 1rem; }
-  .card-hero { height: 120px; }
-  .card-hero h2 { font-size: 1.3rem; }
+@media (max-width: 700px) {
+  .site-header { margin-bottom: 32px; }
+  .page-title { font-size: 2rem; }
+  .page-subtitle { font-size: 1.1rem; margin-bottom: 32px; }
+  .article-entry {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 24px 0;
+  }
+  .article-thumbnail {
+    width: 100%;
+    height: 160px;
+    order: -1;
+  }
 }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <h1>Interactive Explainers</h1>
-  <p class="intro">
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="./" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <h1 class="page-title">Interactive Explainers</h1>
+  <p class="page-subtitle">
+    Clear, interactive essays on topics in AI, science, and computing.
     You don't really understand something until you can play with it.
-    These are interactive essays on topics in AI, science, and computing -
-    inspired by <a href="https://distill.pub">distill.pub</a> and
-    <a href="https://paraschopra.github.io/explainers/">Paras Chopra's explainers</a>.
   </p>
 
-  <div class="cards">
+  <ul class="article-list">
 
-    <a href="world-models/" class="card">
-      <div class="card-hero gradient-world-models">
-        <span class="card-tag">AI &middot; World Models</span>
-        <h2>World Models: How AI Learns to Simulate Reality</h2>
-      </div>
-      <div class="card-body">
-        <p>
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
+          <a href="world-models/">World Models: How AI Learns to Simulate Reality</a>
+        </h2>
+        <p class="article-excerpt">
           Language models predict the next word. World models predict the next moment.
-          Explore how Google's Genie, Yann LeCun's JEPA, and Fei-Fei Li's World Labs
-          are building AI that understands physical reality - with interactive demos for
-          each approach.
+          Explore how Google's Genie, LeCun's JEPA, and Fei-Fei Li's World Labs
+          are building AI that understands physical reality.
         </p>
-        <div class="card-meta">March 2026 &middot; 15 min read &middot; 5 interactive figures</div>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>March 2026</span>
+          <span>15 min read</span>
+          <span>5 figures</span>
+        </div>
       </div>
-    </a>
+      <div class="article-thumbnail">
+        <canvas id="thumb-world-models" width="480" height="280"></canvas>
+      </div>
+    </li>
 
-  </div>
+  </ul>
+</main>
 
-  <div class="footer">
-    <p>
-      Built by <a href="https://github.com/analyticalmonk">analyticalmonk</a>.
-      Source on <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>.
-    </p>
-  </div>
-</div>
+<footer class="site-footer">
+  <p>
+    Built by <a href="https://github.com/analyticalmonk">analyticalmonk</a>.
+    Inspired by <a href="https://distill.pub">distill.pub</a>.
+  </p>
+</footer>
+
+<script>
+// Thumbnail: animated mini 3D scene
+(function() {
+  const canvas = document.getElementById('thumb-world-models');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  let angle = 0;
+
+  function project(x, y, z) {
+    const cosA = Math.cos(angle), sinA = Math.sin(angle);
+    const rx = x * cosA - z * sinA;
+    const rz = x * sinA + z * cosA;
+    const ry = y;
+    const s = 60;
+    const p = 4 / (4 + rz);
+    return { x: w / 2 + rx * s * p, y: h / 2 + ry * s * p, z: rz };
+  }
+
+  function drawBox(cx, cy, cz, bw, bh, bd, color, light) {
+    const hw = bw/2, hh = bh/2, hd = bd/2;
+    const verts = [
+      [cx-hw,cy-hh,cz-hd],[cx+hw,cy-hh,cz-hd],[cx+hw,cy+hh,cz-hd],[cx-hw,cy+hh,cz-hd],
+      [cx-hw,cy-hh,cz+hd],[cx+hw,cy-hh,cz+hd],[cx+hw,cy+hh,cz+hd],[cx-hw,cy+hh,cz+hd]
+    ].map(v => project(v[0],v[1],v[2]));
+
+    const faces = [[0,1,2,3],[5,4,7,6],[4,0,3,7],[1,5,6,2],[4,5,1,0],[3,2,6,7]];
+    const sorted = faces.map(f => {
+      const pts = f.map(i => verts[i]);
+      return { pts, z: pts.reduce((s,p) => s+p.z,0)/4 };
+    }).sort((a,b) => b.z - a.z);
+
+    for (const face of sorted) {
+      const p = face.pts;
+      const ax = p[1].x-p[0].x, ay = p[1].y-p[0].y;
+      const bx2 = p[2].x-p[0].x, by = p[2].y-p[0].y;
+      if (ax*by - ay*bx2 > 0) continue;
+      ctx.fillStyle = face.z < 0 ? light : color;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(p[0].x, p[0].y);
+      for (let i=1;i<4;i++) ctx.lineTo(p[i].x, p[i].y);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = 0.5; ctx.globalAlpha = 0.4; ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawSphere(cx, cy, cz, r, color, light) {
+    const p = project(cx, cy, cz);
+    const sr = r * 60 * (4/(4+p.z));
+    const g = ctx.createRadialGradient(p.x - sr*0.3, p.y - sr*0.3, 0, p.x, p.y, sr);
+    g.addColorStop(0, light); g.addColorStop(1, color);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(p.x, p.y, sr, 0, Math.PI*2); ctx.fill();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Soft gradient bg
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#f8f9fa'); bg.addColorStop(1, '#eef1f5');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    // Grid floor
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 0.5;
+    for (let i = -4; i <= 4; i++) {
+      const a = project(i*0.6, 0.8, -2.5), b = project(i*0.6, 0.8, 2.5);
+      ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      const c = project(-2.5, 0.8, i*0.6), d = project(2.5, 0.8, i*0.6);
+      ctx.beginPath(); ctx.moveTo(c.x,c.y); ctx.lineTo(d.x,d.y); ctx.stroke();
+    }
+
+    // Objects sorted roughly by z
+    const objs = [
+      { t:'box', args:[0,-0.2,0, 1,0.7,1, '#5B21B6','#A78BFA'], z: project(0,-0.2,0).z },
+      { t:'sphere', args:[-1.3,0.2,0.4, 0.45, '#BE185D','#F9A8D4'], z: project(-1.3,0.2,0.4).z },
+      { t:'box', args:[1.2,0,-.6, 0.55,1.1,0.55, '#0E7490','#67E8F9'], z: project(1.2,0,-.6).z },
+      { t:'sphere', args:[0.6,0.4,1.1, 0.32, '#C2410C','#FDBA74'], z: project(0.6,0.4,1.1).z },
+    ].sort((a,b) => b.z - a.z);
+
+    for (const o of objs) {
+      if (o.t === 'box') drawBox(...o.args);
+      else drawSphere(...o.args);
+    }
+
+    angle += 0.006;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
 
 </body>
 </html>
