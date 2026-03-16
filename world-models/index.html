@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Models: How AI Learns to Simulate Reality</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+  --bg: #FAF8F4;
+  --bg-warm: #F5F0E8;
+  --bg-code: #F0EDE6;
+  --text: #2C2C2C;
+  --text-secondary: #6B6560;
+  --text-tertiary: #9B9590;
+  --border: #E0DCD4;
+  --border-light: #EBE7E0;
+
+  /* Approach colors */
+  --genie-primary: #2563EB;
+  --genie-light: #EFF6FF;
+  --genie-border: #BFDBFE;
+  --genie-dark: #1E40AF;
+
+  --jepa-primary: #059669;
+  --jepa-light: #ECFDF5;
+  --jepa-border: #A7F3D0;
+  --jepa-dark: #065F46;
+
+  --world-labs-primary: #7C3AED;
+  --world-labs-light: #F5F3FF;
+  --world-labs-border: #C4B5FD;
+  --world-labs-dark: #5B21B6;
+
+  --accent: #C2410C;
+  --accent-light: #FFF7ED;
+
+  /* Typography */
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  /* Spacing */
+  --content-width: 720px;
+  --sidebar-width: 220px;
+  --gap: 2rem;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.page-wrapper {
+  display: flex;
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  padding-right: 2.5rem;
+}
+
+.sidebar-inner {
+  position: sticky;
+  top: 2rem;
+  padding-top: 6rem;
+}
+
+.sidebar nav a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.sidebar nav a:hover {
+  color: var(--text-secondary);
+}
+
+.sidebar nav a.active {
+  color: var(--text);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar nav a.sub {
+  padding-left: 1.6rem;
+  font-size: 0.67rem;
+}
+
+.content {
+  flex: 1;
+  max-width: var(--content-width);
+  min-width: 0;
+  padding-bottom: 6rem;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 4.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+p {
+  margin-bottom: 1.25rem;
+}
+
+.lead {
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  margin-bottom: 0.5rem;
+}
+
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+strong { font-weight: 600; }
+
+em { font-style: italic; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.math {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--bg-code);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.equation {
+  display: block;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  background: var(--bg-warm);
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  overflow-x: auto;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.article-header {
+  padding-top: 5rem;
+  margin-bottom: 3.5rem;
+}
+
+.article-header .overline {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   INTERACTIVE FIGURES
+   ============================================ */
+.figure {
+  margin: 2.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.figure-canvas-wrap {
+  position: relative;
+  width: 100%;
+  background: #FEFEFE;
+}
+
+.figure-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+}
+
+.figure-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 0.5rem 1rem 0;
+}
+
+button.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+button.ctrl-btn:hover {
+  background: var(--bg);
+  border-color: var(--text-tertiary);
+}
+
+button.ctrl-btn.active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+
+button.ctrl-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+button.ctrl-btn.primary:hover {
+  opacity: 0.9;
+}
+
+.ctrl-label {
+  font-family: var(--font-sans);
+  font-size: 0.67rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.ctrl-separator {
+  width: 1px;
+  height: 1.2rem;
+  background: var(--border);
+  margin: 0 0.3rem;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: pointer;
+}
+
+/* ============================================
+   APPROACH CARDS
+   ============================================ */
+.approach-section {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.approach-section.genie {
+  background: var(--genie-light);
+  border-color: var(--genie-border);
+}
+
+.approach-section.jepa {
+  background: var(--jepa-light);
+  border-color: var(--jepa-border);
+}
+
+.approach-section.world-labs {
+  background: var(--world-labs-light);
+  border-color: var(--world-labs-border);
+}
+
+.approach-tag {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.genie .approach-tag { background: var(--genie-primary); color: #fff; }
+.jepa .approach-tag { background: var(--jepa-primary); color: #fff; }
+.world-labs .approach-tag { background: var(--world-labs-primary); color: #fff; }
+
+.genie h3 { color: var(--genie-dark); }
+.jepa h3 { color: var(--jepa-dark); }
+.world-labs h3 { color: var(--world-labs-dark); }
+
+/* ============================================
+   TIMELINE
+   ============================================ */
+.timeline {
+  position: relative;
+  margin: 2.5rem 0;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.75rem;
+  padding-left: 1rem;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.65rem;
+  top: 0.55rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--text-tertiary);
+}
+
+.timeline-item.highlight::before {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.timeline-year {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.timeline-text {
+  font-size: 0.9rem;
+  margin-top: 0.15rem;
+}
+
+/* ============================================
+   CALLOUT
+   ============================================ */
+.callout {
+  margin: 2rem 0;
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.95rem;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+/* ============================================
+   COMPARISON TABLE
+   ============================================ */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.comparison-cell {
+  padding: 1rem;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.comparison-cell.genie { background: var(--genie-light); border: 1px solid var(--genie-border); }
+.comparison-cell.jepa { background: var(--jepa-light); border: 1px solid var(--jepa-border); }
+.comparison-cell.world-labs { background: var(--world-labs-light); border: 1px solid var(--world-labs-border); }
+
+.comparison-cell strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.article-footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+
+.article-footer a {
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1060px) {
+  .sidebar { display: none; }
+  .page-wrapper { padding: 0 1.25rem; }
+}
+
+@media (max-width: 600px) {
+  html { font-size: 16px; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .article-header { padding-top: 3rem; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .figure-controls { gap: 0.4rem; }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.figure {
+  animation: fadeInUp 0.5s ease both;
+}
+
+.approach-section {
+  animation: fadeInUp 0.4s ease both;
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <nav id="toc">
+        <a href="#intro">What if AI Could Imagine?</a>
+        <a href="#core-idea">The Core Idea</a>
+        <a href="#prediction-demo" class="sub">Prediction Demo</a>
+        <a href="#three-philosophies">Three Philosophies</a>
+        <a href="#genie" class="sub">Genie: Video Generation</a>
+        <a href="#jepa" class="sub">JEPA: Abstract Prediction</a>
+        <a href="#world-labs" class="sub">World Labs: Spatial AI</a>
+        <a href="#why-it-matters">Why It Matters</a>
+        <a href="#open-questions">Open Questions</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- HEADER -->
+    <header class="article-header" id="intro">
+      <div class="overline">Interactive Explainer</div>
+      <h1>World Models: How AI Learns to Simulate Reality</h1>
+      <p class="lead">
+        Language models predict the next word. World models predict the next <em>moment</em>.
+        They are AI systems that learn how reality works - not by reading about it, but by
+        building an internal simulation of the world that can be imagined, explored, and acted upon.
+      </p>
+      <div class="meta">March 2026 &middot; 15 min read</div>
+    </header>
+
+    <!-- SECTION 1: INTRO -->
+    <section>
+      <p>
+        Close your eyes and imagine pushing a ball off a table. You can <em>see</em> it falling,
+        <em>hear</em> the bounce, <em>predict</em> where it rolls. You did not need to actually
+        push the ball - your brain ran a simulation. This internal simulator is what cognitive
+        scientists call a <strong>world model</strong>.
+      </p>
+      <p>
+        Now AI is learning to do the same thing. Below is a tiny world - a grid with a ball
+        that obeys gravity. Click <strong>Step</strong> to advance time. The
+        <span style="color:var(--accent);font-weight:600;">orange overlay</span> shows what a
+        simple predictive model <em>thinks</em> will happen next.
+      </p>
+
+      <!-- FIGURE 1: Simple World Simulation -->
+      <div class="figure" id="fig-gravity">
+        <div class="figure-label">Figure 1 &mdash; A Tiny Physics World</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-gravity" width="720" height="320"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="gravity-step">Step</button>
+          <button class="ctrl-btn" id="gravity-play">Play</button>
+          <button class="ctrl-btn" id="gravity-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="gravity-info">Step: 0</span>
+        </div>
+        <div class="figure-caption">
+          A ball falls under gravity. The <strong style="color:var(--accent);">orange ghost</strong>
+          shows the model's prediction for the next frame. Notice how the prediction aligns
+          perfectly in this simple, deterministic world. Real worlds are far less predictable.
+        </div>
+      </div>
+
+      <p>
+        In this toy example, prediction is trivial - gravity is a simple rule. But what about
+        a world with hundreds of objects, occlusion, friction, other agents making decisions?
+        The prediction problem becomes enormously complex. This is the challenge that world
+        models tackle.
+      </p>
+    </section>
+
+    <!-- SECTION 2: CORE IDEA -->
+    <section>
+      <h2 id="core-idea">The Core Idea</h2>
+      <p>
+        A world model is a learned function that, given the current state of an environment and
+        an action, predicts what happens next:
+      </p>
+      <div class="equation">
+        s<sub>t+1</sub> = f(s<sub>t</sub>, a<sub>t</sub>)
+      </div>
+      <p>
+        Where <span class="math">s<sub>t</sub></span> is the state at time <em>t</em>,
+        <span class="math">a<sub>t</sub></span> is the action taken, and
+        <span class="math">s<sub>t+1</sub></span> is the predicted next state.
+        The model learns <span class="math">f</span> from data - by observing thousands or
+        millions of state transitions.
+      </p>
+      <p>
+        Try it yourself. Use the arrow keys or buttons below to move the agent through a grid
+        world. The left panel shows the <strong>actual</strong> result; the right shows what the
+        model <strong>predicted</strong> would happen.
+      </p>
+
+      <!-- FIGURE 2: Action-Conditioned Prediction -->
+      <div class="figure" id="prediction-demo">
+        <div class="figure-label">Figure 2 &mdash; Predict, Then Verify</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-predict" width="720" height="340"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn" id="pred-up">&uarr;</button>
+          <button class="ctrl-btn" id="pred-down">&darr;</button>
+          <button class="ctrl-btn" id="pred-left">&larr;</button>
+          <button class="ctrl-btn" id="pred-right">&rarr;</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="pred-noise-toggle">Add Noise</button>
+          <button class="ctrl-btn" id="pred-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="pred-info">Accuracy: 100%</span>
+        </div>
+        <div class="figure-caption">
+          Move the agent with arrow keys or buttons. In deterministic mode, prediction is perfect.
+          Toggle <strong>Add Noise</strong> to introduce randomness - the model's predictions
+          start to diverge. This is the fundamental challenge: the real world is stochastic.
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>The key insight:</strong> In a deterministic world, a world model only needs to
+          learn the rules. In a stochastic world, it must learn a <em>distribution</em> over
+          possible futures. This distinction drives the three major approaches to world modeling
+          that have emerged in 2024-2026.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: THREE PHILOSOPHIES -->
+    <section>
+      <h2 id="three-philosophies">Three Philosophies</h2>
+      <p>
+        Three distinct research programs have emerged, each with a fundamentally different answer
+        to the question: <em>what should a world model predict?</em>
+      </p>
+
+      <div class="comparison-grid">
+        <div class="comparison-cell genie">
+          <strong style="color:var(--genie-dark)">Genie</strong>
+          Predict the next <em>video frame</em>. Generate pixels directly, conditioned on actions.
+        </div>
+        <div class="comparison-cell jepa">
+          <strong style="color:var(--jepa-dark)">JEPA</strong>
+          Predict the next <em>representation</em>. Work in abstract embedding space, not pixels.
+        </div>
+        <div class="comparison-cell world-labs">
+          <strong style="color:var(--world-labs-dark)">World Labs</strong>
+          Predict the next <em>3D scene</em>. Understand spatial structure and geometry.
+        </div>
+      </div>
+
+      <!-- GENIE -->
+      <div class="approach-section genie" id="genie">
+        <span class="approach-tag">Google DeepMind</span>
+        <h3>Genie: Imagining Worlds Frame by Frame</h3>
+        <p>
+          Google DeepMind's Genie models (Genie 2, Genie 3, Project Genie) take a direct approach:
+          generate the next video frame conditioned on the user's action. Give it an image of a
+          world and a keyboard input, and it produces what you would <em>see</em> next.
+        </p>
+        <p>
+          Technically, Genie is an <strong>autoregressive latent diffusion model</strong>.
+          It compresses frames into a latent space using an autoencoder, then a transformer
+          predicts the next latent frame given past frames and the action. The latent is
+          decoded back into pixels.
+        </p>
+        <div class="equation">
+          z<sub>t+1</sub> = Transformer(z<sub>1:t</sub>, a<sub>t</sub>) &nbsp;&nbsp;|&nbsp;&nbsp;
+          frame<sub>t+1</sub> = Decoder(z<sub>t+1</sub>)
+        </div>
+        <p>
+          Below, you can step through a simulated version of this process. Pick an action at each
+          step and watch the "world" generate the next frame. Each frame is generated
+          autoregressively - it depends on every frame before it.
+        </p>
+      </div>
+
+      <!-- FIGURE 3: Genie Frame Generation -->
+      <div class="figure">
+        <div class="figure-label">Figure 3 &mdash; Action-Conditioned Frame Generation</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-genie" width="720" height="300"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Action:</span>
+          <button class="ctrl-btn genie-action" data-action="left">&larr; Left</button>
+          <button class="ctrl-btn genie-action" data-action="right">&rarr; Right</button>
+          <button class="ctrl-btn genie-action" data-action="jump">&uarr; Jump</button>
+          <button class="ctrl-btn genie-action" data-action="wait">&middot; Wait</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="genie-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="genie-info">Frame 1 / 12</span>
+        </div>
+        <div class="figure-caption">
+          Each action generates the next frame. The filmstrip shows your trajectory through the
+          world. Notice how the scene maintains consistency - the model remembers what came before.
+          Genie 3 achieves this at 24fps in real time.
+        </div>
+      </div>
+
+      <!-- JEPA -->
+      <div class="approach-section jepa" id="jepa">
+        <span class="approach-tag">Yann LeCun / Meta</span>
+        <h3>JEPA: Predicting Without Generating</h3>
+        <p>
+          Yann LeCun argues that predicting pixels is wasteful. Most pixel-level detail is
+          irrelevant for understanding - the exact texture of a leaf does not matter for
+          predicting that a ball will fall. JEPA (Joint Embedding Predictive Architecture)
+          instead predicts in <strong>representation space</strong>.
+        </p>
+        <p>
+          Two encoders map observations into embeddings. A predictor module then learns to
+          predict the <em>target</em> embedding from the <em>context</em> embedding:
+        </p>
+        <div class="equation">
+          s<sub>x</sub> = Encoder(x) &nbsp;&nbsp;|&nbsp;&nbsp;
+          s<sub>y</sub> = Encoder(y) &nbsp;&nbsp;|&nbsp;&nbsp;
+          s&#770;<sub>y</sub> = Predictor(s<sub>x</sub>)
+        </div>
+        <p>
+          The loss minimizes the distance between the predicted and actual target embeddings.
+          Crucially, predictions happen in an <strong>abstract space</strong> that discards
+          irrelevant detail - the model learns <em>what matters</em> for prediction.
+        </p>
+        <p>
+          The visualization below shows this idea. Points in 2D represent embeddings.
+          The context encoder maps an observation to a point. The predictor maps it to where
+          it thinks the <em>next</em> observation's embedding will be. Drag the context point
+          to explore the prediction landscape.
+        </p>
+      </div>
+
+      <!-- FIGURE 4: JEPA Embedding Space -->
+      <div class="figure">
+        <div class="figure-label">Figure 4 &mdash; Prediction in Embedding Space</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-jepa" width="720" height="400"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Drag the green point to explore</span>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="jepa-energy-toggle">Show Energy Landscape</button>
+          <button class="ctrl-btn" id="jepa-reset">Reset</button>
+        </div>
+        <div class="figure-caption">
+          <strong style="color:var(--jepa-primary)">Green</strong> = context embedding,
+          <strong style="color:var(--accent)">Orange</strong> = predicted target embedding,
+          <strong style="color:var(--text-tertiary)">Gray</strong> = actual target positions.
+          The predictor learns a smooth mapping. Toggle the energy landscape to see regions of
+          high/low compatibility - JEPA uses an energy function where compatible pairs have low energy.
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>Why not just predict pixels?</strong> Consider predicting the next frame of a
+          video showing a person at a crossroads. They might go left or right - both equally
+          likely. A pixel-level model averaging these futures would produce a blurry ghost
+          going in both directions. JEPA avoids this by predicting in abstract space where
+          "left" and "right" are discrete representations, not overlapping pixel clouds.
+        </p>
+      </div>
+
+      <!-- WORLD LABS -->
+      <div class="approach-section world-labs" id="world-labs">
+        <span class="approach-tag">Fei-Fei Li / World Labs</span>
+        <h3>Spatial Intelligence: Worlds in 3D</h3>
+        <p>
+          Fei-Fei Li's World Labs takes yet another angle: true understanding of the world
+          requires <strong>spatial intelligence</strong> - grasping the 3D geometry, layout,
+          and physical structure of scenes. Their model, Marble, generates persistent 3D
+          environments that can be explored from any viewpoint.
+        </p>
+        <p>
+          This is fundamentally different from generating flat video frames. A spatially
+          intelligent model knows that walking around a chair reveals its back, that objects
+          have volume, that light comes from somewhere. It builds an internal 3D scene graph.
+        </p>
+        <p>
+          The demo below illustrates this. The same scene is shown from different viewpoints.
+          A 2D model would need to "hallucinate" each view independently. A spatial model
+          maintains a coherent 3D structure that you can orbit, revealing consistent geometry
+          from any angle.
+        </p>
+      </div>
+
+      <!-- FIGURE 5: 3D Scene Understanding -->
+      <div class="figure">
+        <div class="figure-label">Figure 5 &mdash; Spatial Consistency</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-3d" width="720" height="400"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Drag to orbit &middot; Scroll to zoom</span>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="3d-auto-rotate">Auto-Rotate</button>
+          <button class="ctrl-btn" id="3d-wireframe">Wireframe</button>
+          <button class="ctrl-btn" id="3d-reset">Reset View</button>
+        </div>
+        <div class="figure-caption">
+          A simple 3D scene with geometric objects. As you rotate, notice how objects maintain
+          consistent spatial relationships - occluding and revealing each other correctly. This
+          is the kind of structural understanding that spatial intelligence provides.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: WHY IT MATTERS -->
+    <section>
+      <h2 id="why-it-matters">Why It Matters</h2>
+      <p>
+        World models represent a fundamental shift in AI: from systems that process language
+        to systems that understand <em>physical reality</em>. The implications span robotics
+        (simulate before acting), gaming (infinite procedural worlds), autonomous vehicles
+        (predict other drivers), and scientific discovery (simulate experiments).
+      </p>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-year">2018</div>
+          <div class="timeline-text">
+            David Ha & Jurgen Schmidhuber publish "World Models" - an agent learns a
+            compressed representation of its environment using a VAE + RNN.
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">2023</div>
+          <div class="timeline-text">
+            Yann LeCun publishes his vision for autonomous machine intelligence,
+            proposing JEPA as the architecture for learning world models.
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">Feb 2024</div>
+          <div class="timeline-text">
+            Google DeepMind releases Genie - the first generative interactive
+            environment model, trained on 2D platformer videos.
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">Sep 2024</div>
+          <div class="timeline-text">
+            Fei-Fei Li founds World Labs, raising $230M to build spatially intelligent AI.
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">Dec 2024</div>
+          <div class="timeline-text">
+            Genie 2 generates consistent 3D worlds for up to a minute from a single image.
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">Aug 2025</div>
+          <div class="timeline-text">
+            Genie 3 achieves real-time generation at 24fps, 720p - the first real-time
+            interactive world model.
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-year">Nov 2025</div>
+          <div class="timeline-text">
+            World Labs launches Marble, their first commercial product for 3D world generation.
+          </div>
+        </div>
+        <div class="timeline-item highlight">
+          <div class="timeline-year">Mar 2026</div>
+          <div class="timeline-text">
+            Yann LeCun founds AMI Labs with $1B to commercialize world models.
+            World Labs raises $1B. NVIDIA's Cosmos scales to 9,000 trillion tokens.
+            The world model race is on.
+          </div>
+        </div>
+      </div>
+
+      <p>
+        The convergence is striking: three different philosophies, each attracting billions in
+        funding within months of each other. The field has moved from academic curiosity to
+        one of AI's most heavily invested frontiers.
+      </p>
+    </section>
+
+    <!-- SECTION 5: OPEN QUESTIONS -->
+    <section>
+      <h2 id="open-questions">Open Questions</h2>
+      <p>
+        World models are advancing rapidly, but fundamental challenges remain unsolved.
+      </p>
+
+      <h3>Long-horizon consistency</h3>
+      <p>
+        Genie 3 maintains visual coherence for a few minutes. But a useful world model for
+        robotics or long-form planning needs to stay consistent for hours or days. Errors
+        compound autoregressively - small drift becomes catastrophic over time.
+      </p>
+
+      <h3>Grounding in physics</h3>
+      <p>
+        Current models learn statistical correlations from video, not actual physics. They
+        might learn that dropped objects fall, but fail on novel scenarios - a ball in zero
+        gravity, an unfamiliar material. True physical reasoning versus pattern matching
+        remains an open problem.
+      </p>
+
+      <h3>The representation question</h3>
+      <p>
+        Should world models predict pixels (Genie), embeddings (JEPA), or 3D geometry
+        (World Labs)? Each has tradeoffs. Pixel prediction is grounded but wasteful.
+        Embedding prediction is efficient but hard to interpret. 3D prediction is
+        structured but makes strong assumptions about the world.
+      </p>
+      <p>
+        Perhaps the answer is all three, at different levels of a hierarchy - and indeed
+        LeCun's Hierarchical JEPA (H-JEPA) proposes exactly this: different abstraction
+        levels for different prediction horizons.
+      </p>
+
+      <h3>Evaluation</h3>
+      <p>
+        How do you measure the quality of a world model? FID scores for video quality?
+        Task success rates for robotics? Physics prediction accuracy? The field lacks
+        a standard benchmark, making it difficult to compare approaches directly.
+      </p>
+
+      <div class="callout">
+        <p>
+          The world model race is not just a technical competition - it reflects a
+          deeper question about intelligence itself. Is understanding the world fundamentally
+          about <em>seeing</em> (pixels), <em>knowing</em> (representations), or
+          <em>structuring</em> (geometry)? The answer may reshape how we build AI for
+          decades to come.
+        </p>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="article-footer">
+      <p>
+        <strong>Sources & further reading:</strong>
+        <a href="https://deepmind.google/blog/genie-2-a-large-scale-foundation-world-model/">Genie 2 blog post</a> &middot;
+        <a href="https://deepmind.google/blog/genie-3-a-new-frontier-for-world-models/">Genie 3 blog post</a> &middot;
+        <a href="https://ai.meta.com/blog/v-jepa-yann-lecun-ai-model-video-joint-embedding-predictive-architecture/">V-JEPA</a> &middot;
+        <a href="https://www.worldlabs.ai/">World Labs</a> &middot;
+        <a href="https://arxiv.org/abs/2402.15391">Genie paper (arXiv)</a>
+      </p>
+      <p style="margin-top:1rem;">
+        Built as an interactive explainer. Inspired by
+        <a href="https://distill.pub">distill.pub</a>,
+        <a href="https://envision.page/papers/attention">envision.page</a>, and
+        <a href="https://paraschopra.github.io/explainers/">Paras Chopra's explainers</a>.
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<!-- ============================================
+     JAVASCRIPT
+     ============================================ -->
+<script>
+// ============================================
+// UTILITIES
+// ============================================
+const dpr = window.devicePixelRatio || 1;
+
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const cssW = canvas.width;
+  const cssH = canvas.height;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: cssW, h: cssH };
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// ============================================
+// FIGURE 1: GRAVITY WORLD
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-gravity');
+  const CELL = 32;
+  const COLS = Math.floor(w / CELL);
+  const ROWS = Math.floor(h / CELL);
+
+  let ball = { x: 4, y: 1, vy: 0 };
+  let predicted = { x: 4, y: 1 };
+  let step = 0;
+  let playing = false;
+  let playInterval = null;
+
+  // Static obstacles
+  const obstacles = new Set();
+  // Ground
+  for (let c = 0; c < COLS; c++) obstacles.add(`${c},${ROWS - 1}`);
+  // Platforms
+  for (let c = 6; c < 12; c++) obstacles.add(`${c},6`);
+  for (let c = 2; c < 7; c++) obstacles.add(`${c},4`);
+
+  function isObstacle(x, y) { return obstacles.has(`${x},${y}`); }
+
+  function predict() {
+    let py = ball.y;
+    let pvy = ball.vy + 1;
+    py += pvy;
+    if (py >= ROWS - 1 || isObstacle(ball.x, py)) {
+      py = ball.y;
+      pvy = 0;
+    }
+    predicted = { x: ball.x, y: py };
+  }
+
+  function advance() {
+    ball.vy += 1;
+    let ny = ball.y + ball.vy;
+    if (ny >= ROWS - 1 || isObstacle(ball.x, ny)) {
+      ny = Math.min(ball.y, ROWS - 2);
+      // Check if resting on something
+      if (isObstacle(ball.x, ny + 1) || ny + 1 >= ROWS - 1) {
+        ball.vy = 0;
+      } else {
+        ball.vy = 0;
+      }
+    }
+    ball.y = ny;
+    step++;
+    predict();
+    draw();
+    document.getElementById('gravity-info').textContent = `Step: ${step}`;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Background grid
+    ctx.strokeStyle = '#E8E4DC';
+    ctx.lineWidth = 0.5;
+    for (let c = 0; c <= COLS; c++) {
+      ctx.beginPath(); ctx.moveTo(c * CELL, 0); ctx.lineTo(c * CELL, h); ctx.stroke();
+    }
+    for (let r = 0; r <= ROWS; r++) {
+      ctx.beginPath(); ctx.moveTo(0, r * CELL); ctx.lineTo(w, r * CELL); ctx.stroke();
+    }
+
+    // Obstacles
+    ctx.fillStyle = '#D4CFC5';
+    for (const key of obstacles) {
+      const [cx, cy] = key.split(',').map(Number);
+      ctx.fillRect(cx * CELL + 1, cy * CELL + 1, CELL - 2, CELL - 2);
+    }
+
+    // Prediction ghost
+    ctx.fillStyle = 'rgba(194, 65, 12, 0.25)';
+    ctx.beginPath();
+    ctx.arc(predicted.x * CELL + CELL / 2, predicted.y * CELL + CELL / 2, CELL / 2 - 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(194, 65, 12, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Ball
+    ctx.fillStyle = '#2C2C2C';
+    ctx.beginPath();
+    ctx.arc(ball.x * CELL + CELL / 2, ball.y * CELL + CELL / 2, CELL / 2 - 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Labels
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = '#2C2C2C';
+    ctx.fillText('Actual', ball.x * CELL + CELL + 4, ball.y * CELL + CELL / 2 + 4);
+    ctx.fillStyle = 'rgba(194, 65, 12, 0.8)';
+    ctx.fillText('Predicted', predicted.x * CELL + CELL + 4, predicted.y * CELL + CELL / 2 + 4);
+  }
+
+  function reset() {
+    ball = { x: 4, y: 1, vy: 0 };
+    step = 0;
+    if (playing) { clearInterval(playInterval); playing = false; }
+    predict();
+    draw();
+    document.getElementById('gravity-info').textContent = `Step: 0`;
+  }
+
+  document.getElementById('gravity-step').addEventListener('click', advance);
+  document.getElementById('gravity-reset').addEventListener('click', reset);
+  document.getElementById('gravity-play').addEventListener('click', function() {
+    if (playing) {
+      clearInterval(playInterval);
+      playing = false;
+      this.textContent = 'Play';
+    } else {
+      playInterval = setInterval(advance, 400);
+      playing = true;
+      this.textContent = 'Pause';
+    }
+  });
+
+  predict();
+  draw();
+})();
+
+// ============================================
+// FIGURE 2: ACTION-CONDITIONED PREDICTION
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-predict');
+  const CELL = 36;
+  const GRID_COLS = 8;
+  const GRID_ROWS = 7;
+  const OFFSET_REAL = 40;
+  const OFFSET_PRED = w / 2 + 20;
+
+  let agent = { x: 3, y: 3 };
+  let predictedAgent = { x: 3, y: 3 };
+  let noisy = false;
+  let totalMoves = 0;
+  let correctPredictions = 0;
+
+  // Walls
+  const walls = new Set();
+  for (let c = 0; c < GRID_COLS; c++) { walls.add(`${c},0`); walls.add(`${c},${GRID_ROWS - 1}`); }
+  for (let r = 0; r < GRID_ROWS; r++) { walls.add(`0,${r}`); walls.add(`${GRID_COLS - 1},${r}`); }
+  // Internal walls
+  walls.add('3,2'); walls.add('4,2'); walls.add('5,4'); walls.add('5,5'); walls.add('2,5');
+
+  // Collectibles
+  let coins = new Set(['2,2', '6,3', '4,5', '6,5']);
+
+  function isWall(x, y) { return walls.has(`${x},${y}`); }
+
+  function move(dx, dy) {
+    const nx = agent.x + dx;
+    const ny = agent.y + dy;
+
+    // Predict
+    let px = agent.x + dx;
+    let py = agent.y + dy;
+    if (isWall(px, py)) { px = agent.x; py = agent.y; }
+    predictedAgent = { x: px, y: py };
+
+    // Actual (with possible noise)
+    if (!isWall(nx, ny)) {
+      if (noisy && Math.random() < 0.25) {
+        // Random perturbation
+        const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+        const rd = dirs[Math.floor(Math.random() * dirs.length)];
+        const rx = agent.x + rd[0];
+        const ry = agent.y + rd[1];
+        if (!isWall(rx, ry)) { agent.x = rx; agent.y = ry; }
+      } else {
+        agent.x = nx; agent.y = ny;
+      }
+    }
+
+    // Collect coins
+    const key = `${agent.x},${agent.y}`;
+    coins.delete(key);
+
+    totalMoves++;
+    if (agent.x === predictedAgent.x && agent.y === predictedAgent.y) correctPredictions++;
+
+    draw();
+    updateInfo();
+  }
+
+  function drawGrid(ox, oy, agentPos, label, isPrediction) {
+    // Grid bg
+    ctx.fillStyle = isPrediction ? '#FFF8F0' : '#FFFFFF';
+    ctx.fillRect(ox, oy, GRID_COLS * CELL, GRID_ROWS * CELL);
+
+    // Grid lines
+    ctx.strokeStyle = '#E8E4DC';
+    ctx.lineWidth = 0.5;
+    for (let c = 0; c <= GRID_COLS; c++) {
+      ctx.beginPath(); ctx.moveTo(ox + c * CELL, oy); ctx.lineTo(ox + c * CELL, oy + GRID_ROWS * CELL); ctx.stroke();
+    }
+    for (let r = 0; r <= GRID_ROWS; r++) {
+      ctx.beginPath(); ctx.moveTo(ox, oy + r * CELL); ctx.lineTo(ox + GRID_COLS * CELL, oy + r * CELL); ctx.stroke();
+    }
+
+    // Walls
+    ctx.fillStyle = '#C4BFB5';
+    for (const key of walls) {
+      const [cx, cy] = key.split(',').map(Number);
+      ctx.fillRect(ox + cx * CELL + 1, oy + cy * CELL + 1, CELL - 2, CELL - 2);
+    }
+
+    // Coins
+    ctx.fillStyle = '#F59E0B';
+    for (const key of coins) {
+      const [cx, cy] = key.split(',').map(Number);
+      ctx.beginPath();
+      ctx.arc(ox + cx * CELL + CELL / 2, oy + cy * CELL + CELL / 2, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Agent
+    const ax = ox + agentPos.x * CELL + CELL / 2;
+    const ay = oy + agentPos.y * CELL + CELL / 2;
+    if (isPrediction) {
+      ctx.fillStyle = 'rgba(194, 65, 12, 0.3)';
+      ctx.strokeStyle = 'rgba(194, 65, 12, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(ax, ay, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillStyle = '#2C2C2C';
+      ctx.beginPath(); ctx.arc(ax, ay, 12, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Label
+    ctx.font = 'bold 12px -apple-system, sans-serif';
+    ctx.fillStyle = isPrediction ? 'rgba(194, 65, 12, 0.8)' : '#2C2C2C';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, ox + (GRID_COLS * CELL) / 2, oy - 10);
+    ctx.textAlign = 'left';
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    const gridH = GRID_ROWS * CELL;
+    const oy = (h - gridH) / 2 + 10;
+
+    drawGrid(OFFSET_REAL, oy, agent, 'ACTUAL', false);
+    drawGrid(OFFSET_PRED, oy, predictedAgent, 'PREDICTED', true);
+
+    // Divider
+    ctx.strokeStyle = '#D4CFC5';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 20);
+    ctx.lineTo(w / 2, h - 20);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Match indicator
+    const match = agent.x === predictedAgent.x && agent.y === predictedAgent.y;
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = match ? '#059669' : '#DC2626';
+    ctx.fillText(match ? 'Match!' : 'Mismatch!', w / 2, h - 8);
+    ctx.textAlign = 'left';
+  }
+
+  function updateInfo() {
+    const acc = totalMoves > 0 ? Math.round((correctPredictions / totalMoves) * 100) : 100;
+    document.getElementById('pred-info').textContent = `Accuracy: ${acc}%`;
+  }
+
+  function reset() {
+    agent = { x: 3, y: 3 };
+    predictedAgent = { x: 3, y: 3 };
+    totalMoves = 0;
+    correctPredictions = 0;
+    coins = new Set(['2,2', '6,3', '4,5', '6,5']);
+    draw();
+    updateInfo();
+  }
+
+  document.getElementById('pred-up').addEventListener('click', () => move(0, -1));
+  document.getElementById('pred-down').addEventListener('click', () => move(0, 1));
+  document.getElementById('pred-left').addEventListener('click', () => move(-1, 0));
+  document.getElementById('pred-right').addEventListener('click', () => move(1, 0));
+  document.getElementById('pred-reset').addEventListener('click', reset);
+  document.getElementById('pred-noise-toggle').addEventListener('click', function() {
+    noisy = !noisy;
+    this.classList.toggle('active', noisy);
+    this.textContent = noisy ? 'Remove Noise' : 'Add Noise';
+  });
+
+  document.addEventListener('keydown', function(e) {
+    // Only respond if canvas is roughly visible
+    const rect = canvas.getBoundingClientRect();
+    if (rect.top > window.innerHeight || rect.bottom < 0) return;
+    if (e.key === 'ArrowUp') { e.preventDefault(); move(0, -1); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(0, 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1, 0); }
+    if (e.key === 'ArrowRight') { e.preventDefault(); move(1, 0); }
+  });
+
+  draw();
+})();
+
+// ============================================
+// FIGURE 3: GENIE FRAME GENERATION
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-genie');
+  const FRAME_W = 120;
+  const FRAME_H = 90;
+  const MAX_FRAMES = 12;
+
+  // Simple platformer state
+  let frames = [];
+  let state = { playerX: 30, playerY: 50, velY: 0, grounded: true };
+
+  function stateToFrame(s) {
+    return { playerX: s.playerX, playerY: s.playerY, grounded: s.grounded };
+  }
+
+  function applyAction(action) {
+    const s = { ...state };
+    switch (action) {
+      case 'left': s.playerX = Math.max(10, s.playerX - 15); break;
+      case 'right': s.playerX = Math.min(FRAME_W - 10, s.playerX + 15); break;
+      case 'jump':
+        if (s.grounded) { s.velY = -20; s.grounded = false; }
+        break;
+    }
+    // Gravity
+    if (!s.grounded) {
+      s.velY += 5;
+      s.playerY += s.velY;
+      if (s.playerY >= 50) { s.playerY = 50; s.velY = 0; s.grounded = true; }
+    }
+    state = s;
+    frames.push({ ...stateToFrame(s), action });
+    draw();
+    document.getElementById('genie-info').textContent = `Frame ${frames.length} / ${MAX_FRAMES}`;
+  }
+
+  function drawFrame(fx, fy, frame, index, isCurrent) {
+    // Frame border
+    ctx.fillStyle = isCurrent ? '#FFF8F0' : '#FEFEFE';
+    ctx.fillRect(fx, fy, FRAME_W, FRAME_H);
+    ctx.strokeStyle = isCurrent ? 'var(--genie-primary)' : '#D4CFC5';
+    ctx.lineWidth = isCurrent ? 2 : 1;
+    ctx.strokeRect(fx, fy, FRAME_W, FRAME_H);
+
+    // Sky gradient
+    const grad = ctx.createLinearGradient(fx, fy, fx, fy + FRAME_H * 0.6);
+    grad.addColorStop(0, '#DBEAFE');
+    grad.addColorStop(1, '#EFF6FF');
+    ctx.fillStyle = grad;
+    ctx.fillRect(fx + 1, fy + 1, FRAME_W - 2, FRAME_H * 0.6);
+
+    // Ground
+    ctx.fillStyle = '#86EFAC';
+    ctx.fillRect(fx + 1, fy + FRAME_H * 0.7, FRAME_W - 2, FRAME_H * 0.3);
+
+    // Simple mountains
+    ctx.fillStyle = '#93C5FD';
+    ctx.beginPath();
+    ctx.moveTo(fx + 10, fy + FRAME_H * 0.7);
+    ctx.lineTo(fx + 35, fy + 20);
+    ctx.lineTo(fx + 60, fy + FRAME_H * 0.7);
+    ctx.fill();
+    ctx.fillStyle = '#BFDBFE';
+    ctx.beginPath();
+    ctx.moveTo(fx + 50, fy + FRAME_H * 0.7);
+    ctx.lineTo(fx + 80, fy + 30);
+    ctx.lineTo(fx + 110, fy + FRAME_H * 0.7);
+    ctx.fill();
+
+    // Player
+    const px = fx + frame.playerX;
+    const py = fy + frame.playerY;
+    // Body
+    ctx.fillStyle = '#2563EB';
+    ctx.fillRect(px - 5, py - 12, 10, 12);
+    // Head
+    ctx.fillStyle = '#FBBF24';
+    ctx.beginPath();
+    ctx.arc(px, py - 16, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Frame number
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = '#9B9590';
+    ctx.textAlign = 'center';
+    ctx.fillText(`#${index + 1}`, fx + FRAME_W / 2, fy + FRAME_H + 14);
+
+    // Action arrow
+    if (frame.action) {
+      ctx.fillStyle = '#6B6560';
+      const arrows = { left: '\u2190', right: '\u2192', jump: '\u2191', wait: '\u00B7' };
+      ctx.fillText(arrows[frame.action] || '', fx + FRAME_W / 2, fy - 6);
+    }
+    ctx.textAlign = 'left';
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    const totalW = Math.min(frames.length, 5) * (FRAME_W + 12);
+    const startIdx = Math.max(0, frames.length - 5);
+    const ox = (w - totalW) / 2;
+    const oy = (h - FRAME_H) / 2;
+
+    // "Generating..." animation for latest frame
+    if (frames.length > 0) {
+      // Draw filmstrip
+      for (let i = startIdx; i < frames.length; i++) {
+        const vi = i - startIdx;
+        const fx = ox + vi * (FRAME_W + 12);
+        drawFrame(fx, oy, frames[i], i, i === frames.length - 1);
+      }
+
+      // Connection arrows
+      ctx.strokeStyle = '#D4CFC5';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < Math.min(frames.length - 1, 4); i++) {
+        const x1 = ox + i * (FRAME_W + 12) + FRAME_W + 2;
+        const x2 = ox + (i + 1) * (FRAME_W + 12) - 2;
+        const cy = oy + FRAME_H / 2;
+        ctx.beginPath();
+        ctx.moveTo(x1, cy);
+        ctx.lineTo(x2, cy);
+        ctx.stroke();
+        // arrowhead
+        ctx.beginPath();
+        ctx.moveTo(x2 - 4, cy - 3);
+        ctx.lineTo(x2, cy);
+        ctx.lineTo(x2 - 4, cy + 3);
+        ctx.stroke();
+      }
+    }
+
+    if (frames.length === 0) {
+      ctx.font = '14px "Crimson Pro", Georgia, serif';
+      ctx.fillStyle = '#9B9590';
+      ctx.textAlign = 'center';
+      ctx.fillText('Choose an action below to generate the first frame', w / 2, h / 2);
+      ctx.textAlign = 'left';
+    }
+
+    if (frames.length >= MAX_FRAMES) {
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.fillStyle = '#9B9590';
+      ctx.textAlign = 'center';
+      ctx.fillText('Sequence complete - reset to try a new trajectory', w / 2, h - 12);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  function reset() {
+    frames = [];
+    state = { playerX: 30, playerY: 50, velY: 0, grounded: true };
+    draw();
+    document.getElementById('genie-info').textContent = 'Frame 0 / 12';
+  }
+
+  document.querySelectorAll('.genie-action').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (frames.length >= MAX_FRAMES) return;
+      applyAction(this.dataset.action);
+    });
+  });
+
+  document.getElementById('genie-reset').addEventListener('click', reset);
+  draw();
+})();
+
+// ============================================
+// FIGURE 4: JEPA EMBEDDING SPACE
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-jepa');
+
+  let showEnergy = false;
+  let dragging = false;
+
+  // Context point (draggable)
+  let contextPt = { x: w * 0.3, y: h * 0.5 };
+
+  // Target points (actual data)
+  const targetPts = [
+    { x: w * 0.65, y: h * 0.3 },
+    { x: w * 0.7, y: h * 0.55 },
+    { x: w * 0.55, y: h * 0.7 },
+    { x: w * 0.75, y: h * 0.45 },
+    { x: w * 0.6, y: h * 0.4 },
+    { x: w * 0.68, y: h * 0.65 },
+    { x: w * 0.5, y: h * 0.55 },
+    { x: w * 0.72, y: h * 0.35 },
+  ];
+
+  // Predictor: maps context -> predicted target (a simple learned mapping)
+  function predict(cx, cy) {
+    // Simulate a smooth predictor mapping
+    const nx = (cx - w * 0.15) / (w * 0.35);
+    const ny = (cy - h * 0.1) / (h * 0.8);
+    return {
+      x: w * 0.5 + nx * w * 0.25 + Math.sin(ny * 3) * 30,
+      y: h * 0.3 + ny * h * 0.4 + Math.cos(nx * 2.5) * 25
+    };
+  }
+
+  // Energy function: distance between predicted and actual targets
+  function energy(px, py, tx, ty) {
+    const dx = px - tx;
+    const dy = py - ty;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function drawEnergyLandscape() {
+    const res = 6;
+    const pred = predict(contextPt.x, contextPt.y);
+    for (let x = 0; x < w; x += res) {
+      for (let y = 0; y < h; y += res) {
+        // Energy = min distance to any target
+        let minE = Infinity;
+        for (const t of targetPts) {
+          const e = energy(x, y, t.x, t.y);
+          if (e < minE) minE = e;
+        }
+        // Normalize
+        const norm = clamp(minE / 200, 0, 1);
+        const r = Math.round(lerp(236, 250, norm));
+        const g = Math.round(lerp(253, 245, norm));
+        const b = Math.round(lerp(245, 235, norm));
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(x, y, res, res);
+      }
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    ctx.fillStyle = '#FEFEFE';
+    ctx.fillRect(0, 0, w, h);
+
+    if (showEnergy) {
+      drawEnergyLandscape();
+    }
+
+    // Axes
+    ctx.strokeStyle = '#E0DCD4';
+    ctx.lineWidth = 1;
+    // X axis
+    ctx.beginPath();
+    ctx.moveTo(40, h - 30);
+    ctx.lineTo(w - 20, h - 30);
+    ctx.stroke();
+    // Y axis
+    ctx.beginPath();
+    ctx.moveTo(40, 20);
+    ctx.lineTo(40, h - 30);
+    ctx.stroke();
+
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillStyle = '#9B9590';
+    ctx.textAlign = 'center';
+    ctx.fillText('Embedding Dimension 1', w / 2, h - 8);
+    ctx.save();
+    ctx.translate(14, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Embedding Dimension 2', 0, 0);
+    ctx.restore();
+    ctx.textAlign = 'left';
+
+    // Predicted point
+    const pred = predict(contextPt.x, contextPt.y);
+
+    // Arrow from context to predicted
+    ctx.strokeStyle = 'rgba(194, 65, 12, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.moveTo(contextPt.x, contextPt.y);
+    ctx.lineTo(pred.x, pred.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Target points
+    for (const t of targetPts) {
+      ctx.fillStyle = 'rgba(107, 101, 96, 0.35)';
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(107, 101, 96, 0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    // Predicted target
+    ctx.fillStyle = 'rgba(194, 65, 12, 0.7)';
+    ctx.beginPath();
+    ctx.arc(pred.x, pred.y, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#C2410C';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Context point (draggable)
+    ctx.fillStyle = '#059669';
+    ctx.beginPath();
+    ctx.arc(contextPt.x, contextPt.y, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#065F46';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Drag handle hint
+    if (!dragging) {
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('drag', contextPt.x, contextPt.y + 3.5);
+      ctx.textAlign = 'left';
+    }
+
+    // Labels
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = '#059669';
+    ctx.fillText('Context s_x', contextPt.x + 16, contextPt.y - 4);
+    ctx.fillStyle = '#C2410C';
+    ctx.fillText('Predicted s\u0302_y', pred.x + 14, pred.y - 4);
+    ctx.fillStyle = '#6B6560';
+    ctx.fillText('Actual s_y', w - 100, 36);
+
+    // Energy label
+    if (showEnergy) {
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = '#059669';
+      ctx.fillText('Low energy (compatible)', 50, 36);
+      ctx.fillStyle = '#9B9590';
+      ctx.fillText('High energy (incompatible)', 50, 50);
+    }
+  }
+
+  // Mouse interaction
+  function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (w / rect.width),
+      y: (e.clientY - rect.top) * (h / rect.height)
+    };
+  }
+
+  canvas.addEventListener('mousedown', function(e) {
+    const m = getMousePos(e);
+    const dx = m.x - contextPt.x;
+    const dy = m.y - contextPt.y;
+    if (dx * dx + dy * dy < 400) {
+      dragging = true;
+      canvas.style.cursor = 'grabbing';
+    }
+  });
+
+  canvas.addEventListener('mousemove', function(e) {
+    if (dragging) {
+      const m = getMousePos(e);
+      contextPt.x = clamp(m.x, 50, w - 50);
+      contextPt.y = clamp(m.y, 30, h - 40);
+      draw();
+    } else {
+      const m = getMousePos(e);
+      const dx = m.x - contextPt.x;
+      const dy = m.y - contextPt.y;
+      canvas.style.cursor = dx * dx + dy * dy < 400 ? 'grab' : 'default';
+    }
+  });
+
+  canvas.addEventListener('mouseup', function() {
+    dragging = false;
+    canvas.style.cursor = 'default';
+    draw();
+  });
+
+  canvas.addEventListener('mouseleave', function() {
+    dragging = false;
+    canvas.style.cursor = 'default';
+  });
+
+  // Touch support
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    const touch = e.touches[0];
+    const m = getMousePos(touch);
+    const dx = m.x - contextPt.x;
+    const dy = m.y - contextPt.y;
+    if (dx * dx + dy * dy < 600) dragging = true;
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (dragging) {
+      const touch = e.touches[0];
+      const m = getMousePos(touch);
+      contextPt.x = clamp(m.x, 50, w - 50);
+      contextPt.y = clamp(m.y, 30, h - 40);
+      draw();
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', function() { dragging = false; });
+
+  document.getElementById('jepa-energy-toggle').addEventListener('click', function() {
+    showEnergy = !showEnergy;
+    this.classList.toggle('active', showEnergy);
+    this.textContent = showEnergy ? 'Hide Energy Landscape' : 'Show Energy Landscape';
+    draw();
+  });
+
+  document.getElementById('jepa-reset').addEventListener('click', function() {
+    contextPt = { x: w * 0.3, y: h * 0.5 };
+    showEnergy = false;
+    document.getElementById('jepa-energy-toggle').classList.remove('active');
+    document.getElementById('jepa-energy-toggle').textContent = 'Show Energy Landscape';
+    draw();
+  });
+
+  draw();
+})();
+
+// ============================================
+// FIGURE 5: 3D SCENE
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-3d');
+
+  let angleX = 0.3;
+  let angleY = -0.4;
+  let zoom = 1;
+  let autoRotate = false;
+  let wireframe = false;
+  let dragging = false;
+  let lastMouse = { x: 0, y: 0 };
+  let animId = null;
+
+  // 3D primitives
+  const objects = [
+    { type: 'box', x: 0, y: -0.3, z: 0, w: 0.8, h: 0.6, d: 0.8, color: '#7C3AED', lightColor: '#A78BFA' },
+    { type: 'sphere', x: -1.2, y: 0, z: 0.3, r: 0.4, color: '#EC4899', lightColor: '#F9A8D4' },
+    { type: 'box', x: 1.0, y: -0.1, z: -0.5, w: 0.5, h: 1.0, d: 0.5, color: '#0891B2', lightColor: '#67E8F9' },
+    { type: 'sphere', x: 0.5, y: 0.3, z: 1.0, r: 0.3, color: '#EA580C', lightColor: '#FDBA74' },
+    // Ground plane
+    { type: 'plane', y: 0.3, color: '#E8E4DC' },
+  ];
+
+  function project(x, y, z) {
+    // Rotate Y
+    const cosY = Math.cos(angleY);
+    const sinY = Math.sin(angleY);
+    let rx = x * cosY - z * sinY;
+    let rz = x * sinY + z * cosY;
+    // Rotate X
+    const cosX = Math.cos(angleX);
+    const sinX = Math.sin(angleX);
+    let ry = y * cosX - rz * sinX;
+    let rz2 = y * sinX + rz * cosX;
+
+    const scale = 180 * zoom;
+    const perspective = 4;
+    const factor = perspective / (perspective + rz2);
+    return {
+      x: w / 2 + rx * scale * factor,
+      y: h / 2 + ry * scale * factor,
+      z: rz2,
+      factor
+    };
+  }
+
+  function drawBox(obj) {
+    const hw = obj.w / 2, hh = obj.h / 2, hd = obj.d / 2;
+    const vertices = [
+      [obj.x - hw, obj.y - hh, obj.z - hd],
+      [obj.x + hw, obj.y - hh, obj.z - hd],
+      [obj.x + hw, obj.y + hh, obj.z - hd],
+      [obj.x - hw, obj.y + hh, obj.z - hd],
+      [obj.x - hw, obj.y - hh, obj.z + hd],
+      [obj.x + hw, obj.y - hh, obj.z + hd],
+      [obj.x + hw, obj.y + hh, obj.z + hd],
+      [obj.x - hw, obj.y + hh, obj.z + hd],
+    ];
+    const projected = vertices.map(v => project(v[0], v[1], v[2]));
+
+    const faces = [
+      { verts: [0, 1, 2, 3], normal: [0, 0, -1] },  // front
+      { verts: [5, 4, 7, 6], normal: [0, 0, 1] },   // back
+      { verts: [4, 0, 3, 7], normal: [-1, 0, 0] },  // left
+      { verts: [1, 5, 6, 2], normal: [1, 0, 0] },   // right
+      { verts: [4, 5, 1, 0], normal: [0, -1, 0] },  // top
+      { verts: [3, 2, 6, 7], normal: [0, 1, 0] },   // bottom
+    ];
+
+    // Sort faces by average z
+    const sortedFaces = faces.map(f => ({
+      ...f,
+      avgZ: f.verts.reduce((s, vi) => s + projected[vi].z, 0) / 4
+    })).sort((a, b) => b.avgZ - a.avgZ);
+
+    for (const face of sortedFaces) {
+      const pts = face.verts.map(vi => projected[vi]);
+
+      // Simple backface culling using cross product
+      const ax = pts[1].x - pts[0].x, ay = pts[1].y - pts[0].y;
+      const bx = pts[2].x - pts[0].x, by = pts[2].y - pts[0].y;
+      const cross = ax * by - ay * bx;
+      if (cross > 0) continue;
+
+      if (wireframe) {
+        ctx.strokeStyle = obj.color;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.closePath();
+        ctx.stroke();
+      } else {
+        // Lighting based on normal after rotation
+        const cosYn = Math.cos(angleY), sinYn = Math.sin(angleY);
+        const cosXn = Math.cos(angleX), sinXn = Math.sin(angleX);
+        let nx = face.normal[0] * cosYn - face.normal[2] * sinYn;
+        let nz = face.normal[0] * sinYn + face.normal[2] * cosYn;
+        let ny = face.normal[1] * cosXn - nz * sinXn;
+        // Light from top-right
+        const light = clamp(nx * 0.3 + ny * -0.7 + 0.5, 0.2, 1);
+
+        ctx.fillStyle = light > 0.5 ? obj.lightColor : obj.color;
+        ctx.globalAlpha = 0.6 + light * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        ctx.strokeStyle = obj.color;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+  }
+
+  function drawSphere(obj) {
+    const p = project(obj.x, obj.y, obj.z);
+    const r = obj.r * 180 * zoom * p.factor;
+
+    if (wireframe) {
+      ctx.strokeStyle = obj.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      // Equator lines
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, r, r * 0.3, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, r * 0.3, r, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      const grad = ctx.createRadialGradient(p.x - r * 0.3, p.y - r * 0.3, 0, p.x, p.y, r);
+      grad.addColorStop(0, obj.lightColor);
+      grad.addColorStop(1, obj.color);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = obj.color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    return { x: p.x, y: p.y, z: p.z, r };
+  }
+
+  function drawPlane(obj) {
+    const size = 2.5;
+    const corners = [
+      project(-size, obj.y, -size),
+      project(size, obj.y, -size),
+      project(size, obj.y, size),
+      project(-size, obj.y, size)
+    ];
+
+    if (wireframe) {
+      ctx.strokeStyle = '#C4BFB5';
+      ctx.lineWidth = 0.5;
+      // Grid
+      for (let i = -5; i <= 5; i++) {
+        const a = project(i * 0.5, obj.y, -size);
+        const b = project(i * 0.5, obj.y, size);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        const c = project(-size, obj.y, i * 0.5);
+        const d = project(size, obj.y, i * 0.5);
+        ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.stroke();
+      }
+    } else {
+      ctx.fillStyle = obj.color;
+      ctx.globalAlpha = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(corners[0].x, corners[0].y);
+      for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FEFEFE';
+    ctx.fillRect(0, 0, w, h);
+
+    // Sort objects by depth
+    const sortable = objects.map((obj, i) => {
+      let cz;
+      if (obj.type === 'plane') {
+        cz = project(0, obj.y, 0).z;
+      } else {
+        cz = project(obj.x, obj.y, obj.z).z;
+      }
+      return { obj, z: cz, i };
+    }).sort((a, b) => b.z - a.z);
+
+    for (const { obj } of sortable) {
+      if (obj.type === 'plane') drawPlane(obj);
+      else if (obj.type === 'box') drawBox(obj);
+      else if (obj.type === 'sphere') drawSphere(obj);
+    }
+
+    // Crosshair at center
+    ctx.strokeStyle = '#D4CFC5';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(w / 2 - 8, h / 2);
+    ctx.lineTo(w / 2 + 8, h / 2);
+    ctx.moveTo(w / 2, h / 2 - 8);
+    ctx.lineTo(w / 2, h / 2 + 8);
+    ctx.stroke();
+  }
+
+  function animate() {
+    if (autoRotate) {
+      angleY += 0.008;
+      draw();
+    }
+    animId = requestAnimationFrame(animate);
+  }
+
+  // Mouse controls
+  function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left),
+      y: (e.clientY - rect.top)
+    };
+  }
+
+  canvas.addEventListener('mousedown', function(e) {
+    dragging = true;
+    lastMouse = getMousePos(e);
+    canvas.style.cursor = 'grabbing';
+  });
+
+  canvas.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    const m = getMousePos(e);
+    const dx = m.x - lastMouse.x;
+    const dy = m.y - lastMouse.y;
+    angleY += dx * 0.008;
+    angleX += dy * 0.008;
+    angleX = clamp(angleX, -1.2, 1.2);
+    lastMouse = m;
+    draw();
+  });
+
+  canvas.addEventListener('mouseup', function() {
+    dragging = false;
+    canvas.style.cursor = 'grab';
+  });
+
+  canvas.addEventListener('mouseleave', function() {
+    dragging = false;
+  });
+
+  canvas.style.cursor = 'grab';
+
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    zoom = clamp(zoom - e.deltaY * 0.001, 0.5, 2.5);
+    draw();
+  }, { passive: false });
+
+  // Touch controls
+  let lastTouchDist = 0;
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+      dragging = true;
+      lastMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastTouchDist = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    if (e.touches.length === 1 && dragging) {
+      const mx = e.touches[0].clientX;
+      const my = e.touches[0].clientY;
+      angleY += (mx - lastMouse.x) * 0.008;
+      angleX += (my - lastMouse.y) * 0.008;
+      angleX = clamp(angleX, -1.2, 1.2);
+      lastMouse = { x: mx, y: my };
+      draw();
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      zoom = clamp(zoom + (dist - lastTouchDist) * 0.005, 0.5, 2.5);
+      lastTouchDist = dist;
+      draw();
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', function() { dragging = false; });
+
+  document.getElementById('3d-auto-rotate').addEventListener('click', function() {
+    autoRotate = !autoRotate;
+    this.classList.toggle('active', autoRotate);
+  });
+
+  document.getElementById('3d-wireframe').addEventListener('click', function() {
+    wireframe = !wireframe;
+    this.classList.toggle('active', wireframe);
+    draw();
+  });
+
+  document.getElementById('3d-reset').addEventListener('click', function() {
+    angleX = 0.3;
+    angleY = -0.4;
+    zoom = 1;
+    draw();
+  });
+
+  draw();
+  animate();
+})();
+
+// ============================================
+// TABLE OF CONTENTS SCROLL TRACKING
+// ============================================
+(function() {
+  const links = document.querySelectorAll('#toc a');
+  const sections = Array.from(links).map(link => {
+    const id = link.getAttribute('href').slice(1);
+    return document.getElementById(id);
+  }).filter(Boolean);
+
+  function onScroll() {
+    const scrollY = window.scrollY + 120;
+    let current = 0;
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].offsetTop <= scrollY) {
+        current = i;
+      }
+    }
+    links.forEach((link, i) => {
+      link.classList.toggle('active', i === current);
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>
