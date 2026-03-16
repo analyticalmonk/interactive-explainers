@@ -542,6 +542,28 @@ input[type="range"]::-webkit-slider-thumb {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.article-header .overline {
+  animation: slideInLeft 0.6s ease 0.1s both;
+}
+
+.article-header h1 {
+  animation: fadeInUp 0.6s ease 0.2s both;
+}
+
+.article-header .lead {
+  animation: fadeIn 0.8s ease 0.4s both;
+}
+
 .figure {
   animation: fadeInUp 0.5s ease both;
 }
@@ -577,7 +599,7 @@ input[type="range"]::-webkit-slider-thumb {
     <!-- HEADER -->
     <header class="article-header" id="intro">
       <div class="overline">Interactive Explainer</div>
-      <h1>World Models: How AI Learns to Simulate Reality</h1>
+      <h1>World Models:<br>How AI Learns to Simulate Reality</h1>
       <p class="lead">
         Language models predict the next word. World models predict the next <em>moment</em>.
         They are AI systems that learn how reality works - not by reading about it, but by
@@ -761,7 +783,7 @@ input[type="range"]::-webkit-slider-thumb {
 
       <!-- JEPA -->
       <div class="approach-section jepa" id="jepa">
-        <span class="approach-tag">Yann LeCun / Meta</span>
+        <span class="approach-tag">Yann LeCun / AMI Labs</span>
         <h3>JEPA: Predicting Without Generating</h3>
         <p>
           Yann LeCun argues that predicting pixels is wasteful. Most pixel-level detail is
@@ -1249,7 +1271,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     // Actual (with possible noise)
     if (!isWall(nx, ny)) {
-      if (noisy && Math.random() < 0.25) {
+      if (noisy && Math.random() < 0.4) {
         // Random perturbation
         const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
         const rd = dirs[Math.floor(Math.random() * dirs.length)];
