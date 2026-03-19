@@ -1070,7 +1070,7 @@ input[type="range"]::-webkit-slider-thumb {
 
       <h3>Agent-Built Software</h3>
       <p>
-        As Armin Ronacher documented in his analysis of pi, this is "software building
+        As Armin Ronacher <a href="https://lucumr.pocoo.org/2026/1/31/pi/">documented in his analysis of pi</a>, this is "software building
         software." He does not write his extensions by hand - the agent does, to his
         specification. Browser automation via Chrome DevTools Protocol, commit message
         crafting, changelog maintenance, session sharing - all written by pi, tested
@@ -1911,122 +1911,115 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   const { canvas, ctx, w, h } = initCanvas('canvas-pipeline');
 
   const POLICIES = {
-    default: {
-      label: 'Default',
-      blocked: [],
-    },
-    restricted: {
-      label: 'Restricted',
-      blocked: ['exec', 'process', 'browser', 'cron'],
-    },
-    sandbox: {
-      label: 'Sandbox',
-      blocked: ['exec', 'cron', 'gateway'],
-    },
+    default: { label: 'Default', blocked: [] },
+    restricted: { label: 'Restricted', blocked: ['exec', 'process', 'browser', 'cron'] },
+    sandbox: { label: 'Sandbox', blocked: ['exec', 'cron', 'gateway'] },
   };
 
   const PROVIDERS = {
-    anthropic: {
-      label: 'Anthropic',
-      normalized: [],
-      added: [],
-    },
-    google: {
-      label: 'Google',
-      normalized: ['canvas', 'sessions'],
-      added: [],
-    },
-    openai: {
-      label: 'OpenAI',
-      normalized: ['browser'],
-      added: ['apply_patch'],
-    },
+    anthropic: { label: 'Anthropic', normalized: [], added: [] },
+    google: { label: 'Google', normalized: ['canvas', 'sessions'], added: [] },
+    openai: { label: 'OpenAI', normalized: ['browser'], added: ['apply_patch'] },
   };
 
   let currentPolicy = 'default';
   let currentProvider = 'anthropic';
-  let animStep = 7; // Start fully visible
+  let animStep = 8; // 7 stages + 1 result row; start fully visible
   let animating = false;
   let animId = null;
 
-  // All tools that flow through the pipeline
-  const ALL_TOOLS = [
-    { name: 'Read', stage: 'base', color: '#DBEAFE' },
-    { name: 'Write', stage: 'base', color: '#D1FAE5' },
-    { name: 'Edit', stage: 'base', color: '#FEF3C7' },
-    { name: 'Bash', stage: 'base', color: '#FCE7F3' },
-    { name: 'exec', stage: 'replace', color: '#FCE7F3' },
-    { name: 'process', stage: 'replace', color: '#FCE7F3' },
-    { name: 'messaging', stage: 'claw', color: '#EDE9FE' },
-    { name: 'browser', stage: 'claw', color: '#EDE9FE' },
-    { name: 'canvas', stage: 'claw', color: '#EDE9FE' },
-    { name: 'sessions', stage: 'claw', color: '#EDE9FE' },
-    { name: 'cron', stage: 'claw', color: '#EDE9FE' },
-    { name: 'gateway', stage: 'claw', color: '#EDE9FE' },
-    { name: 'channel', stage: 'channel', color: '#CFFAFE' },
-  ];
+  // Colors by origin
+  const C_BASE = '#DBEAFE';
+  const C_REPLACE = '#FCE7F3';
+  const C_CLAW = '#EDE9FE';
+  const C_CHAN = '#CFFAFE';
+  const C_PROV = '#FEF3C7';
 
-  const STAGES = [
-    { label: 'Base Tools', desc: 'Pi defaults: Read, Write, Edit, Bash', yFrac: 0.06 },
-    { label: 'Replacements', desc: 'Swap Bash for sandboxed variants', yFrac: 0.18 },
-    { label: 'OpenClaw Tools', desc: 'Add messaging, browser, canvas...', yFrac: 0.32 },
-    { label: 'Channel Tools', desc: 'Add Discord/Slack/Telegram actions', yFrac: 0.46 },
-    { label: 'Policy Filter', desc: 'Remove blocked tools per policy', yFrac: 0.60 },
-    { label: 'Schema Normalize', desc: 'Fix schemas for target provider', yFrac: 0.74 },
-    { label: 'Abort Wrap', desc: 'Wrap all with cancellation signal', yFrac: 0.88 },
-  ];
-
-  function getToolsAtStage(stageIndex) {
+  // What each stage shows (delta only)
+  function getStageDelta(stageIndex) {
     const policy = POLICIES[currentPolicy];
     const provider = PROVIDERS[currentProvider];
-    let tools = [];
 
-    // Stage 0: all base tools including Bash
-    if (stageIndex >= 0) {
-      tools = ALL_TOOLS.filter(t => t.stage === 'base').map(t => ({ ...t }));
-    }
-    // Stage 1: Bash replaced by exec/process - mark Bash as removed
-    if (stageIndex >= 1) {
-      tools = tools.map(t => t.name === 'Bash' ? { ...t, removed: true } : t);
-      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'replace').map(t => ({ ...t, added: true })));
-    }
-    // Stage 2: OpenClaw additions
-    if (stageIndex >= 2) {
-      tools = tools.filter(t => !t.removed);
-      tools = tools.map(t => ({ ...t, added: false }));
-      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'claw').map(t => ({ ...t, added: true })));
-    }
-    // Stage 3: Channel tools
-    if (stageIndex >= 3) {
-      tools = tools.map(t => ({ ...t, added: false }));
-      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'channel').map(t => ({ ...t, added: true })));
-    }
-    // Stage 4: Policy filtering - mark blocked tools as removed
-    if (stageIndex >= 4) {
-      tools = tools.map(t => ({ ...t, added: false }));
-      tools = tools.map(t => policy.blocked.includes(t.name) ? { ...t, removed: true } : t);
-    }
-    // Stage 5: Schema normalization - remove filtered tools, mark modified
-    if (stageIndex >= 5) {
-      tools = tools.filter(t => !t.removed);
-      tools = tools.map(t => ({
-        ...t,
-        added: false,
-        normalized: provider.normalized.includes(t.name),
-      }));
-      if (provider.added.length) {
-        for (const name of provider.added) {
-          tools.push({ name, stage: 'provider', color: '#FEF3C7', normalized: false, added: true });
-        }
+    switch (stageIndex) {
+      case 0: // Base
+        return [
+          { name: 'Read', color: C_BASE },
+          { name: 'Write', color: C_BASE },
+          { name: 'Edit', color: C_BASE },
+          { name: 'Bash', color: C_REPLACE },
+        ];
+      case 1: // Replacements
+        return [
+          { name: 'Bash', color: C_REPLACE, removed: true },
+          { name: 'exec', color: C_REPLACE, added: true },
+          { name: 'process', color: C_REPLACE, added: true },
+        ];
+      case 2: // OpenClaw
+        return [
+          { name: 'messaging', color: C_CLAW, added: true },
+          { name: 'browser', color: C_CLAW, added: true },
+          { name: 'canvas', color: C_CLAW, added: true },
+          { name: 'sessions', color: C_CLAW, added: true },
+          { name: 'cron', color: C_CLAW, added: true },
+          { name: 'gateway', color: C_CLAW, added: true },
+        ];
+      case 3: // Channel
+        return [
+          { name: 'channel', color: C_CHAN, added: true },
+        ];
+      case 4: { // Policy filter
+        if (policy.blocked.length === 0) return []; // nothing removed
+        return policy.blocked.map(name => ({ name, color: '#FEE2E2', removed: true }));
       }
+      case 5: { // Schema normalize
+        let items = [];
+        if (provider.normalized.length) {
+          // Only show tools that survived policy filtering
+          const surviving = provider.normalized.filter(n => !policy.blocked.includes(n));
+          items = surviving.map(name => ({ name, color: C_CLAW, modified: true }));
+        }
+        if (provider.added.length) {
+          items = items.concat(provider.added.map(name => ({ name, color: C_PROV, added: true })));
+        }
+        return items;
+      }
+      case 6: // Abort wrap
+        return []; // text-only stage
+      default:
+        return [];
     }
-    // Stage 6: abort wrapping (all get wrapped)
-    if (stageIndex >= 6) {
-      tools = tools.map(t => ({ ...t, added: false, wrapped: true }));
-    }
-
-    return tools;
   }
+
+  // Compute final tool set
+  function getFinalTools() {
+    const policy = POLICIES[currentPolicy];
+    const provider = PROVIDERS[currentProvider];
+    let tools = ['Read', 'Write', 'Edit', 'exec', 'process',
+                 'messaging', 'browser', 'canvas', 'sessions', 'cron', 'gateway', 'channel'];
+    tools = tools.filter(t => !policy.blocked.includes(t));
+    tools = tools.concat(provider.added);
+    const colorMap = {
+      Read: C_BASE, Write: C_BASE, Edit: C_BASE,
+      exec: C_REPLACE, process: C_REPLACE,
+      messaging: C_CLAW, browser: C_CLAW, canvas: C_CLAW,
+      sessions: C_CLAW, cron: C_CLAW, gateway: C_CLAW,
+      channel: C_CHAN, apply_patch: C_PROV,
+    };
+    return tools.map(name => ({
+      name, color: colorMap[name] || C_PROV,
+      modified: provider.normalized.includes(name),
+    }));
+  }
+
+  const STAGES = [
+    { label: 'Base Tools',       desc: 'Pi defaults' },
+    { label: 'Replacements',     desc: 'Sandbox Bash' },
+    { label: 'OpenClaw Tools',   desc: 'Add platform tools' },
+    { label: 'Channel Tools',    desc: 'Add per-channel' },
+    { label: 'Policy Filter',    desc: 'Remove blocked' },
+    { label: 'Schema Normalize', desc: 'Fix for provider' },
+    { label: 'Abort Wrap',       desc: 'Add cancellation' },
+  ];
 
   function drawRoundedRect(x, y, rw, rh, r) {
     ctx.beginPath();
@@ -2042,167 +2035,225 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.closePath();
   }
 
+  function drawPill(tx, ty, toolW, toolH, tool) {
+    const isRemoved = tool.removed;
+    const isAdded = tool.added;
+    const isMod = tool.modified;
+
+    ctx.globalAlpha = isRemoved ? 0.5 : 1;
+    drawRoundedRect(tx, ty, toolW, toolH, 4);
+    ctx.fillStyle = isRemoved ? '#FEE2E2' : tool.color;
+    ctx.fill();
+
+    if (isRemoved) {
+      ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 1.5;
+    } else if (isAdded) {
+      ctx.strokeStyle = '#059669'; ctx.lineWidth = 2;
+    } else if (isMod) {
+      ctx.strokeStyle = '#7C3AED'; ctx.lineWidth = 2;
+    } else {
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth = 1;
+    }
+    ctx.stroke();
+
+    // Prefix
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    if (isRemoved) {
+      ctx.fillStyle = '#DC2626';
+    } else if (isAdded) {
+      ctx.fillStyle = '#059669';
+    } else if (isMod) {
+      ctx.fillStyle = '#7C3AED';
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    }
+    const prefix = isRemoved ? '-' : isAdded ? '+' : isMod ? '~' : '';
+    const label = prefix ? prefix + ' ' + tool.name : tool.name;
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillText(label, tx + toolW / 2, ty + toolH / 2 + 3.5);
+
+    // Strikethrough
+    if (isRemoved) {
+      const textW = ctx.measureText(label).width;
+      ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(tx + toolW / 2 - textW / 2 - 1, ty + toolH / 2);
+      ctx.lineTo(tx + toolW / 2 + textW / 2 + 1, ty + toolH / 2);
+      ctx.stroke();
+    }
+
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  }
+
   function draw() {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#fff';
     ctx.fillRect(0, 0, w, h);
 
-    const stageColX = 10;
-    const stageColW = 200;
-    const toolsStartX = 230;
-    const toolsAreaW = w - toolsStartX - 20;
+    const leftW = 160;
+    const pillStartX = leftW + 14;
+    const totalRows = 8; // 7 stages + result
+    const rowH = Math.floor((h - 36) / totalRows);
+    const pillW = 76;
+    const pillH = 22;
+    const pillGap = 5;
 
-    for (let i = 0; i < STAGES.length; i++) {
+    // Draw 7 stages
+    for (let i = 0; i < 7; i++) {
       const stage = STAGES[i];
-      const sy = h * stage.yFrac;
-      const rowH = h * 0.10;
+      const sy = 8 + i * rowH;
       const isActive = i < animStep;
       const isCurrent = i === animStep - 1;
 
-      // Stage label area
-      const alpha = isActive ? 1 : 0.35;
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = isActive ? 1 : 0.3;
 
-      // Stage number
-      ctx.font = 'bold 11px "JetBrains Mono", monospace';
-      ctx.fillStyle = isCurrent ? '#1E40AF' : 'rgba(0,0,0,0.38)';
-      ctx.textAlign = 'right';
-      ctx.fillText((i + 1).toString(), stageColX + 18, sy + rowH / 2 + 1);
+      // Stage number circle
+      const circleX = 18;
+      const circleY = sy + rowH / 2;
+      ctx.beginPath();
+      ctx.arc(circleX, circleY, 10, 0, Math.PI * 2);
+      ctx.fillStyle = isCurrent ? '#1E40AF' : (isActive ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.04)');
+      ctx.fill();
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = isCurrent ? '#fff' : (isActive ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)');
+      ctx.textAlign = 'center';
+      ctx.fillText((i + 1).toString(), circleX, circleY + 3.5);
       ctx.textAlign = 'left';
+
+      // Connector line to next stage
+      if (i < 6) {
+        ctx.strokeStyle = (i + 1 < animStep) ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(circleX, circleY + 10);
+        ctx.lineTo(circleX, sy + rowH - 1);
+        ctx.stroke();
+      }
 
       // Stage label
       ctx.font = 'bold 11px -apple-system, sans-serif';
-      ctx.fillStyle = isCurrent ? '#1E40AF' : 'rgba(0,0,0,0.8)';
-      ctx.fillText(stage.label, stageColX + 28, sy + rowH / 2 - 4);
-
-      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = isCurrent ? '#1E40AF' : 'rgba(0,0,0,0.75)';
+      ctx.fillText(stage.label, 36, sy + rowH / 2 - 3);
+      ctx.font = '9px -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(0,0,0,0.38)';
-      ctx.fillText(stage.desc, stageColX + 28, sy + rowH / 2 + 11);
+      ctx.fillText(stage.desc, 36, sy + rowH / 2 + 11);
 
-      // Horizontal separator
-      if (i > 0) {
-        ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 3]);
-        ctx.beginPath();
-        ctx.moveTo(toolsStartX - 10, sy - 2);
-        ctx.lineTo(w - 10, sy - 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
+      // Vertical divider
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(leftW, sy + 4);
+      ctx.lineTo(leftW, sy + rowH - 4);
+      ctx.stroke();
+
+      // Delta pills
+      if (isActive) {
+        const delta = getStageDelta(i);
+        if (delta.length > 0) {
+          const pillY = sy + (rowH - pillH) / 2;
+          delta.forEach((tool, ti) => {
+            const tx = pillStartX + ti * (pillW + pillGap);
+            drawPill(tx, pillY, pillW, pillH, tool);
+          });
+        } else if (i === 4) {
+          // Policy: no blocked tools
+          ctx.font = '10px -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(0,0,0,0.38)';
+          ctx.fillText('No tools blocked', pillStartX, sy + rowH / 2 + 3.5);
+        } else if (i === 5) {
+          // Schema: no changes
+          ctx.font = '10px -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(0,0,0,0.38)';
+          ctx.fillText('No schema changes needed', pillStartX, sy + rowH / 2 + 3.5);
+        } else if (i === 6) {
+          // Abort wrap: text description
+          ctx.font = '10px -apple-system, sans-serif';
+          ctx.fillStyle = 'rgba(0,0,0,0.54)';
+          ctx.fillText('All tools wrapped with abort signal', pillStartX, sy + rowH / 2 + 3.5);
+        }
       }
 
-      // Tools at this stage
-      if (isActive) {
-        const tools = getToolsAtStage(i);
-        const toolW = 68;
-        const toolH = 24;
-        const toolGap = 6;
-        const cols = Math.floor(toolsAreaW / (toolW + toolGap));
-
-        tools.forEach((tool, ti) => {
-          const col = ti % cols;
-          const row = Math.floor(ti / cols);
-          const tx = toolsStartX + col * (toolW + toolGap);
-          const ty = sy + 4 + row * (toolH + 4);
-
-          const isRemoved = tool.removed;
-          const isAdded = tool.added;
-
-          // Tool pill
-          ctx.globalAlpha = isRemoved ? 0.4 : 1;
-          drawRoundedRect(tx, ty, toolW, toolH, 4);
-          ctx.fillStyle = isRemoved ? '#FEE2E2' : tool.color;
-          ctx.fill();
-
-          // Border style based on state
-          if (isAdded) {
-            ctx.strokeStyle = '#059669';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          } else if (tool.normalized) {
-            ctx.strokeStyle = '#7C3AED';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-          } else if (tool.wrapped) {
-            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-          } else if (isRemoved) {
-            ctx.strokeStyle = '#DC2626';
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-          } else {
-            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-          }
-
-          // Tool name
-          ctx.font = '10px "JetBrains Mono", monospace';
-          ctx.fillStyle = isRemoved ? '#DC2626' : 'rgba(0,0,0,0.8)';
-          ctx.textAlign = 'center';
-          ctx.fillText(tool.name, tx + toolW / 2, ty + toolH / 2 + 3.5);
-
-          // Strikethrough for removed
-          if (isRemoved) {
-            const textW = ctx.measureText(tool.name).width;
-            ctx.strokeStyle = '#DC2626';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(tx + toolW / 2 - textW / 2 - 2, ty + toolH / 2);
-            ctx.lineTo(tx + toolW / 2 + textW / 2 + 2, ty + toolH / 2);
-            ctx.stroke();
-          }
-
-          ctx.textAlign = 'left';
-          ctx.globalAlpha = 1;
-        });
+      // Row separator
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(6, sy);
+        ctx.lineTo(w - 6, sy);
+        ctx.stroke();
       }
 
       ctx.globalAlpha = 1;
     }
 
-    // Vertical divider
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    // Result row
+    const resultY = 8 + 7 * rowH;
+    const resultActive = animStep >= 8;
+    ctx.globalAlpha = resultActive ? 1 : 0.3;
+
+    // Separator
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(toolsStartX - 14, 6);
-    ctx.lineTo(toolsStartX - 14, h - 6);
+    ctx.moveTo(6, resultY);
+    ctx.lineTo(w - 6, resultY);
     ctx.stroke();
 
-    // Legend - clear visual key
-    const legY = h - 12;
+    // Arrow
+    ctx.fillStyle = resultActive ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.15)';
+    ctx.beginPath();
+    ctx.moveTo(14, resultY + 4);
+    ctx.lineTo(22, resultY + 10);
+    ctx.lineTo(14, resultY + 16);
+    ctx.fill();
+
+    // Result label
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillStyle = resultActive ? '#059669' : 'rgba(0,0,0,0.38)';
+    ctx.fillText('Result', 36, resultY + rowH / 2 - 3);
+    const finalTools = getFinalTools();
     ctx.font = '9px -apple-system, sans-serif';
-    let legX = toolsStartX;
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.fillText(finalTools.length + ' tools sent to LLM', 36, resultY + rowH / 2 + 11);
 
-    // Added
-    ctx.strokeStyle = '#059669'; ctx.lineWidth = 2;
-    ctx.strokeRect(legX, legY - 8, 12, 8);
-    ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('added', legX + 16, legY);
-    legX += 58;
+    // Divider
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(leftW, resultY + 4);
+    ctx.lineTo(leftW, resultY + rowH - 4);
+    ctx.stroke();
 
-    // Removed
-    ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 1.5;
-    ctx.strokeRect(legX, legY - 8, 12, 8);
-    ctx.fillStyle = '#DC2626'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(legX + 1, legY - 4); ctx.lineTo(legX + 11, legY - 4); ctx.stroke();
-    ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('removed', legX + 16, legY);
-    legX += 68;
+    // Final tool pills - compact
+    if (resultActive) {
+      const smallW = 66;
+      const smallH = 20;
+      const smallGap = 4;
+      const cols = Math.floor((w - pillStartX - 10) / (smallW + smallGap));
+      finalTools.forEach((tool, ti) => {
+        const col = ti % cols;
+        const row = Math.floor(ti / cols);
+        const tx = pillStartX + col * (smallW + smallGap);
+        const ty = resultY + 6 + row * (smallH + 3);
+        drawPill(tx, ty, smallW, smallH, tool);
+      });
+    }
 
-    // Normalized
-    ctx.strokeStyle = '#7C3AED'; ctx.lineWidth = 2;
-    ctx.strokeRect(legX, legY - 8, 12, 8);
-    ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('schema fixed', legX + 16, legY);
-    legX += 88;
+    ctx.globalAlpha = 1;
 
-    // Wrapped
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1.5;
-    ctx.strokeRect(legX, legY - 8, 12, 8);
-    ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('wrapped', legX + 16, legY);
+    // Legend
+    const legY = h - 6;
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    let legX = 10;
+
+    ctx.fillStyle = '#059669'; ctx.fillText('+ added', legX, legY); legX += 56;
+    ctx.fillStyle = '#DC2626'; ctx.fillText('- removed', legX, legY); legX += 66;
+    ctx.fillStyle = '#7C3AED'; ctx.fillText('~ schema fixed', legX, legY); legX += 90;
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillText('Policy: ' + POLICIES[currentPolicy].label + '  |  Provider: ' + PROVIDERS[currentProvider].label, legX, legY);
   }
 
   // Policy buttons
@@ -2211,7 +2262,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       document.querySelectorAll('.policy-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       currentPolicy = this.dataset.policy;
-      animStep = 7;
+      animStep = 8;
       draw();
     });
   });
@@ -2222,7 +2273,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
       currentProvider = this.dataset.provider;
-      animStep = 7;
+      animStep = 8;
       draw();
     });
   });
@@ -2236,7 +2287,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     function tick() {
       animStep++;
       draw();
-      if (animStep <= 7) {
+      if (animStep <= 8) {
         animId = setTimeout(tick, 500);
       } else {
         animating = false;
