@@ -1374,6 +1374,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   const { canvas, ctx, w, h } = initCanvas('canvas-tree');
 
   const NODE_R = 16;
+  const MAX_DEPTH = 4;
   let nextId = 0;
 
   function makeNode(parentId, label, x, y) {
@@ -1386,10 +1387,10 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   function resetTree() {
     nextId = 0;
     nodes = [];
-    const root = makeNode(-1, 'Start', w / 2, 40);
+    const root = makeNode(-1, 'Prompt', w / 2, 40);
     nodes.push(root);
 
-    const n1 = makeNode(0, 'Read file', w / 2, 110);
+    const n1 = makeNode(0, 'Read src', w / 2, 110);
     nodes.push(n1);
     root.children.push(n1.id);
 
@@ -1401,7 +1402,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     nodes.push(n3);
     n2.children.push(n3.id);
 
-    const n3b = makeNode(2, 'Refactor', w / 2 + 80, 250);
+    const n3b = makeNode(2, 'Try v2', w / 2 + 80, 250);
     nodes.push(n3b);
     n2.children.push(n3b.id);
 
@@ -1413,12 +1414,28 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   }
   resetTree();
 
-  const LABELS_SHORT = [
-    'Read src', 'Write test', 'Run lint', 'Edit cfg',
-    'Bash cmd', 'Review', 'Deploy', 'Debug',
-    'Refactor', 'Add docs', 'Fix CI', 'Optimize',
-    'Merge', 'Revert', 'Analyze', 'Extend'
+  // Context-aware labels: when branching, offer an alternative; when continuing, offer a next step
+  const BRANCH_LABELS = [
+    'Try v2', 'Alt approach', 'Rewrite', 'Simpler fix',
+    'Use lib', 'Rollback', 'New idea', 'Workaround'
   ];
+  const CONTINUE_LABELS = [
+    'Run tests', 'Read logs', 'Edit fix', 'Write test',
+    'Bash build', 'Deploy', 'Lint check', 'Commit'
+  ];
+  let branchIdx = 0;
+  let continueIdx = 0;
+
+  function getNodeDepth(nodeId) {
+    let depth = 0, id = nodeId;
+    while (id >= 0) {
+      const n = nodes[id];
+      if (!n || n.parentId < 0) break;
+      id = n.parentId;
+      depth++;
+    }
+    return depth;
+  }
 
   function layoutTree() {
     // Simple tree layout with spacing
@@ -1447,7 +1464,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     }
 
     const depths = bfs();
-    const ySpacing = 70;
+    const maxDepth = Math.max(...Object.values(depths));
+    const ySpacing = Math.min(70, (h - 80) / Math.max(maxDepth, 1));
     const counters = {};
 
     // Assign positions
@@ -1458,8 +1476,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
       if (!counters[depth]) counters[depth] = 0;
       const count = levelCount[depth] || 1;
-      const totalW = Math.min(count * 120, w - 80);
-      const startX = (w - totalW) / 2 + 60;
+      const totalW = Math.min(count * 110, w - 80);
+      const startX = (w - totalW) / 2 + 55;
       const spacing = count > 1 ? totalW / (count - 1) : 0;
       node.x = count === 1 ? w / 2 : startX + counters[depth] * spacing;
       counters[depth]++;
@@ -1590,9 +1608,18 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   document.getElementById('tree-branch').addEventListener('click', function() {
     const parent = nodes[selectedId];
     if (!parent) return;
-    if (nodes.length > 20) return; // Limit for readability
+    const depth = getNodeDepth(selectedId);
+    if (depth >= MAX_DEPTH) {
+      document.getElementById('tree-info').textContent = 'Max depth reached - select a shallower node';
+      return;
+    }
+    if (nodes.length >= 16) {
+      document.getElementById('tree-info').textContent = 'Tree full - reset to start over';
+      return;
+    }
 
-    const label = LABELS_SHORT[Math.floor(Math.random() * LABELS_SHORT.length)];
+    const label = BRANCH_LABELS[branchIdx % BRANCH_LABELS.length];
+    branchIdx++;
     const newNode = makeNode(selectedId, label, 0, 0);
     nodes.push(newNode);
     parent.children.push(newNode.id);
@@ -1604,10 +1631,18 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   document.getElementById('tree-continue').addEventListener('click', function() {
     const parent = nodes[selectedId];
     if (!parent) return;
-    if (nodes.length > 20) return;
+    const depth = getNodeDepth(selectedId);
+    if (depth >= MAX_DEPTH) {
+      document.getElementById('tree-info').textContent = 'Max depth reached - select a shallower node';
+      return;
+    }
+    if (nodes.length >= 16) {
+      document.getElementById('tree-info').textContent = 'Tree full - reset to start over';
+      return;
+    }
 
-    // Continue = add child to the selected node (no branching context)
-    const label = LABELS_SHORT[Math.floor(Math.random() * LABELS_SHORT.length)];
+    const label = CONTINUE_LABELS[continueIdx % CONTINUE_LABELS.length];
+    continueIdx++;
     const newNode = makeNode(selectedId, label, 0, 0);
     nodes.push(newNode);
     parent.children.push(newNode.id);
@@ -1757,75 +1792,83 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     // Side panel: channel-specific details
     const panelX = w * 0.65;
-    const panelY = h * 0.12;
+    const panelY = h * 0.08;
     const panelW = w * 0.32;
+    const panelH = h * 0.84;
 
     ctx.fillStyle = '#f8f9fa';
-    drawRoundedRect(panelX, panelY, panelW, h * 0.7, 8);
+    drawRoundedRect(panelX, panelY, panelW, panelH, 8);
     ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,0.08)';
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Channel header
-    ctx.font = 'bold 12px -apple-system, sans-serif';
-    ctx.fillStyle = ch.color;
-    ctx.fillText(ch.label + ' Configuration', panelX + 16, panelY + 28);
+    let curY = panelY + 24;
+    const pad = panelX + 14;
+    const lineH = 15;
 
-    // Tools
-    ctx.font = 'bold 10px -apple-system, sans-serif';
+    // Channel header
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillStyle = ch.color;
+    ctx.fillText(ch.label + ' Config', pad, curY);
+    curY += 22;
+
+    // Channel tools
+    ctx.font = 'bold 9px -apple-system, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('CHANNEL TOOLS', panelX + 16, panelY + 56);
-    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillText('CHANNEL TOOLS', pad, curY);
+    curY += lineH;
+    ctx.font = '10px "JetBrains Mono", monospace';
     ctx.fillStyle = 'rgba(0,0,0,0.8)';
     const tools = ch.tools.split(', ');
-    tools.forEach((tool, i) => {
-      ctx.fillText(tool, panelX + 16, panelY + 76 + i * 18);
+    tools.forEach(tool => {
+      ctx.fillText(tool, pad, curY);
+      curY += lineH;
     });
+    curY += 10;
 
     // System prompt
-    const promptY = panelY + 76 + tools.length * 18 + 20;
-    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.font = 'bold 9px -apple-system, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('PROMPT ADDITIONS', panelX + 16, promptY);
-    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText('PROMPT ADDITIONS', pad, curY);
+    curY += lineH;
+    ctx.font = '10px -apple-system, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    // Word wrap the prompt
     const words = ch.prompt.split(' ');
     let line = '';
-    let lineY = promptY + 20;
     for (const word of words) {
       const test = line + (line ? ' ' : '') + word;
-      if (ctx.measureText(test).width > panelW - 32 && line) {
-        ctx.fillText(line, panelX + 16, lineY);
+      if (ctx.measureText(test).width > panelW - 28 && line) {
+        ctx.fillText(line, pad, curY);
         line = word;
-        lineY += 16;
+        curY += lineH;
       } else {
         line = test;
       }
     }
-    if (line) ctx.fillText(line, panelX + 16, lineY);
+    if (line) { ctx.fillText(line, pad, curY); curY += lineH; }
+    curY += 10;
 
-    // Base tools
-    const baseY = lineY + 30;
-    ctx.font = 'bold 10px -apple-system, sans-serif';
+    // Base tools - horizontal layout
+    ctx.font = 'bold 9px -apple-system, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('BASE (PI CORE)', panelX + 16, baseY);
-    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillText('BASE (PI CORE)', pad, curY);
+    curY += lineH;
+    ctx.font = '10px "JetBrains Mono", monospace';
     ctx.fillStyle = '#B45309';
-    ['Read', 'Write', 'Edit', 'exec'].forEach((tool, i) => {
-      ctx.fillText(tool, panelX + 16, baseY + 20 + i * 18);
-    });
+    ctx.fillText('Read  Write  Edit  exec', pad, curY);
+    curY += 22;
 
     // Auth info
-    const authY = baseY + 20 + 4 * 18 + 16;
-    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.font = 'bold 9px -apple-system, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,0.54)';
-    ctx.fillText('AUTH PROFILES', panelX + 16, authY);
-    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillText('AUTH', pad, curY);
+    curY += lineH;
+    ctx.font = '10px -apple-system, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    ctx.fillText('Multi-key rotation', panelX + 16, authY + 18);
-    ctx.fillText('Auto-failover on error', panelX + 16, authY + 34);
+    ctx.fillText('Multi-key rotation', pad, curY);
+    curY += lineH;
+    ctx.fillText('Auto-failover on error', pad, curY);
   }
 
   // Channel buttons
@@ -1849,7 +1892,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       flowStep++;
       draw();
       if (flowStep < LAYERS.length) {
-        flowId = setTimeout(tick, 400);
+        flowId = setTimeout(tick, 700);
       } else {
         flowAnimating = false;
       }
@@ -1911,6 +1954,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     { name: 'Read', stage: 'base', color: '#DBEAFE' },
     { name: 'Write', stage: 'base', color: '#D1FAE5' },
     { name: 'Edit', stage: 'base', color: '#FEF3C7' },
+    { name: 'Bash', stage: 'base', color: '#FCE7F3' },
     { name: 'exec', stage: 'replace', color: '#FCE7F3' },
     { name: 'process', stage: 'replace', color: '#FCE7F3' },
     { name: 'messaging', stage: 'claw', color: '#EDE9FE' },
@@ -1923,13 +1967,13 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   ];
 
   const STAGES = [
-    { label: 'Base Tools', desc: 'Pi defaults', yFrac: 0.06 },
-    { label: 'Replacements', desc: 'Bash -> exec/process', yFrac: 0.18 },
-    { label: 'OpenClaw Tools', desc: '+messaging, browser, etc.', yFrac: 0.32 },
-    { label: 'Channel Tools', desc: '+platform-specific', yFrac: 0.46 },
-    { label: 'Policy Filter', desc: 'Allow/deny list', yFrac: 0.60 },
-    { label: 'Normalize Schema', desc: 'Provider quirks', yFrac: 0.74 },
-    { label: 'Abort Wrap', desc: 'Cancellation support', yFrac: 0.88 },
+    { label: 'Base Tools', desc: 'Pi defaults: Read, Write, Edit, Bash', yFrac: 0.06 },
+    { label: 'Replacements', desc: 'Swap Bash for sandboxed variants', yFrac: 0.18 },
+    { label: 'OpenClaw Tools', desc: 'Add messaging, browser, canvas...', yFrac: 0.32 },
+    { label: 'Channel Tools', desc: 'Add Discord/Slack/Telegram actions', yFrac: 0.46 },
+    { label: 'Policy Filter', desc: 'Remove blocked tools per policy', yFrac: 0.60 },
+    { label: 'Schema Normalize', desc: 'Fix schemas for target provider', yFrac: 0.74 },
+    { label: 'Abort Wrap', desc: 'Wrap all with cancellation signal', yFrac: 0.88 },
   ];
 
   function getToolsAtStage(stageIndex) {
@@ -1937,42 +1981,48 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     const provider = PROVIDERS[currentProvider];
     let tools = [];
 
-    // Stage 0: base tools (Read, Write, Edit - Bash removed since replaced)
+    // Stage 0: all base tools including Bash
     if (stageIndex >= 0) {
-      tools = ALL_TOOLS.filter(t => t.stage === 'base');
+      tools = ALL_TOOLS.filter(t => t.stage === 'base').map(t => ({ ...t }));
     }
-    // Stage 1: replacements
+    // Stage 1: Bash replaced by exec/process - mark Bash as removed
     if (stageIndex >= 1) {
-      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'replace'));
+      tools = tools.map(t => t.name === 'Bash' ? { ...t, removed: true } : t);
+      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'replace').map(t => ({ ...t, added: true })));
     }
     // Stage 2: OpenClaw additions
     if (stageIndex >= 2) {
-      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'claw'));
+      tools = tools.filter(t => !t.removed);
+      tools = tools.map(t => ({ ...t, added: false }));
+      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'claw').map(t => ({ ...t, added: true })));
     }
     // Stage 3: Channel tools
     if (stageIndex >= 3) {
-      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'channel'));
+      tools = tools.map(t => ({ ...t, added: false }));
+      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'channel').map(t => ({ ...t, added: true })));
     }
-    // Stage 4: Policy filtering
+    // Stage 4: Policy filtering - mark blocked tools as removed
     if (stageIndex >= 4) {
-      tools = tools.filter(t => !policy.blocked.includes(t.name));
+      tools = tools.map(t => ({ ...t, added: false }));
+      tools = tools.map(t => policy.blocked.includes(t.name) ? { ...t, removed: true } : t);
     }
-    // Stage 5: Schema normalization (mark modified)
+    // Stage 5: Schema normalization - remove filtered tools, mark modified
     if (stageIndex >= 5) {
+      tools = tools.filter(t => !t.removed);
       tools = tools.map(t => ({
         ...t,
+        added: false,
         normalized: provider.normalized.includes(t.name),
       }));
-      // Add provider-specific tools
       if (provider.added.length) {
         for (const name of provider.added) {
-          tools.push({ name, stage: 'provider', color: '#FEF3C7', normalized: false });
+          tools.push({ name, stage: 'provider', color: '#FEF3C7', normalized: false, added: true });
         }
       }
     }
     // Stage 6: abort wrapping (all get wrapped)
     if (stageIndex >= 6) {
-      tools = tools.map(t => ({ ...t, wrapped: true }));
+      tools = tools.map(t => ({ ...t, added: false, wrapped: true }));
     }
 
     return tools;
@@ -1998,8 +2048,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.fillRect(0, 0, w, h);
 
     const stageColX = 10;
-    const stageColW = 170;
-    const toolsStartX = 200;
+    const stageColW = 200;
+    const toolsStartX = 230;
     const toolsAreaW = w - toolsStartX - 20;
 
     for (let i = 0; i < STAGES.length; i++) {
@@ -2055,33 +2105,57 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
           const tx = toolsStartX + col * (toolW + toolGap);
           const ty = sy + 4 + row * (toolH + 4);
 
+          const isRemoved = tool.removed;
+          const isAdded = tool.added;
+
           // Tool pill
+          ctx.globalAlpha = isRemoved ? 0.4 : 1;
           drawRoundedRect(tx, ty, toolW, toolH, 4);
-          ctx.fillStyle = tool.color;
+          ctx.fillStyle = isRemoved ? '#FEE2E2' : tool.color;
           ctx.fill();
 
-          // Normalized indicator
-          if (tool.normalized) {
+          // Border style based on state
+          if (isAdded) {
+            ctx.strokeStyle = '#059669';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          } else if (tool.normalized) {
             ctx.strokeStyle = '#7C3AED';
             ctx.lineWidth = 2;
             ctx.stroke();
           } else if (tool.wrapped) {
-            ctx.strokeStyle = 'rgba(0,0,0,0.54)';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([2, 2]);
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 1.5;
             ctx.stroke();
-            ctx.setLineDash([]);
+          } else if (isRemoved) {
+            ctx.strokeStyle = '#DC2626';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
           } else {
             ctx.strokeStyle = 'rgba(0,0,0,0.12)';
             ctx.lineWidth = 1;
             ctx.stroke();
           }
 
+          // Tool name
           ctx.font = '10px "JetBrains Mono", monospace';
-          ctx.fillStyle = 'rgba(0,0,0,0.8)';
+          ctx.fillStyle = isRemoved ? '#DC2626' : 'rgba(0,0,0,0.8)';
           ctx.textAlign = 'center';
           ctx.fillText(tool.name, tx + toolW / 2, ty + toolH / 2 + 3.5);
+
+          // Strikethrough for removed
+          if (isRemoved) {
+            const textW = ctx.measureText(tool.name).width;
+            ctx.strokeStyle = '#DC2626';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(tx + toolW / 2 - textW / 2 - 2, ty + toolH / 2);
+            ctx.lineTo(tx + toolW / 2 + textW / 2 + 2, ty + toolH / 2);
+            ctx.stroke();
+          }
+
           ctx.textAlign = 'left';
+          ctx.globalAlpha = 1;
         });
       }
 
@@ -2096,21 +2170,39 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.lineTo(toolsStartX - 14, h - 6);
     ctx.stroke();
 
-    // Legend
-    const legY = h - 18;
+    // Legend - clear visual key
+    const legY = h - 12;
     ctx.font = '9px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(0,0,0,0.38)';
-    ctx.fillText('Policy: ' + POLICIES[currentPolicy].label + '  |  Provider: ' + PROVIDERS[currentProvider].label, toolsStartX, legY);
+    let legX = toolsStartX;
 
-    if (PROVIDERS[currentProvider].normalized.length) {
-      ctx.strokeStyle = '#7C3AED';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(toolsStartX + 250, legY - 4);
-      ctx.lineTo(toolsStartX + 266, legY - 4);
-      ctx.stroke();
-      ctx.fillText('= normalized', toolsStartX + 270, legY);
-    }
+    // Added
+    ctx.strokeStyle = '#059669'; ctx.lineWidth = 2;
+    ctx.strokeRect(legX, legY - 8, 12, 8);
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('added', legX + 16, legY);
+    legX += 58;
+
+    // Removed
+    ctx.strokeStyle = '#DC2626'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(legX, legY - 8, 12, 8);
+    ctx.fillStyle = '#DC2626'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(legX + 1, legY - 4); ctx.lineTo(legX + 11, legY - 4); ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('removed', legX + 16, legY);
+    legX += 68;
+
+    // Normalized
+    ctx.strokeStyle = '#7C3AED'; ctx.lineWidth = 2;
+    ctx.strokeRect(legX, legY - 8, 12, 8);
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('schema fixed', legX + 16, legY);
+    legX += 88;
+
+    // Wrapped
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(legX, legY - 8, 12, 8);
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('wrapped', legX + 16, legY);
   }
 
   // Policy buttons
