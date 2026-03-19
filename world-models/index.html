@@ -10,14 +10,14 @@
    CSS CUSTOM PROPERTIES
    ============================================ */
 :root {
-  --bg: #FAF8F4;
-  --bg-warm: #F5F0E8;
-  --bg-code: #F0EDE6;
-  --text: #2C2C2C;
-  --text-secondary: #6B6560;
-  --text-tertiary: #9B9590;
-  --border: #E0DCD4;
-  --border-light: #EBE7E0;
+  --bg: #fff;
+  --bg-warm: #f8f9fa;
+  --bg-code: #f4f4f4;
+  --text: rgba(0, 0, 0, 0.8);
+  --text-secondary: rgba(0, 0, 0, 0.54);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.05);
 
   /* Approach colors */
   --genie-primary: #2563EB;
@@ -36,7 +36,8 @@
   --world-labs-dark: #5B21B6;
 
   --accent: #C2410C;
-  --accent-light: #FFF7ED;
+  --accent-light: #fff7ed;
+  --link: #004276;
 
   /* Typography */
   --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
@@ -67,6 +68,42 @@ body {
   line-height: 1.75;
   color: var(--text);
   background: var(--bg);
+}
+
+/* ============================================
+   SITE HEADER
+   ============================================ */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+
+.site-header-inner {
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.site-nav a {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-nav a:hover {
+  color: var(--text);
 }
 
 /* ============================================
@@ -194,7 +231,7 @@ strong { font-weight: 600; }
 
 em { font-style: italic; }
 
-a { color: var(--accent); text-decoration: none; }
+a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 .math {
@@ -512,7 +549,7 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .article-footer a {
-  color: var(--text-secondary);
+  color: var(--link);
 }
 
 /* ============================================
@@ -574,6 +611,15 @@ input[type="range"]::-webkit-slider-thumb {
 </style>
 </head>
 <body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
+    </nav>
+  </div>
+</header>
 
 <div class="page-wrapper">
   <!-- SIDEBAR -->
@@ -1128,7 +1174,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.clearRect(0, 0, w, h);
 
     // Background grid
-    ctx.strokeStyle = '#EBE7E0';
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
     ctx.lineWidth = 0.5;
     for (let c = 0; c <= COLS; c++) {
       ctx.beginPath(); ctx.moveTo(c * CELL, 0); ctx.lineTo(c * CELL, h); ctx.stroke();
@@ -1142,10 +1188,10 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       const [cx, cy] = key.split(',').map(Number);
       const ox = cx * CELL;
       const oy = cy * CELL;
-      ctx.fillStyle = '#D4CFC5';
+      ctx.fillStyle = '#d4d4d8';
       ctx.fillRect(ox + 1, oy + 1, CELL - 2, CELL - 2);
       // Top highlight
-      ctx.fillStyle = '#E0DCD4';
+      ctx.fillStyle = '#e4e4e7';
       ctx.fillRect(ox + 1, oy + 1, CELL - 2, 3);
     }
 
@@ -1180,7 +1226,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     const br = CELL / 2 - 2;
     const ballGrad = ctx.createRadialGradient(bx - 3, by - 3, 0, bx, by, br);
     ballGrad.addColorStop(0, '#555');
-    ballGrad.addColorStop(1, '#2C2C2C');
+    ballGrad.addColorStop(1, 'rgba(0,0,0,0.8)');
     ctx.fillStyle = ballGrad;
     ctx.beginPath();
     ctx.arc(bx, by, br, 0, Math.PI * 2);
@@ -1189,7 +1235,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     // Labels - position to the right, offset if overlapping
     const labelOffX = CELL + 6;
     ctx.font = '11px -apple-system, sans-serif';
-    ctx.fillStyle = '#2C2C2C';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
     ctx.fillText('Actual', bx + labelOffX - CELL / 2, by + 4);
     // Only show predicted label if not overlapping with actual
     if (Math.abs(ball.y - predicted.y) > 0) {
@@ -1296,11 +1342,11 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   function drawGrid(ox, oy, agentPos, label, isPrediction) {
     // Grid bg
-    ctx.fillStyle = isPrediction ? '#FFF8F0' : '#FFFFFF';
+    ctx.fillStyle = isPrediction ? '#f8f9fa' : '#FFFFFF';
     ctx.fillRect(ox, oy, GRID_COLS * CELL, GRID_ROWS * CELL);
 
     // Grid lines
-    ctx.strokeStyle = '#E8E4DC';
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
     ctx.lineWidth = 0.5;
     for (let c = 0; c <= GRID_COLS; c++) {
       ctx.beginPath(); ctx.moveTo(ox + c * CELL, oy); ctx.lineTo(ox + c * CELL, oy + GRID_ROWS * CELL); ctx.stroke();
@@ -1310,7 +1356,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     }
 
     // Walls
-    ctx.fillStyle = '#C4BFB5';
+    ctx.fillStyle = '#d4d4d8';
     for (const key of walls) {
       const [cx, cy] = key.split(',').map(Number);
       ctx.fillRect(ox + cx * CELL + 1, oy + cy * CELL + 1, CELL - 2, CELL - 2);
@@ -1334,13 +1380,13 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(ax, ay, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     } else {
-      ctx.fillStyle = '#2C2C2C';
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
       ctx.beginPath(); ctx.arc(ax, ay, 12, 0, Math.PI * 2); ctx.fill();
     }
 
     // Label
     ctx.font = 'bold 12px -apple-system, sans-serif';
-    ctx.fillStyle = isPrediction ? 'rgba(194, 65, 12, 0.8)' : '#2C2C2C';
+    ctx.fillStyle = isPrediction ? 'rgba(194, 65, 12, 0.8)' : 'rgba(0,0,0,0.8)';
     ctx.textAlign = 'center';
     ctx.fillText(label, ox + (GRID_COLS * CELL) / 2, oy - 10);
     ctx.textAlign = 'left';
@@ -1356,7 +1402,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     drawGrid(OFFSET_PRED, oy, predictedAgent, 'PREDICTED', true);
 
     // Divider
-    ctx.strokeStyle = '#D4CFC5';
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
     ctx.lineWidth = 1;
     ctx.setLineDash([6, 4]);
     ctx.beginPath();
@@ -1456,9 +1502,9 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   function drawFrame(fx, fy, frame, index, isCurrent) {
     // Frame border
-    ctx.fillStyle = isCurrent ? '#FFF8F0' : '#FEFEFE';
+    ctx.fillStyle = isCurrent ? '#f8f9fa' : '#FEFEFE';
     ctx.fillRect(fx, fy, FRAME_W, FRAME_H);
-    ctx.strokeStyle = isCurrent ? '#2563EB' : '#D4CFC5';
+    ctx.strokeStyle = isCurrent ? '#2563EB' : 'rgba(0,0,0,0.12)';
     ctx.lineWidth = isCurrent ? 2 : 1;
     ctx.strokeRect(fx, fy, FRAME_W, FRAME_H);
 
@@ -1516,13 +1562,13 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     // Frame number
     ctx.font = '9px -apple-system, sans-serif';
-    ctx.fillStyle = '#9B9590';
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
     ctx.textAlign = 'center';
     ctx.fillText(`#${index + 1}`, fx + FRAME_W / 2, fy + FRAME_H + 14);
 
     // Action arrow
     if (frame.action) {
-      ctx.fillStyle = '#6B6560';
+      ctx.fillStyle = 'rgba(0,0,0,0.54)';
       const arrows = { left: '\u2190', right: '\u2192', jump: '\u2191', wait: '\u00B7' };
       ctx.fillText(arrows[frame.action] || '', fx + FRAME_W / 2, fy - 6);
     }
@@ -1547,7 +1593,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       }
 
       // Connection arrows
-      ctx.strokeStyle = '#D4CFC5';
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
       ctx.lineWidth = 1;
       for (let i = 0; i < Math.min(frames.length - 1, 4); i++) {
         const x1 = ox + i * (FRAME_W + 12) + FRAME_W + 2;
@@ -1568,7 +1614,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     if (frames.length === 0) {
       ctx.font = '14px "Crimson Pro", Georgia, serif';
-      ctx.fillStyle = '#9B9590';
+      ctx.fillStyle = 'rgba(0,0,0,0.38)';
       ctx.textAlign = 'center';
       ctx.fillText('Choose an action below to generate the first frame', w / 2, h / 2);
       ctx.textAlign = 'left';
@@ -1576,7 +1622,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
     if (frames.length >= MAX_FRAMES) {
       ctx.font = '12px -apple-system, sans-serif';
-      ctx.fillStyle = '#9B9590';
+      ctx.fillStyle = 'rgba(0,0,0,0.38)';
       ctx.textAlign = 'center';
       ctx.fillText('Sequence complete - reset to try a new trajectory', w / 2, h - 12);
       ctx.textAlign = 'left';
@@ -1691,7 +1737,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.stroke();
 
     ctx.font = '10px -apple-system, sans-serif';
-    ctx.fillStyle = '#9B9590';
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
     ctx.textAlign = 'center';
     ctx.fillText('Embedding Dimension 1', w / 2, h - 8);
     ctx.save();
@@ -1758,7 +1804,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.fillText('Context s_x', contextPt.x + 16, contextPt.y - 4);
     ctx.fillStyle = '#C2410C';
     ctx.fillText('Predicted s\u0302_y', pred.x + 14, pred.y - 4);
-    ctx.fillStyle = '#6B6560';
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
     ctx.fillText('Actual s_y', w - 100, 36);
 
     // Energy label
@@ -1766,7 +1812,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       ctx.font = '10px -apple-system, sans-serif';
       ctx.fillStyle = '#059669';
       ctx.fillText('Low energy (compatible)', 50, 36);
-      ctx.fillStyle = '#9B9590';
+      ctx.fillStyle = 'rgba(0,0,0,0.38)';
       ctx.fillText('High energy (incompatible)', 50, 50);
     }
   }
@@ -2019,7 +2065,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ];
 
     if (wireframe) {
-      ctx.strokeStyle = '#C4BFB5';
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
       ctx.lineWidth = 0.5;
       // Grid
       for (let i = -5; i <= 5; i++) {
@@ -2065,7 +2111,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     }
 
     // Crosshair at center
-    ctx.strokeStyle = '#D4CFC5';
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
     ctx.lineWidth = 0.5;
     ctx.beginPath();
     ctx.moveTo(w / 2 - 8, h / 2);
