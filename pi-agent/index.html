@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pi & OpenClaw: The Self-Extending Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+  --bg: #fff;
+  --bg-warm: #f8f9fa;
+  --bg-code: #f4f4f4;
+  --text: rgba(0, 0, 0, 0.8);
+  --text-secondary: rgba(0, 0, 0, 0.54);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.05);
+
+  /* Pi colors */
+  --pi-primary: #B45309;
+  --pi-light: #FEF3C7;
+  --pi-border: #FDE68A;
+  --pi-dark: #92400E;
+
+  /* OpenClaw colors */
+  --claw-primary: #1E40AF;
+  --claw-light: #EFF6FF;
+  --claw-border: #BFDBFE;
+  --claw-dark: #1E3A8A;
+
+  /* Session/Tree colors */
+  --tree-primary: #059669;
+  --tree-light: #ECFDF5;
+  --tree-border: #A7F3D0;
+  --tree-dark: #065F46;
+
+  --accent: #C2410C;
+  --accent-light: #fff7ed;
+  --link: #004276;
+
+  /* Typography */
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  /* Spacing */
+  --content-width: 720px;
+  --sidebar-width: 220px;
+  --gap: 2rem;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* ============================================
+   SITE HEADER
+   ============================================ */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+
+.site-header-inner {
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.site-nav a {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-nav a:hover {
+  color: var(--text);
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.page-wrapper {
+  display: flex;
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  padding-right: 2.5rem;
+}
+
+.sidebar-inner {
+  position: sticky;
+  top: 2rem;
+  padding-top: 6rem;
+}
+
+.sidebar nav a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.sidebar nav a:hover {
+  color: var(--text-secondary);
+}
+
+.sidebar nav a.active {
+  color: var(--text);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar nav a.sub {
+  padding-left: 1.6rem;
+  font-size: 0.67rem;
+}
+
+.content {
+  flex: 1;
+  max-width: var(--content-width);
+  min-width: 0;
+  padding-bottom: 6rem;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 4.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+p {
+  margin-bottom: 1.25rem;
+}
+
+.lead {
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  margin-bottom: 0.5rem;
+}
+
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+strong { font-weight: 600; }
+
+em { font-style: italic; }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.math {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--bg-code);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--bg-code);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.code-block {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  background: #2C2C2C;
+  color: #E8E4DC;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.code-block .kw { color: #C792EA; }
+.code-block .fn { color: #82AAFF; }
+.code-block .str { color: #C3E88D; }
+.code-block .cm { color: #6B6560; }
+.code-block .type { color: #FFCB6B; }
+
+/* ============================================
+   HEADER
+   ============================================ */
+.article-header {
+  padding-top: 5rem;
+  margin-bottom: 3.5rem;
+}
+
+.article-header .overline {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   INTERACTIVE FIGURES
+   ============================================ */
+.figure {
+  margin: 2.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.figure-canvas-wrap {
+  position: relative;
+  width: 100%;
+  background: #fff;
+}
+
+.figure-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+}
+
+.figure-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 0.5rem 1rem 0;
+}
+
+button.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+button.ctrl-btn:hover {
+  background: var(--bg);
+  border-color: var(--text-tertiary);
+}
+
+button.ctrl-btn.active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+
+button.ctrl-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+button.ctrl-btn.primary:hover {
+  opacity: 0.9;
+}
+
+.ctrl-label {
+  font-family: var(--font-sans);
+  font-size: 0.67rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.ctrl-separator {
+  width: 1px;
+  height: 1.2rem;
+  background: var(--border);
+  margin: 0 0.3rem;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: pointer;
+}
+
+/* ============================================
+   APPROACH CARDS
+   ============================================ */
+.approach-section {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.approach-section.pi {
+  background: var(--pi-light);
+  border-color: var(--pi-border);
+}
+
+.approach-section.claw {
+  background: var(--claw-light);
+  border-color: var(--claw-border);
+}
+
+.approach-section.tree {
+  background: var(--tree-light);
+  border-color: var(--tree-border);
+}
+
+.approach-tag {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+}
+
+.pi .approach-tag { background: var(--pi-primary); color: #fff; }
+.claw .approach-tag { background: var(--claw-primary); color: #fff; }
+.tree .approach-tag { background: var(--tree-primary); color: #fff; }
+
+.pi h3 { color: var(--pi-dark); }
+.claw h3 { color: var(--claw-dark); }
+.tree h3 { color: var(--tree-dark); }
+
+/* ============================================
+   PACKAGE TABLE
+   ============================================ */
+.package-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.package-card {
+  padding: 0.85rem 1rem;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  background: var(--bg-warm);
+  border: 1px solid var(--border-light);
+}
+
+.package-card strong {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--pi-primary);
+  margin-bottom: 0.25rem;
+}
+
+/* ============================================
+   COMPARISON TABLE
+   ============================================ */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.comparison-cell {
+  padding: 1rem;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.comparison-cell.pi { background: var(--pi-light); border: 1px solid var(--pi-border); }
+.comparison-cell.claw { background: var(--claw-light); border: 1px solid var(--claw-border); }
+
+.comparison-cell strong {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+}
+
+/* ============================================
+   CALLOUT
+   ============================================ */
+.callout {
+  margin: 2rem 0;
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.95rem;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+/* ============================================
+   PIPELINE STAGES
+   ============================================ */
+.pipeline-list {
+  list-style: none;
+  margin: 1.5rem 0;
+  counter-reset: pipeline;
+}
+
+.pipeline-list li {
+  counter-increment: pipeline;
+  position: relative;
+  padding: 0.6rem 0 0.6rem 2.5rem;
+  font-size: 0.95rem;
+  border-left: 2px solid var(--border);
+  margin-left: 0.8rem;
+}
+
+.pipeline-list li::before {
+  content: counter(pipeline);
+  position: absolute;
+  left: -0.8rem;
+  top: 0.55rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--claw-primary);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-align: center;
+}
+
+.pipeline-list li:last-child {
+  border-left-color: transparent;
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.article-footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+
+.article-footer a {
+  color: var(--link);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1060px) {
+  .sidebar { display: none; }
+  .page-wrapper { padding: 0 1.25rem; }
+}
+
+@media (max-width: 600px) {
+  html { font-size: 16px; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .article-header { padding-top: 3rem; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .package-grid { grid-template-columns: 1fr; }
+  .figure-controls { gap: 0.4rem; }
+  .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .figure-canvas-wrap canvas { min-width: 500px; }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.article-header .overline {
+  animation: slideInLeft 0.6s ease 0.1s both;
+}
+
+.article-header h1 {
+  animation: fadeInUp 0.6s ease 0.2s both;
+}
+
+.article-header .lead {
+  animation: fadeIn 0.8s ease 0.4s both;
+}
+
+.figure {
+  animation: fadeInUp 0.5s ease both;
+}
+
+.approach-section {
+  animation: fadeInUp 0.4s ease both;
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <nav id="toc">
+        <a href="#intro">The Self-Extending Agent</a>
+        <a href="#minimal-core">The Minimal Core</a>
+        <a href="#tool-composition" class="sub">Tool Composition</a>
+        <a href="#monorepo">The Monorepo</a>
+        <a href="#session-trees">Sessions as Trees</a>
+        <a href="#session-demo" class="sub">Session Explorer</a>
+        <a href="#openclaw">OpenClaw</a>
+        <a href="#embedding" class="sub">Embedding Pi</a>
+        <a href="#tool-pipeline">The Tool Pipeline</a>
+        <a href="#pipeline-demo" class="sub">Pipeline Demo</a>
+        <a href="#why-it-matters">Why It Matters</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- HEADER -->
+    <header class="article-header" id="intro">
+      <div class="overline">Interactive Explainer</div>
+      <h1>Pi & OpenClaw:<br>The Self-Extending Agent</h1>
+      <p class="lead">
+        Most coding agents ship with dozens of built-in tools. Pi ships with four -
+        and asks the AI to build the rest. Explore how this radical constraint powers
+        a new kind of agent architecture, and how OpenClaw embeds it as the runtime
+        for a multi-channel AI platform.
+      </p>
+      <div class="meta">March 2026 &middot; 12 min read</div>
+    </header>
+
+    <!-- SECTION 1: INTRO -->
+    <section>
+      <p>
+        The typical AI coding agent is a Swiss Army knife: file search, web browsing,
+        code execution, git integration, linting, testing, documentation lookup, image
+        generation, database queries. The list grows with every release. Each new
+        capability means more tools loaded into the system prompt, more context consumed
+        before the agent writes a single line of code.
+      </p>
+      <p>
+        <a href="https://github.com/badlogic/pi-mono">Pi</a>, created by Mario Zechner,
+        takes the opposite approach. It ships with the shortest system prompt of any
+        coding agent and exactly <strong>four tools</strong>: Read, Write, Edit, and Bash.
+        Everything else - browser automation, code review, task management, multi-agent
+        orchestration - the agent builds for itself, on demand, by writing code.
+      </p>
+      <p>
+        This is not minimalism for its own sake. It is a <em>design philosophy</em>:
+        LLMs are already good at writing and running code, so instead of shipping
+        pre-built capabilities that bloat the context window, let the agent extend itself
+        at runtime. The result is an agent that starts small and grows exactly the
+        capabilities it needs.
+      </p>
+    </section>
+
+    <!-- SECTION 2: THE MINIMAL CORE -->
+    <section>
+      <h2 id="minimal-core">The Minimal Core</h2>
+
+      <div class="approach-section pi">
+        <span class="approach-tag">Philosophy</span>
+        <h3>Four Tools, Infinite Capabilities</h3>
+        <p>
+          Pi's core insight is that four primitives are sufficient for any software
+          engineering task. <strong>Read</strong> lets the agent understand existing code.
+          <strong>Write</strong> creates new files. <strong>Edit</strong> modifies existing
+          ones. <strong>Bash</strong> executes arbitrary shell commands - which means
+          the agent can install packages, run tests, call APIs, start servers, or do
+          anything else a developer can do from a terminal.
+        </p>
+        <p>
+          When the agent needs a capability it does not have - say, browsing a webpage -
+          it does not look for a pre-installed MCP server or extension. It writes a script
+          that uses the Chrome DevTools Protocol, runs it via Bash, and parses the output.
+          The capability is created on demand, tailored to the specific task, and discarded
+          when no longer needed.
+        </p>
+      </div>
+
+      <p>
+        The visualization below demonstrates this principle. Choose a task, and watch
+        how pi decomposes it into a sequence of its four primitive tools. Complex
+        operations emerge from simple compositions.
+      </p>
+
+      <!-- FIGURE 1: Tool Composition -->
+      <div class="figure" id="tool-composition">
+        <div class="figure-label">Figure 1 - Tool Composition</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-tools" width="720" height="400"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Task:</span>
+          <button class="ctrl-btn task-btn active" data-task="test">Add a Test</button>
+          <button class="ctrl-btn task-btn" data-task="review">Code Review</button>
+          <button class="ctrl-btn task-btn" data-task="browser">Browse Docs</button>
+          <button class="ctrl-btn task-btn" data-task="extend">Self-Extend</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="tools-replay">Replay</button>
+        </div>
+        <div class="figure-caption">
+          Each task is decomposed into pi's four primitive tools. Notice that even complex
+          operations like browsing the web or building a new extension resolve to the same
+          four primitives. The <strong style="color:var(--pi-dark)">self-extend</strong>
+          task shows how pi creates new capabilities by writing and executing code.
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>Why not MCP?</strong> Pi intentionally rejects the Model Context Protocol.
+          MCP tools must be loaded into the system context at session start, making runtime
+          reloading difficult without invalidating the cache. Pi instead uses
+          <code>mcporter</code> - which exposes MCP servers as CLI bindings - or simply
+          has the agent write the capability directly.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: THE MONOREPO -->
+    <section>
+      <h2 id="monorepo">The Monorepo</h2>
+      <p>
+        Pi is not a single tool but a collection of packages in a TypeScript monorepo.
+        The coding agent CLI is the most visible piece, but beneath it sits a layered
+        architecture of reusable libraries that other projects - like OpenClaw - can
+        embed independently.
+      </p>
+
+      <div class="package-grid">
+        <div class="package-card">
+          <strong>pi-ai</strong>
+          Unified multi-provider LLM API. Talks to OpenAI, Anthropic, Google, and others
+          through a single interface.
+        </div>
+        <div class="package-card">
+          <strong>pi-agent-core</strong>
+          Agent runtime with tool calling, state management, and the core agent loop.
+        </div>
+        <div class="package-card">
+          <strong>pi-coding-agent</strong>
+          The interactive CLI coding agent. The part users interact with directly.
+        </div>
+        <div class="package-card">
+          <strong>pi-tui</strong>
+          Terminal UI library with differential rendering for smooth, flicker-free output.
+        </div>
+        <div class="package-card">
+          <strong>pi-web-ui</strong>
+          Web components for building AI chat interfaces in the browser.
+        </div>
+        <div class="package-card">
+          <strong>pi-mom</strong>
+          A Slack bot that delegates messages to the pi coding agent.
+        </div>
+        <div class="package-card">
+          <strong>pi-pods</strong>
+          CLI for managing vLLM deployments on GPU pods.
+        </div>
+      </div>
+
+      <p>
+        This layered design is what makes pi embeddable. OpenClaw does not fork the coding
+        agent - it imports <code>pi-agent-core</code> and <code>pi-ai</code> as libraries,
+        then builds its own tool set, system prompt, and session management on top.
+        The monorepo provides the engine; the consumer provides the chassis.
+      </p>
+    </section>
+
+    <!-- SECTION 4: SESSIONS AS TREES -->
+    <section>
+      <h2 id="session-trees">Sessions as Trees</h2>
+
+      <div class="approach-section tree">
+        <span class="approach-tag">Architecture</span>
+        <h3>Not a Chat Log - A Branching History</h3>
+        <p>
+          Most agents store conversations as a flat list of messages. Pi stores them as
+          <strong>trees</strong>. Each message has an <code>id</code> and a
+          <code>parentId</code>, stored in JSONL format. This means you can branch
+          from any point in a conversation, explore a different approach, and later
+          return to the original path.
+        </p>
+        <p>
+          This is more than a convenience feature. It changes how you work with an agent.
+          Instead of starting over when an approach fails, you revert to the decision
+          point and try a different branch. You can run parallel explorations and compare
+          results. The session tree becomes a record of your problem-solving process, not
+          just a transcript.
+        </p>
+      </div>
+
+      <p>
+        The explorer below simulates a pi session tree. Click any node to select it,
+        then <strong>Branch</strong> to explore an alternative path. The tree grows
+        as you would navigate a real session - branching at decision points, building
+        parallel explorations.
+      </p>
+
+      <!-- FIGURE 2: Session Tree Explorer -->
+      <div class="figure" id="session-demo">
+        <div class="figure-label">Figure 2 - Session Tree Explorer</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-tree" width="720" height="420"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="tree-branch">Branch</button>
+          <button class="ctrl-btn" id="tree-continue">Continue</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="tree-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="tree-info">Click a node to select it</span>
+        </div>
+        <div class="figure-caption">
+          Each circle is a conversation turn. <strong style="color:var(--tree-primary)">Green</strong>
+          is the selected node. Click a node and press <strong>Branch</strong> to create an
+          alternative path from that point. <strong>Continue</strong> extends the current branch.
+          Notice how the tree structure lets you explore multiple approaches without losing earlier work.
+        </div>
+      </div>
+
+      <p>
+        Internally, sessions are stored as JSONL files where each entry carries its parent
+        reference. Pi's <code>SessionManager</code> handles persistence - opening, reading,
+        appending, and navigating the tree. This format also means sessions can contain
+        messages from different model providers in the same tree, since each node is
+        self-describing.
+      </p>
+    </section>
+
+    <!-- SECTION 5: OPENCLAW -->
+    <section>
+      <h2 id="openclaw">OpenClaw: Pi as Infrastructure</h2>
+      <p>
+        <a href="https://docs.openclaw.ai/pi">OpenClaw</a> is a messaging gateway that
+        embeds AI agents across communication channels - Discord, Slack, Telegram, WhatsApp.
+        Rather than building its own agent runtime from scratch, it imports pi's SDK
+        directly and wraps it with channel-specific behavior.
+      </p>
+
+      <div class="comparison-grid">
+        <div class="comparison-cell pi">
+          <strong style="color:var(--pi-dark)">Pi CLI</strong>
+          Command-line invocation. Default tool set. Static system prompt from AGENTS.md.
+          Sessions stored in <code>~/.pi/</code>. Single credential. TUI rendering.
+        </div>
+        <div class="comparison-cell claw">
+          <strong style="color:var(--claw-dark)">OpenClaw</strong>
+          SDK embedding via <code>createAgentSession()</code>. Custom tool suite.
+          Dynamic system prompt per channel. Multi-profile auth rotation. Callback-based events.
+        </div>
+      </div>
+
+      <div class="approach-section claw" id="embedding">
+        <span class="approach-tag">Integration</span>
+        <h3>Embedding, Not Forking</h3>
+        <p>
+          OpenClaw does not spawn pi as a subprocess or call it over RPC. It directly
+          imports and instantiates pi's <code>AgentSession</code> via
+          <code>createAgentSession()</code>. This embedded approach gives OpenClaw full
+          control over the session lifecycle - creating sessions, injecting custom tools,
+          customizing system prompts per channel, and handling events through callbacks
+          rather than rendering to a terminal.
+        </p>
+        <p>
+          The flow works like this: a user sends a message on Discord. OpenClaw's gateway
+          receives it, resolves the right agent configuration, builds a dynamic system
+          prompt for that channel, assembles the tool set through a multi-stage pipeline,
+          creates a pi AgentSession, and calls <code>session.prompt()</code>. Pi's agent
+          core handles the LLM communication, tool execution, and response streaming.
+          OpenClaw routes the response back to the channel.
+        </p>
+      </div>
+
+      <p>
+        The diagram below shows this flow. Select a channel to see how the same pi
+        core gets wrapped with different system prompts, tools, and behavior for
+        each platform.
+      </p>
+
+      <!-- FIGURE 3: Architecture Flow -->
+      <div class="figure">
+        <div class="figure-label">Figure 3 - OpenClaw Architecture</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-arch" width="720" height="380"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Channel:</span>
+          <button class="ctrl-btn channel-btn active" data-channel="discord">Discord</button>
+          <button class="ctrl-btn channel-btn" data-channel="slack">Slack</button>
+          <button class="ctrl-btn channel-btn" data-channel="telegram">Telegram</button>
+          <button class="ctrl-btn channel-btn" data-channel="whatsapp">WhatsApp</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="arch-animate">Animate Flow</button>
+        </div>
+        <div class="figure-caption">
+          The same pi AgentSession core is wrapped differently for each channel. Discord gets
+          thread management and reaction tools. Slack gets workspace-aware formatting. Each channel
+          contributes its own tools and system prompt sections, but the underlying agent loop is
+          always pi.
+        </div>
+      </div>
+
+      <h3>Authentication and Failover</h3>
+      <p>
+        OpenClaw maintains multiple API keys per provider through an auth profile store.
+        When a provider rejects a request - rate limit, quota exceeded, authentication
+        failure - the system classifies the error and can automatically rotate to the next
+        profile or fail over to an entirely different provider. This is invisible to the
+        agent session; it just sees a working LLM connection.
+      </p>
+
+      <h3>Session Persistence</h3>
+      <p>
+        OpenClaw reuses pi's JSONL tree format for sessions but adds caching on top.
+        A <code>SessionManager</code> cache avoids repeatedly parsing the same JSONL files,
+        with access tracking to evict stale entries. Different channel types get different
+        history depths - direct messages keep more context than group conversations where
+        the agent is mentioned occasionally.
+      </p>
+    </section>
+
+    <!-- SECTION 6: THE TOOL PIPELINE -->
+    <section>
+      <h2 id="tool-pipeline">The Tool Pipeline</h2>
+      <p>
+        One of OpenClaw's most interesting architectural details is its seven-stage tool
+        pipeline. Pi's coding agent ships with four default tools. OpenClaw replaces,
+        augments, filters, normalizes, and wraps them before they reach the LLM.
+      </p>
+
+      <ol class="pipeline-list">
+        <li><strong>Base tools</strong> - Pi's default coding tools (Read, Bash, Edit, Write)</li>
+        <li><strong>Custom replacements</strong> - OpenClaw swaps Bash for sandboxed <code>exec</code>/<code>process</code> variants and customizes file operations</li>
+        <li><strong>OpenClaw additions</strong> - Messaging, browser, canvas, sessions, cron, and gateway tools are added</li>
+        <li><strong>Channel-specific tools</strong> - Discord thread actions, Telegram commands, Slack workspace tools from plugin directories</li>
+        <li><strong>Policy filtering</strong> - Allowlist/denylist applied per profile, provider, agent, group, or sandbox</li>
+        <li><strong>Schema normalization</strong> - Tool schemas adjusted for provider quirks (Gemini's parameter constraints, OpenAI's tool format)</li>
+        <li><strong>Abort wrapping</strong> - All tools wrapped to respect cancellation signals</li>
+      </ol>
+
+      <p>
+        Rather than using pi's built-in tools at all, OpenClaw passes <em>everything</em>
+        via <code>customTools</code> with the built-in set left empty. This ensures every
+        tool flows through the full pipeline - policy filtering, sandbox integration,
+        and provider normalization are applied uniformly regardless of origin.
+      </p>
+
+      <p>
+        The demo below visualizes this pipeline. Toggle different policy filters and
+        provider targets to see how the tool set changes at each stage.
+      </p>
+
+      <!-- FIGURE 4: Tool Pipeline -->
+      <div class="figure" id="pipeline-demo">
+        <div class="figure-label">Figure 4 - Tool Pipeline Flow</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-pipeline" width="720" height="460"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Policy:</span>
+          <button class="ctrl-btn policy-btn active" data-policy="default">Default</button>
+          <button class="ctrl-btn policy-btn" data-policy="restricted">Restricted</button>
+          <button class="ctrl-btn policy-btn" data-policy="sandbox">Sandbox</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label">Provider:</span>
+          <button class="ctrl-btn provider-btn active" data-provider="anthropic">Anthropic</button>
+          <button class="ctrl-btn provider-btn" data-provider="google">Google</button>
+          <button class="ctrl-btn provider-btn" data-provider="openai">OpenAI</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="pipeline-animate">Animate</button>
+        </div>
+        <div class="figure-caption">
+          Tools flow through seven pipeline stages. <strong>Policy filtering</strong> removes
+          tools based on configuration - a restricted profile loses dangerous tools like exec.
+          <strong>Schema normalization</strong> adjusts tool definitions for each provider's
+          quirks. The final set reaching the LLM depends on both policy and provider.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: EXTENSIONS -->
+    <section>
+      <h2 id="why-it-matters">Why It Matters</h2>
+      <p>
+        Pi and OpenClaw represent a shift in how agent software gets built. Traditional
+        agents are monoliths - they ship with every capability pre-installed, consuming
+        context whether you need it or not. Pi inverts this by treating the agent as
+        <em>malleable software that writes its own capabilities</em>.
+      </p>
+      <p>
+        This has practical consequences. Pi users do not install extensions from a marketplace.
+        They describe what they want, and the agent builds it - a code review workflow,
+        a task management system, browser automation, multi-agent orchestration. These
+        capabilities are written as code by the agent, stored as extensions or skills,
+        and discarded when unused. There is no dead code, no dependency rot, no extension
+        ecosystem to maintain.
+      </p>
+
+      <h3>The Extension System</h3>
+      <p>
+        Pi's extensions can register tools available to the LLM, persist state to disk
+        between sessions, render custom TUI components (spinners, tables, pickers), and
+        hot-reload without flushing context. A user might ask pi to build a <code>/review</code>
+        command that branches into a fresh context, reviews code changes, and reports
+        findings with customizable rules. The agent writes the extension, and it becomes
+        part of the workflow.
+      </p>
+
+      <h3>Agent-Built Software</h3>
+      <p>
+        As Armin Ronacher documented in his analysis of pi, this is "software building
+        software." He does not write his extensions by hand - the agent does, to his
+        specification. Browser automation via Chrome DevTools Protocol, commit message
+        crafting, changelog maintenance, session sharing - all written by pi, tested
+        by pi, maintained by pi.
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>The broader pattern:</strong> OpenClaw's success suggests that embedding
+          a minimal, self-extending agent core is a viable architecture for AI platforms.
+          Instead of building a custom agent runtime, import one. Instead of pre-building
+          every capability, let the agent grow what it needs. Pi provides the engine;
+          OpenClaw proves it can power a production messaging platform across four
+          communication channels.
+        </p>
+      </div>
+
+      <h3>Open Questions</h3>
+      <p>
+        The self-extension model raises its own challenges. How do you audit capabilities
+        the agent creates for itself? How do you ensure sandboxing when the agent can write
+        and execute arbitrary code? How do you maintain consistency when skills are ephemeral
+        rather than version-controlled? These are active design tensions in both pi and
+        OpenClaw, and different deployments resolve them differently - OpenClaw, for instance,
+        layers sandbox constraints, policy filtering, and abort signals on top of pi's
+        permissive core.
+      </p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="article-footer">
+      <p>
+        <strong>Sources & further reading:</strong>
+        <a href="https://github.com/badlogic/pi-mono">pi monorepo</a> &middot;
+        <a href="https://docs.openclaw.ai/pi">OpenClaw pi docs</a> &middot;
+        <a href="https://lucumr.pocoo.org/2026/1/31/pi/">Armin Ronacher's analysis</a>
+      </p>
+      <p style="margin-top:1rem;">
+        Built as an interactive explainer. Inspired by
+        <a href="https://distill.pub">distill.pub</a>.
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<!-- ============================================
+     JAVASCRIPT
+     ============================================ -->
+<script>
+// ============================================
+// UTILITIES
+// ============================================
+const dpr = window.devicePixelRatio || 1;
+
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const cssW = canvas.width;
+  const cssH = canvas.height;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: cssW, h: cssH };
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// ============================================
+// FIGURE 1: TOOL COMPOSITION
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-tools');
+
+  const TOOL_COLORS = {
+    Read: { bg: '#DBEAFE', border: '#93C5FD', text: '#1E40AF' },
+    Write: { bg: '#D1FAE5', border: '#6EE7B7', text: '#065F46' },
+    Edit: { bg: '#FEF3C7', border: '#FDE68A', text: '#92400E' },
+    Bash: { bg: '#FCE7F3', border: '#F9A8D4', text: '#9D174D' },
+  };
+
+  const TASKS = {
+    test: {
+      label: 'Add a Test',
+      steps: [
+        { tool: 'Read', desc: 'Read src/utils.ts', detail: 'Understand the function to test' },
+        { tool: 'Read', desc: 'Read tests/utils.test.ts', detail: 'Check existing test patterns' },
+        { tool: 'Write', desc: 'Write tests/newUtil.test.ts', detail: 'Create test file with cases' },
+        { tool: 'Bash', desc: 'npm test', detail: 'Run test suite' },
+        { tool: 'Edit', desc: 'Fix failing assertion', detail: 'Adjust expected value' },
+        { tool: 'Bash', desc: 'npm test', detail: 'Verify all pass' },
+      ]
+    },
+    review: {
+      label: 'Code Review',
+      steps: [
+        { tool: 'Bash', desc: 'git diff HEAD~1', detail: 'Get recent changes' },
+        { tool: 'Read', desc: 'Read changed files', detail: 'Understand each modified file' },
+        { tool: 'Read', desc: 'Read CONTRIBUTING.md', detail: 'Check project conventions' },
+        { tool: 'Write', desc: 'Write review.md', detail: 'Write structured findings' },
+        { tool: 'Bash', desc: 'npm run lint', detail: 'Check for lint issues' },
+      ]
+    },
+    browser: {
+      label: 'Browse Docs',
+      steps: [
+        { tool: 'Write', desc: 'Write fetch-docs.ts', detail: 'Create CDP browsing script' },
+        { tool: 'Bash', desc: 'npx tsx fetch-docs.ts', detail: 'Run browser automation' },
+        { tool: 'Read', desc: 'Read output.json', detail: 'Parse scraped content' },
+        { tool: 'Edit', desc: 'Update src/api.ts', detail: 'Apply docs to code' },
+        { tool: 'Bash', desc: 'rm fetch-docs.ts', detail: 'Clean up temp script' },
+      ]
+    },
+    extend: {
+      label: 'Self-Extend',
+      steps: [
+        { tool: 'Read', desc: 'Read .pi/extensions/', detail: 'Check existing extensions' },
+        { tool: 'Write', desc: 'Write .pi/ext/review.ts', detail: 'Create /review extension' },
+        { tool: 'Write', desc: 'Write .pi/ext/review.json', detail: 'Extension manifest' },
+        { tool: 'Bash', desc: 'pi reload-extensions', detail: 'Hot-reload without cache flush' },
+        { tool: 'Bash', desc: '/review src/', detail: 'Test the new extension' },
+        { tool: 'Edit', desc: 'Tune review rules', detail: 'Refine based on output' },
+      ]
+    },
+  };
+
+  let currentTask = 'test';
+  let animStep = -1;
+  let animProgress = 0;
+  let animating = false;
+  let animId = null;
+
+  function drawRoundedRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    const task = TASKS[currentTask];
+    const steps = task.steps;
+    const stepH = 46;
+    const stepGap = 8;
+    const totalH = steps.length * (stepH + stepGap) - stepGap;
+    const startY = (h - totalH) / 2;
+    const boxW = 420;
+    const boxX = (w - boxW) / 2;
+
+    // Title
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Task: ' + task.label, w / 2, startY - 18);
+    ctx.textAlign = 'left';
+
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const y = startY + i * (stepH + stepGap);
+      const colors = TOOL_COLORS[step.tool];
+      const isActive = i <= animStep;
+      const isCurrent = i === animStep;
+      const alpha = isActive ? 1 : 0.35;
+
+      // Connection line
+      if (i > 0) {
+        ctx.strokeStyle = isActive ? 'rgba(0,0,0,0.38)' : 'rgba(0,0,0,0.08)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash(isActive ? [] : [4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(w / 2, y - stepGap);
+        ctx.lineTo(w / 2, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Step box
+      ctx.globalAlpha = alpha;
+      drawRoundedRect(boxX, y, boxW, stepH, 6);
+      ctx.fillStyle = isCurrent ? colors.bg : (isActive ? '#f8f9fa' : '#f8f9fa');
+      ctx.fill();
+      ctx.strokeStyle = isCurrent ? colors.border : (isActive ? 'rgba(0,0,0,0.12)' : 'rgba(0,0,0,0.06)');
+      ctx.lineWidth = isCurrent ? 2 : 1;
+      ctx.stroke();
+
+      // Tool badge
+      const badgeW = 48;
+      const badgeH = 22;
+      const badgeX = boxX + 12;
+      const badgeY = y + (stepH - badgeH) / 2;
+      drawRoundedRect(badgeX, badgeY, badgeW, badgeH, 3);
+      ctx.fillStyle = colors.bg;
+      ctx.fill();
+      ctx.strokeStyle = colors.border;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = colors.text;
+      ctx.textAlign = 'center';
+      ctx.fillText(step.tool, badgeX + badgeW / 2, badgeY + badgeH / 2 + 3.5);
+      ctx.textAlign = 'left';
+
+      // Step description
+      ctx.font = '500 12px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillText(step.desc, boxX + 72, y + 21);
+
+      // Step detail
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.38)';
+      ctx.fillText(step.detail, boxX + 72, y + 37);
+
+      // Step number
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.38)';
+      ctx.textAlign = 'right';
+      ctx.fillText((i + 1).toString(), boxX - 8, y + stepH / 2 + 3.5);
+      ctx.textAlign = 'left';
+
+      // Progress indicator for current step
+      if (isCurrent && animating) {
+        const progW = boxW * animProgress;
+        ctx.fillStyle = colors.border;
+        ctx.globalAlpha = 0.25;
+        drawRoundedRect(boxX, y, progW, stepH, 6);
+        ctx.fill();
+      }
+
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function startAnimation() {
+    if (animating) return;
+    animStep = -1;
+    animProgress = 0;
+    animating = true;
+    const steps = TASKS[currentTask].steps;
+
+    function tick() {
+      animProgress += 0.035;
+      if (animProgress >= 1) {
+        animProgress = 0;
+        animStep++;
+        if (animStep >= steps.length) {
+          animating = false;
+          animStep = steps.length - 1;
+          draw();
+          return;
+        }
+      }
+      draw();
+      animId = requestAnimationFrame(tick);
+    }
+    animId = requestAnimationFrame(tick);
+  }
+
+  document.querySelectorAll('.task-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.task-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentTask = this.dataset.task;
+      if (animId) cancelAnimationFrame(animId);
+      animating = false;
+      animStep = -1;
+      animProgress = 0;
+      startAnimation();
+    });
+  });
+
+  document.getElementById('tools-replay').addEventListener('click', function() {
+    if (animId) cancelAnimationFrame(animId);
+    animating = false;
+    animStep = -1;
+    animProgress = 0;
+    startAnimation();
+  });
+
+  startAnimation();
+})();
+
+// ============================================
+// FIGURE 2: SESSION TREE
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-tree');
+
+  const NODE_R = 16;
+  let nextId = 0;
+
+  function makeNode(parentId, label, x, y) {
+    return { id: nextId++, parentId, label, x, y, children: [] };
+  }
+
+  let nodes = [];
+  let selectedId = 0;
+
+  function resetTree() {
+    nextId = 0;
+    nodes = [];
+    const root = makeNode(-1, 'Start', w / 2, 40);
+    nodes.push(root);
+
+    const n1 = makeNode(0, 'Read file', w / 2, 110);
+    nodes.push(n1);
+    root.children.push(n1.id);
+
+    const n2 = makeNode(1, 'Edit code', w / 2, 180);
+    nodes.push(n2);
+    n1.children.push(n2.id);
+
+    const n3 = makeNode(2, 'Run tests', w / 2 - 80, 250);
+    nodes.push(n3);
+    n2.children.push(n3.id);
+
+    const n3b = makeNode(2, 'Refactor', w / 2 + 80, 250);
+    nodes.push(n3b);
+    n2.children.push(n3b.id);
+
+    const n4 = makeNode(3, 'Fix bug', w / 2 - 80, 320);
+    nodes.push(n4);
+    n3.children.push(n4.id);
+
+    selectedId = n4.id;
+  }
+  resetTree();
+
+  const LABELS_SHORT = [
+    'Read src', 'Write test', 'Run lint', 'Edit cfg',
+    'Bash cmd', 'Review', 'Deploy', 'Debug',
+    'Refactor', 'Add docs', 'Fix CI', 'Optimize',
+    'Merge', 'Revert', 'Analyze', 'Extend'
+  ];
+
+  function layoutTree() {
+    // Simple tree layout with spacing
+    const root = nodes[0];
+    const levelWidth = {};
+    const levelCount = {};
+
+    // BFS to assign levels
+    function bfs() {
+      const queue = [{ id: 0, depth: 0 }];
+      const depths = {};
+      depths[0] = 0;
+
+      while (queue.length) {
+        const { id, depth } = queue.shift();
+        const node = nodes[id];
+        if (!node) continue;
+        depths[id] = depth;
+        if (!levelCount[depth]) levelCount[depth] = 0;
+        levelCount[depth]++;
+        for (const cid of node.children) {
+          queue.push({ id: cid, depth: depth + 1 });
+        }
+      }
+      return depths;
+    }
+
+    const depths = bfs();
+    const ySpacing = 70;
+    const counters = {};
+
+    // Assign positions
+    function assign(id) {
+      const node = nodes[id];
+      const depth = depths[id];
+      node.y = 40 + depth * ySpacing;
+
+      if (!counters[depth]) counters[depth] = 0;
+      const count = levelCount[depth] || 1;
+      const totalW = Math.min(count * 120, w - 80);
+      const startX = (w - totalW) / 2 + 60;
+      const spacing = count > 1 ? totalW / (count - 1) : 0;
+      node.x = count === 1 ? w / 2 : startX + counters[depth] * spacing;
+      counters[depth]++;
+
+      for (const cid of node.children) {
+        assign(cid);
+      }
+    }
+
+    assign(0);
+  }
+
+  function getAncestorPath(nodeId) {
+    const path = new Set();
+    let id = nodeId;
+    while (id >= 0) {
+      path.add(id);
+      const node = nodes[id];
+      if (!node) break;
+      id = node.parentId;
+    }
+    return path;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    layoutTree();
+    const activePath = getAncestorPath(selectedId);
+
+    // Draw edges
+    for (const node of nodes) {
+      for (const cid of node.children) {
+        const child = nodes[cid];
+        if (!child) continue;
+        const onPath = activePath.has(node.id) && activePath.has(cid);
+        ctx.strokeStyle = onPath ? '#059669' : 'rgba(0,0,0,0.12)';
+        ctx.lineWidth = onPath ? 2.5 : 1.5;
+        ctx.beginPath();
+        ctx.moveTo(node.x, node.y + NODE_R);
+        // Curve
+        const midY = (node.y + NODE_R + child.y - NODE_R) / 2;
+        ctx.bezierCurveTo(node.x, midY, child.x, midY, child.x, child.y - NODE_R);
+        ctx.stroke();
+      }
+    }
+
+    // Draw nodes
+    for (const node of nodes) {
+      const isSelected = node.id === selectedId;
+      const onPath = activePath.has(node.id);
+
+      // Glow for selected
+      if (isSelected) {
+        ctx.fillStyle = 'rgba(5, 150, 105, 0.12)';
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, NODE_R + 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Node circle
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, NODE_R, 0, Math.PI * 2);
+      ctx.fillStyle = isSelected ? '#059669' : (onPath ? '#A7F3D0' : '#f4f4f4');
+      ctx.fill();
+      ctx.strokeStyle = isSelected ? '#065F46' : (onPath ? '#059669' : 'rgba(0,0,0,0.12)');
+      ctx.lineWidth = isSelected ? 2.5 : 1.5;
+      ctx.stroke();
+
+      // Node id
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = isSelected ? '#fff' : (onPath ? '#065F46' : 'rgba(0,0,0,0.38)');
+      ctx.textAlign = 'center';
+      ctx.fillText(node.id.toString(), node.x, node.y + 3.5);
+
+      // Label
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = isSelected ? '#065F46' : 'rgba(0,0,0,0.38)';
+      ctx.fillText(node.label, node.x, node.y + NODE_R + 14);
+      ctx.textAlign = 'left';
+    }
+
+    // Legend
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.fillText('JSONL: { id, parentId, message, role }', 10, h - 10);
+  }
+
+  // Click detection
+  function getMousePos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (w / rect.width),
+      y: (e.clientY - rect.top) * (h / rect.height)
+    };
+  }
+
+  canvas.addEventListener('click', function(e) {
+    const m = getMousePos(e);
+    for (const node of nodes) {
+      const dx = m.x - node.x;
+      const dy = m.y - node.y;
+      if (dx * dx + dy * dy < (NODE_R + 4) * (NODE_R + 4)) {
+        selectedId = node.id;
+        document.getElementById('tree-info').textContent = 'Node ' + node.id + ': ' + node.label;
+        draw();
+        return;
+      }
+    }
+  });
+
+  canvas.addEventListener('mousemove', function(e) {
+    const m = getMousePos(e);
+    let over = false;
+    for (const node of nodes) {
+      const dx = m.x - node.x;
+      const dy = m.y - node.y;
+      if (dx * dx + dy * dy < (NODE_R + 4) * (NODE_R + 4)) {
+        over = true;
+        break;
+      }
+    }
+    canvas.style.cursor = over ? 'pointer' : 'default';
+  });
+
+  document.getElementById('tree-branch').addEventListener('click', function() {
+    const parent = nodes[selectedId];
+    if (!parent) return;
+    if (nodes.length > 20) return; // Limit for readability
+
+    const label = LABELS_SHORT[Math.floor(Math.random() * LABELS_SHORT.length)];
+    const newNode = makeNode(selectedId, label, 0, 0);
+    nodes.push(newNode);
+    parent.children.push(newNode.id);
+    selectedId = newNode.id;
+    document.getElementById('tree-info').textContent = 'Branched: Node ' + newNode.id + ' (' + label + ')';
+    draw();
+  });
+
+  document.getElementById('tree-continue').addEventListener('click', function() {
+    const parent = nodes[selectedId];
+    if (!parent) return;
+    if (nodes.length > 20) return;
+
+    // Continue = add child to the selected node (no branching context)
+    const label = LABELS_SHORT[Math.floor(Math.random() * LABELS_SHORT.length)];
+    const newNode = makeNode(selectedId, label, 0, 0);
+    nodes.push(newNode);
+    parent.children.push(newNode.id);
+    selectedId = newNode.id;
+    document.getElementById('tree-info').textContent = 'Continued: Node ' + newNode.id + ' (' + label + ')';
+    draw();
+  });
+
+  document.getElementById('tree-reset').addEventListener('click', function() {
+    resetTree();
+    document.getElementById('tree-info').textContent = 'Click a node to select it';
+    draw();
+  });
+
+  draw();
+})();
+
+// ============================================
+// FIGURE 3: OPENCLAW ARCHITECTURE
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-arch');
+
+  const CHANNELS = {
+    discord: {
+      label: 'Discord',
+      color: '#5865F2',
+      tools: '+threads, +reactions, +embeds',
+      prompt: 'Thread management, reaction tools, rich embeds',
+    },
+    slack: {
+      label: 'Slack',
+      color: '#4A154B',
+      tools: '+workspace, +channels, +blocks',
+      prompt: 'Workspace context, Block Kit formatting',
+    },
+    telegram: {
+      label: 'Telegram',
+      color: '#229ED9',
+      tools: '+commands, +inline, +media',
+      prompt: 'Bot commands, inline queries, media handling',
+    },
+    whatsapp: {
+      label: 'WhatsApp',
+      color: '#25D366',
+      tools: '+templates, +media, +status',
+      prompt: 'Message templates, media messages',
+    },
+  };
+
+  let currentChannel = 'discord';
+  let flowStep = -1;
+  let flowAnimating = false;
+  let flowId = null;
+
+  const LAYERS = [
+    { label: 'User Message', yFrac: 0.08, w: 130, color: 'rgba(0,0,0,0.54)' },
+    { label: null, yFrac: 0.20, w: 150, color: null }, // Channel - dynamic
+    { label: 'OpenClaw Gateway', yFrac: 0.35, w: 170, color: '#1E40AF' },
+    { label: 'System Prompt Builder', yFrac: 0.50, w: 170, color: '#7C3AED' },
+    { label: 'Pi AgentSession', yFrac: 0.65, w: 160, color: '#B45309' },
+    { label: 'LLM Provider', yFrac: 0.80, w: 140, color: '#059669' },
+    { label: 'Response', yFrac: 0.92, w: 110, color: 'rgba(0,0,0,0.54)' },
+  ];
+
+  function drawRoundedRect(x, y, rw, rh, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + rw - r, y);
+    ctx.quadraticCurveTo(x + rw, y, x + rw, y + r);
+    ctx.lineTo(x + rw, y + rh - r);
+    ctx.quadraticCurveTo(x + rw, y + rh, x + rw - r, y + rh);
+    ctx.lineTo(x + r, y + rh);
+    ctx.quadraticCurveTo(x, y + rh, x, y + rh - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    const ch = CHANNELS[currentChannel];
+    const centerX = w * 0.38;
+    const boxH = 30;
+
+    // Draw layers
+    for (let i = 0; i < LAYERS.length; i++) {
+      const layer = LAYERS[i];
+      const ly = h * layer.yFrac;
+      const lw = layer.w;
+      const lx = centerX - lw / 2;
+      const isActive = i <= flowStep;
+      const isCurrent = i === flowStep;
+
+      // Connection arrow
+      if (i > 0) {
+        const prevY = h * LAYERS[i - 1].yFrac + boxH;
+        ctx.strokeStyle = isActive ? 'rgba(0,0,0,0.38)' : 'rgba(0,0,0,0.08)';
+        ctx.lineWidth = isActive ? 2 : 1;
+        ctx.beginPath();
+        ctx.moveTo(centerX, prevY + 2);
+        ctx.lineTo(centerX, ly - 2);
+        ctx.stroke();
+        // arrowhead
+        if (isActive) {
+          ctx.fillStyle = 'rgba(0,0,0,0.38)';
+          ctx.beginPath();
+          ctx.moveTo(centerX - 4, ly - 6);
+          ctx.lineTo(centerX, ly - 1);
+          ctx.lineTo(centerX + 4, ly - 6);
+          ctx.fill();
+        }
+      }
+
+      // Layer box
+      const alpha = isActive ? 1 : 0.4;
+      ctx.globalAlpha = alpha;
+
+      const color = i === 1 ? ch.color : layer.color;
+      const label = i === 1 ? ch.label : layer.label;
+
+      // Glow for current
+      if (isCurrent) {
+        ctx.fillStyle = color + '18';
+        drawRoundedRect(lx - 6, ly - 4, lw + 12, boxH + 8, 10);
+        ctx.fill();
+      }
+
+      drawRoundedRect(lx, ly, lw, boxH, 6);
+      ctx.fillStyle = color + '15';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isCurrent ? 2 : 1;
+      ctx.stroke();
+
+      ctx.font = (isCurrent ? 'bold ' : '') + '12px -apple-system, sans-serif';
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.fillText(label, centerX, ly + boxH / 2 + 4);
+      ctx.textAlign = 'left';
+
+      ctx.globalAlpha = 1;
+    }
+
+    // Side panel: channel-specific details
+    const panelX = w * 0.65;
+    const panelY = h * 0.12;
+    const panelW = w * 0.32;
+
+    ctx.fillStyle = '#f8f9fa';
+    drawRoundedRect(panelX, panelY, panelW, h * 0.7, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Channel header
+    ctx.font = 'bold 12px -apple-system, sans-serif';
+    ctx.fillStyle = ch.color;
+    ctx.fillText(ch.label + ' Configuration', panelX + 16, panelY + 28);
+
+    // Tools
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('CHANNEL TOOLS', panelX + 16, panelY + 56);
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    const tools = ch.tools.split(', ');
+    tools.forEach((tool, i) => {
+      ctx.fillText(tool, panelX + 16, panelY + 76 + i * 18);
+    });
+
+    // System prompt
+    const promptY = panelY + 76 + tools.length * 18 + 20;
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('PROMPT ADDITIONS', panelX + 16, promptY);
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    // Word wrap the prompt
+    const words = ch.prompt.split(' ');
+    let line = '';
+    let lineY = promptY + 20;
+    for (const word of words) {
+      const test = line + (line ? ' ' : '') + word;
+      if (ctx.measureText(test).width > panelW - 32 && line) {
+        ctx.fillText(line, panelX + 16, lineY);
+        line = word;
+        lineY += 16;
+      } else {
+        line = test;
+      }
+    }
+    if (line) ctx.fillText(line, panelX + 16, lineY);
+
+    // Base tools
+    const baseY = lineY + 30;
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('BASE (PI CORE)', panelX + 16, baseY);
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#B45309';
+    ['Read', 'Write', 'Edit', 'exec'].forEach((tool, i) => {
+      ctx.fillText(tool, panelX + 16, baseY + 20 + i * 18);
+    });
+
+    // Auth info
+    const authY = baseY + 20 + 4 * 18 + 16;
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.54)';
+    ctx.fillText('AUTH PROFILES', panelX + 16, authY);
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillText('Multi-key rotation', panelX + 16, authY + 18);
+    ctx.fillText('Auto-failover on error', panelX + 16, authY + 34);
+  }
+
+  // Channel buttons
+  document.querySelectorAll('.channel-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentChannel = this.dataset.channel;
+      flowStep = LAYERS.length; // Show all
+      draw();
+    });
+  });
+
+  // Animate flow
+  document.getElementById('arch-animate').addEventListener('click', function() {
+    if (flowAnimating) return;
+    flowAnimating = true;
+    flowStep = -1;
+
+    function tick() {
+      flowStep++;
+      draw();
+      if (flowStep < LAYERS.length) {
+        flowId = setTimeout(tick, 400);
+      } else {
+        flowAnimating = false;
+      }
+    }
+    tick();
+  });
+
+  flowStep = LAYERS.length; // Start fully visible
+  draw();
+})();
+
+// ============================================
+// FIGURE 4: TOOL PIPELINE
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-pipeline');
+
+  const POLICIES = {
+    default: {
+      label: 'Default',
+      blocked: [],
+    },
+    restricted: {
+      label: 'Restricted',
+      blocked: ['exec', 'process', 'browser', 'cron'],
+    },
+    sandbox: {
+      label: 'Sandbox',
+      blocked: ['exec', 'cron', 'gateway'],
+    },
+  };
+
+  const PROVIDERS = {
+    anthropic: {
+      label: 'Anthropic',
+      normalized: [],
+      added: [],
+    },
+    google: {
+      label: 'Google',
+      normalized: ['canvas', 'sessions'],
+      added: [],
+    },
+    openai: {
+      label: 'OpenAI',
+      normalized: ['browser'],
+      added: ['apply_patch'],
+    },
+  };
+
+  let currentPolicy = 'default';
+  let currentProvider = 'anthropic';
+  let animStep = 7; // Start fully visible
+  let animating = false;
+  let animId = null;
+
+  // All tools that flow through the pipeline
+  const ALL_TOOLS = [
+    { name: 'Read', stage: 'base', color: '#DBEAFE' },
+    { name: 'Write', stage: 'base', color: '#D1FAE5' },
+    { name: 'Edit', stage: 'base', color: '#FEF3C7' },
+    { name: 'exec', stage: 'replace', color: '#FCE7F3' },
+    { name: 'process', stage: 'replace', color: '#FCE7F3' },
+    { name: 'messaging', stage: 'claw', color: '#EDE9FE' },
+    { name: 'browser', stage: 'claw', color: '#EDE9FE' },
+    { name: 'canvas', stage: 'claw', color: '#EDE9FE' },
+    { name: 'sessions', stage: 'claw', color: '#EDE9FE' },
+    { name: 'cron', stage: 'claw', color: '#EDE9FE' },
+    { name: 'gateway', stage: 'claw', color: '#EDE9FE' },
+    { name: 'channel', stage: 'channel', color: '#CFFAFE' },
+  ];
+
+  const STAGES = [
+    { label: 'Base Tools', desc: 'Pi defaults', yFrac: 0.06 },
+    { label: 'Replacements', desc: 'Bash -> exec/process', yFrac: 0.18 },
+    { label: 'OpenClaw Tools', desc: '+messaging, browser, etc.', yFrac: 0.32 },
+    { label: 'Channel Tools', desc: '+platform-specific', yFrac: 0.46 },
+    { label: 'Policy Filter', desc: 'Allow/deny list', yFrac: 0.60 },
+    { label: 'Normalize Schema', desc: 'Provider quirks', yFrac: 0.74 },
+    { label: 'Abort Wrap', desc: 'Cancellation support', yFrac: 0.88 },
+  ];
+
+  function getToolsAtStage(stageIndex) {
+    const policy = POLICIES[currentPolicy];
+    const provider = PROVIDERS[currentProvider];
+    let tools = [];
+
+    // Stage 0: base tools (Read, Write, Edit - Bash removed since replaced)
+    if (stageIndex >= 0) {
+      tools = ALL_TOOLS.filter(t => t.stage === 'base');
+    }
+    // Stage 1: replacements
+    if (stageIndex >= 1) {
+      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'replace'));
+    }
+    // Stage 2: OpenClaw additions
+    if (stageIndex >= 2) {
+      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'claw'));
+    }
+    // Stage 3: Channel tools
+    if (stageIndex >= 3) {
+      tools = tools.concat(ALL_TOOLS.filter(t => t.stage === 'channel'));
+    }
+    // Stage 4: Policy filtering
+    if (stageIndex >= 4) {
+      tools = tools.filter(t => !policy.blocked.includes(t.name));
+    }
+    // Stage 5: Schema normalization (mark modified)
+    if (stageIndex >= 5) {
+      tools = tools.map(t => ({
+        ...t,
+        normalized: provider.normalized.includes(t.name),
+      }));
+      // Add provider-specific tools
+      if (provider.added.length) {
+        for (const name of provider.added) {
+          tools.push({ name, stage: 'provider', color: '#FEF3C7', normalized: false });
+        }
+      }
+    }
+    // Stage 6: abort wrapping (all get wrapped)
+    if (stageIndex >= 6) {
+      tools = tools.map(t => ({ ...t, wrapped: true }));
+    }
+
+    return tools;
+  }
+
+  function drawRoundedRect(x, y, rw, rh, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + rw - r, y);
+    ctx.quadraticCurveTo(x + rw, y, x + rw, y + r);
+    ctx.lineTo(x + rw, y + rh - r);
+    ctx.quadraticCurveTo(x + rw, y + rh, x + rw - r, y + rh);
+    ctx.lineTo(x + r, y + rh);
+    ctx.quadraticCurveTo(x, y + rh, x, y + rh - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    const stageColX = 10;
+    const stageColW = 170;
+    const toolsStartX = 200;
+    const toolsAreaW = w - toolsStartX - 20;
+
+    for (let i = 0; i < STAGES.length; i++) {
+      const stage = STAGES[i];
+      const sy = h * stage.yFrac;
+      const rowH = h * 0.10;
+      const isActive = i < animStep;
+      const isCurrent = i === animStep - 1;
+
+      // Stage label area
+      const alpha = isActive ? 1 : 0.35;
+      ctx.globalAlpha = alpha;
+
+      // Stage number
+      ctx.font = 'bold 11px "JetBrains Mono", monospace';
+      ctx.fillStyle = isCurrent ? '#1E40AF' : 'rgba(0,0,0,0.38)';
+      ctx.textAlign = 'right';
+      ctx.fillText((i + 1).toString(), stageColX + 18, sy + rowH / 2 + 1);
+      ctx.textAlign = 'left';
+
+      // Stage label
+      ctx.font = 'bold 11px -apple-system, sans-serif';
+      ctx.fillStyle = isCurrent ? '#1E40AF' : 'rgba(0,0,0,0.8)';
+      ctx.fillText(stage.label, stageColX + 28, sy + rowH / 2 - 4);
+
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.38)';
+      ctx.fillText(stage.desc, stageColX + 28, sy + rowH / 2 + 11);
+
+      // Horizontal separator
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.moveTo(toolsStartX - 10, sy - 2);
+        ctx.lineTo(w - 10, sy - 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Tools at this stage
+      if (isActive) {
+        const tools = getToolsAtStage(i);
+        const toolW = 68;
+        const toolH = 24;
+        const toolGap = 6;
+        const cols = Math.floor(toolsAreaW / (toolW + toolGap));
+
+        tools.forEach((tool, ti) => {
+          const col = ti % cols;
+          const row = Math.floor(ti / cols);
+          const tx = toolsStartX + col * (toolW + toolGap);
+          const ty = sy + 4 + row * (toolH + 4);
+
+          // Tool pill
+          drawRoundedRect(tx, ty, toolW, toolH, 4);
+          ctx.fillStyle = tool.color;
+          ctx.fill();
+
+          // Normalized indicator
+          if (tool.normalized) {
+            ctx.strokeStyle = '#7C3AED';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+          } else if (tool.wrapped) {
+            ctx.strokeStyle = 'rgba(0,0,0,0.54)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          } else {
+            ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+
+          ctx.font = '10px "JetBrains Mono", monospace';
+          ctx.fillStyle = 'rgba(0,0,0,0.8)';
+          ctx.textAlign = 'center';
+          ctx.fillText(tool.name, tx + toolW / 2, ty + toolH / 2 + 3.5);
+          ctx.textAlign = 'left';
+        });
+      }
+
+      ctx.globalAlpha = 1;
+    }
+
+    // Vertical divider
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(toolsStartX - 14, 6);
+    ctx.lineTo(toolsStartX - 14, h - 6);
+    ctx.stroke();
+
+    // Legend
+    const legY = h - 18;
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.fillText('Policy: ' + POLICIES[currentPolicy].label + '  |  Provider: ' + PROVIDERS[currentProvider].label, toolsStartX, legY);
+
+    if (PROVIDERS[currentProvider].normalized.length) {
+      ctx.strokeStyle = '#7C3AED';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(toolsStartX + 250, legY - 4);
+      ctx.lineTo(toolsStartX + 266, legY - 4);
+      ctx.stroke();
+      ctx.fillText('= normalized', toolsStartX + 270, legY);
+    }
+  }
+
+  // Policy buttons
+  document.querySelectorAll('.policy-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.policy-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentPolicy = this.dataset.policy;
+      animStep = 7;
+      draw();
+    });
+  });
+
+  // Provider buttons
+  document.querySelectorAll('.provider-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.provider-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentProvider = this.dataset.provider;
+      animStep = 7;
+      draw();
+    });
+  });
+
+  // Animate
+  document.getElementById('pipeline-animate').addEventListener('click', function() {
+    if (animating) return;
+    animating = true;
+    animStep = 0;
+
+    function tick() {
+      animStep++;
+      draw();
+      if (animStep <= 7) {
+        animId = setTimeout(tick, 500);
+      } else {
+        animating = false;
+      }
+    }
+    tick();
+  });
+
+  draw();
+})();
+
+// ============================================
+// TABLE OF CONTENTS SCROLL TRACKING
+// ============================================
+(function() {
+  const links = document.querySelectorAll('#toc a');
+  const sections = Array.from(links).map(link => {
+    const id = link.getAttribute('href').slice(1);
+    return document.getElementById(id);
+  }).filter(Boolean);
+
+  function onScroll() {
+    const scrollY = window.scrollY + 120;
+    let current = 0;
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].offsetTop <= scrollY) {
+        current = i;
+      }
+    }
+    links.forEach((link, i) => {
+      link.classList.toggle('active', i === current);
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>
