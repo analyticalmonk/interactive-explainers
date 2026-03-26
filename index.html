@@ -280,6 +280,28 @@ body {
       </div>
     </li>
 
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
+          <a href="autoresearch/">Autoresearch: AI That Does ML Research While You Sleep</a>
+        </h2>
+        <p class="article-excerpt">
+          Give an AI agent a real LLM training setup, go to sleep, wake up to a better model.
+          Explore how Karpathy's autoresearch lets agents run 100 experiments overnight -
+          keeping wins, discarding losses, and steadily improving.
+        </p>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>March 2026</span>
+          <span>15 min read</span>
+          <span>3 figures</span>
+        </div>
+      </div>
+      <div class="article-thumbnail">
+        <canvas id="thumb-autoresearch" width="480" height="280"></canvas>
+      </div>
+    </li>
+
   </ul>
 </main>
 
@@ -386,6 +408,135 @@ body {
     }
 
     angle += 0.006;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// Thumbnail: animated experiment loop for autoresearch
+(function() {
+  const canvas = document.getElementById('thumb-autoresearch');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  let time = 0;
+
+  // Progress chart data points
+  const points = [
+    { x: 0.08, y: 0.85 },
+    { x: 0.15, y: 0.78 },
+    { x: 0.22, y: 0.72 },
+    { x: 0.30, y: 0.72 },
+    { x: 0.36, y: 0.65 },
+    { x: 0.42, y: 0.55 },
+    { x: 0.48, y: 0.55 },
+    { x: 0.54, y: 0.48 },
+    { x: 0.62, y: 0.42 },
+    { x: 0.68, y: 0.42 },
+    { x: 0.74, y: 0.38 },
+    { x: 0.80, y: 0.35 },
+    { x: 0.88, y: 0.32 },
+    { x: 0.94, y: 0.30 },
+  ];
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#F5F0FF');
+    bg.addColorStop(1, '#EDE9FE');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const padL = 40, padR = 20, padT = 30, padB = 40;
+    const plotW = w - padL - padR;
+    const plotH = h - padT - padB;
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 4; i++) {
+      const gy = padT + (i / 4) * plotH;
+      ctx.beginPath();
+      ctx.moveTo(padL, gy);
+      ctx.lineTo(w - padR, gy);
+      ctx.stroke();
+    }
+
+    // Animated draw progress
+    const visibleCount = Math.min(points.length, Math.floor(time * 1.2) + 1);
+
+    // Best line (step function)
+    if (visibleCount > 0) {
+      ctx.strokeStyle = '#7C3AED';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      let bestY = points[0].y;
+      ctx.moveTo(padL + points[0].x * plotW, padT + points[0].y * plotH);
+      for (let i = 1; i < visibleCount; i++) {
+        const px = padL + points[i].x * plotW;
+        const py = padT + points[i].y * plotH;
+        if (points[i].y < bestY) {
+          ctx.lineTo(px, padT + bestY * plotH);
+          ctx.lineTo(px, py);
+          bestY = points[i].y;
+        }
+      }
+      const lastPx = padL + points[visibleCount - 1].x * plotW;
+      ctx.lineTo(lastPx, padT + bestY * plotH);
+      ctx.stroke();
+    }
+
+    // Dots
+    for (let i = 0; i < visibleCount; i++) {
+      const px = padL + points[i].x * plotW;
+      const py = padT + points[i].y * plotH;
+      const isKeep = i === 0 || points[i].y < points[i-1].y || points[i].y <= points.slice(0, i).reduce((m, p) => Math.min(m, p.y), 1);
+      const color = isKeep ? '#059669' : '#DC2626';
+      const r = isKeep ? 4 : 3;
+
+      // Pulse for latest
+      if (i === visibleCount - 1) {
+        const pulse = Math.sin(time * 4) * 0.3 + 0.7;
+        ctx.fillStyle = color + Math.floor(pulse * 40).toString(16).padStart(2, '0');
+        ctx.beginPath();
+        ctx.arc(px, py, r + 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Label
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillStyle = '#7C3AED';
+    ctx.textAlign = 'left';
+    ctx.fillText('val_bpb', padL + 4, padT - 10);
+
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.textAlign = 'center';
+    ctx.fillText('experiments', w / 2, h - 8);
+
+    // Loop animation when all visible
+    if (visibleCount >= points.length) {
+      time += 0.016;
+      if (time > points.length / 1.2 + 8) time = 0;
+    } else {
+      time += 0.016;
+    }
+
     requestAnimationFrame(draw);
   }
   draw();
