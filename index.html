@@ -302,6 +302,28 @@ body {
       </div>
     </li>
 
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
+          <a href="dspy/">DSPy: Programming - Not Prompting - Language Models</a>
+        </h2>
+        <p class="article-excerpt">
+          Stop hand-tuning prompt strings. DSPy lets you declare what your LM should do,
+          compose calls into pipelines, and compile optimized prompts automatically.
+          Explore signatures, modules, and optimizers interactively.
+        </p>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>April 2026</span>
+          <span>15 min read</span>
+          <span>3 figures</span>
+        </div>
+      </div>
+      <div class="article-thumbnail">
+        <canvas id="thumb-dspy" width="480" height="280"></canvas>
+      </div>
+    </li>
+
   </ul>
 </main>
 
@@ -537,6 +559,162 @@ body {
       time += 0.016;
     }
 
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// Thumbnail: animated pipeline + optimization for DSPy
+(function() {
+  const canvas = document.getElementById('thumb-dspy');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  let time = 0;
+
+  const modules = [
+    { x: 0.15, y: 0.42, w: 0.18, h: 0.22, label: 'Retrieve', color: '#D97706', light: '#FEF3C7' },
+    { x: 0.42, y: 0.42, w: 0.18, h: 0.22, label: 'CoT', color: '#7C3AED', light: '#F5F0FF' },
+    { x: 0.69, y: 0.42, w: 0.18, h: 0.22, label: 'Predict', color: '#2563EB', light: '#EFF6FF' },
+  ];
+
+  // Particles
+  let particles = [];
+  let frameCount = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#F0F5FF');
+    bg.addColorStop(1, '#E8ECF4');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Connection lines
+    for (let i = 0; i < modules.length - 1; i++) {
+      const a = modules[i], b = modules[i + 1];
+      const ax = (a.x + a.w) * w, ay = (a.y + a.h / 2) * h;
+      const bx = b.x * w, by = (b.y + b.h / 2) * h;
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+      ctx.stroke();
+    }
+
+    // Draw modules
+    for (const m of modules) {
+      const mx = m.x * w, my = m.y * h, mw = m.w * w, mh = m.h * h;
+      ctx.fillStyle = m.light;
+      ctx.strokeStyle = m.color + '60';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(mx, my, mw, mh, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.fillStyle = m.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(m.label, mx + mw / 2, my + mh / 2);
+    }
+
+    // Spawn particles
+    frameCount++;
+    if (frameCount % 40 === 0) {
+      particles.push({ seg: 0, t: 0 });
+    }
+
+    // Update and draw particles
+    const newP = [];
+    for (const p of particles) {
+      p.t += 0.015;
+      if (p.t >= 1) {
+        p.t = 0;
+        p.seg++;
+        if (p.seg > 1) continue;
+      }
+      const a = modules[p.seg], b = modules[p.seg + 1];
+      const ax = (a.x + a.w) * w, ay = (a.y + a.h / 2) * h;
+      const bx = b.x * w, by = (b.y + b.h / 2) * h;
+      const px = ax + (bx - ax) * p.t;
+      const py = ay + (by - ay) * p.t;
+      const color = modules[p.seg + 1].color;
+
+      ctx.fillStyle = color + '30';
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(px, py, 3, 0, Math.PI * 2);
+      ctx.fill();
+      newP.push(p);
+    }
+    particles = newP;
+
+    // Mini optimization curve at bottom
+    const chartX = w * 0.15, chartW = w * 0.7;
+    const chartY = h * 0.78, chartH = h * 0.14;
+
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(chartX, chartY + chartH);
+    ctx.lineTo(chartX + chartW, chartY + chartH);
+    ctx.stroke();
+
+    // Animated curve
+    const numPoints = 12;
+    const visiblePoints = Math.min(numPoints, Math.floor(time * 0.8) + 1);
+
+    if (visiblePoints > 1) {
+      ctx.beginPath();
+      for (let i = 0; i < visiblePoints; i++) {
+        const px = chartX + (i / (numPoints - 1)) * chartW;
+        const progress = 0.3 + 0.55 * (1 - Math.exp(-0.5 * i));
+        const py = chartY + chartH - progress * chartH;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.strokeStyle = '#2563EB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Latest dot
+      const lastI = visiblePoints - 1;
+      const lastX = chartX + (lastI / (numPoints - 1)) * chartW;
+      const lastProgress = 0.3 + 0.55 * (1 - Math.exp(-0.5 * lastI));
+      const lastY = chartY + chartH - lastProgress * chartH;
+      ctx.fillStyle = '#2563EB';
+      ctx.beginPath();
+      ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Label
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.fillStyle = '#2563EB80';
+    ctx.textAlign = 'left';
+    ctx.fillText('accuracy', chartX, chartY - 4);
+
+    // Reset animation
+    if (visiblePoints >= numPoints && time > numPoints / 0.8 + 6) {
+      time = 0;
+    }
+
+    time += 0.016;
     requestAnimationFrame(draw);
   }
   draw();
