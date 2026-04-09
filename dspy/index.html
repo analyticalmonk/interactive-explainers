@@ -1,0 +1,2137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSPy: Programming - Not Prompting - Language Models</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --text: rgba(0, 0, 0, 0.8);
+  --text-secondary: rgba(0, 0, 0, 0.54);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --bg: #FAF8F4;
+  --link: #004276;
+  --border: rgba(0, 0, 0, 0.08);
+  --content-width: 720px;
+  --sidebar-width: 220px;
+
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Accent colors - blue for DSPy */
+  --accent: #2563EB;
+  --accent-light: #EFF6FF;
+  --accent-border: #BFDBFE;
+  --accent-dark: #1D4ED8;
+
+  --sig-primary: #D97706;
+  --sig-light: #FEF3C7;
+  --sig-border: #FDE68A;
+
+  --mod-primary: #7C3AED;
+  --mod-light: #F5F0FF;
+  --mod-border: #DDD6FE;
+
+  --opt-primary: #059669;
+  --opt-light: #ECFDF5;
+  --opt-border: #A7F3D0;
+}
+
+html {
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-serif);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+}
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 0;
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.site-header-inner {
+  max-width: calc(var(--content-width) + var(--sidebar-width) + 80px);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.site-nav a {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-nav a:hover { color: var(--text); }
+
+/* Page wrapper */
+.page-wrapper {
+  max-width: calc(var(--content-width) + var(--sidebar-width) + 80px);
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  gap: 40px;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  padding-top: 2.5rem;
+  position: sticky;
+  top: 52px;
+  height: fit-content;
+  max-height: calc(100vh - 68px);
+  overflow-y: auto;
+}
+
+#toc {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+#toc a {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 4px 12px;
+  border-left: 2px solid transparent;
+  transition: all 0.15s ease;
+  display: block;
+}
+
+#toc a.sub {
+  padding-left: 24px;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+}
+
+#toc a:hover { color: var(--text); }
+
+#toc a.active {
+  color: var(--accent-dark);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Main content */
+.content {
+  flex: 1;
+  min-width: 0;
+  max-width: var(--content-width);
+  padding-bottom: 6rem;
+}
+
+/* Article header */
+.article-header {
+  padding: 3rem 0 2rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.overline {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  animation: slideInLeft 0.6s ease 0.1s both;
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h1 {
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  animation: fadeInUp 0.7s ease 0.2s both;
+}
+
+.article-subtitle {
+  font-size: 1.2rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  animation: fadeInUp 0.7s ease 0.3s both;
+}
+
+.article-meta-header {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  animation: fadeInUp 0.7s ease 0.4s both;
+}
+
+/* Sections */
+section {
+  margin-top: 2.5rem;
+}
+
+h2 {
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  margin-bottom: 1rem;
+  padding-top: 0.5rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.8rem;
+  margin-bottom: 0.75rem;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+.lead {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+a { color: var(--link); }
+
+/* Code */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.code-block {
+  background: #2C2C2C;
+  color: #E0E0E0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  padding: 1.2rem 1.5rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1.2rem 0;
+}
+
+.code-block .kw { color: #C792EA; }
+.code-block .str { color: #C3E88D; }
+.code-block .cm { color: #6A7280; }
+.code-block .fn { color: #82AAFF; }
+.code-block .ty { color: #FFCB6B; }
+.code-block .num { color: #F78C6C; }
+.code-block .dec { color: #89DDFF; }
+
+/* Callout */
+.callout {
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  padding: 1rem 1.25rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+}
+
+.callout strong {
+  color: var(--accent-dark);
+}
+
+/* Figures */
+.figure {
+  margin: 2.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.figure-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  padding: 0.75rem 1rem 0;
+}
+
+.figure-canvas-wrap {
+  width: 100%;
+}
+
+.figure-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+}
+
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ctrl-btn:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.ctrl-btn.active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+
+.ctrl-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.ctrl-btn.primary:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+}
+
+.ctrl-label {
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+}
+
+.ctrl-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 0.3rem;
+}
+
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  padding: 0.6rem 1rem 0.75rem;
+  border-top: 1px solid var(--border);
+  line-height: 1.55;
+}
+
+/* Comparison grid */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.comparison-cell {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+}
+
+.comparison-cell h4 {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.comparison-cell ul {
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.comparison-cell ul li {
+  padding: 0.2rem 0;
+  padding-left: 1rem;
+  position: relative;
+}
+
+.comparison-cell ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+
+.prompt-cell h4 { color: #DC2626; }
+.prompt-cell ul li::before { background: #DC2626; }
+.program-cell h4 { color: var(--accent); }
+.program-cell ul li::before { background: var(--accent); }
+
+/* Concept cards */
+.concept-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.concept-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.2rem;
+  background: #fff;
+  transition: border-color 0.15s ease;
+}
+
+.concept-card:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.concept-card-badge {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-bottom: 0.6rem;
+}
+
+.badge-sig {
+  color: var(--sig-primary);
+  background: var(--sig-light);
+}
+
+.badge-mod {
+  color: var(--mod-primary);
+  background: var(--mod-light);
+}
+
+.badge-opt {
+  color: var(--opt-primary);
+  background: var(--opt-light);
+}
+
+.concept-card-name {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.concept-card-desc {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Epigraph */
+.epigraph {
+  border-left: 3px solid var(--accent-border);
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.015);
+  border-radius: 0 6px 6px 0;
+}
+
+.epigraph cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-style: normal;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+/* Optimizer selection guide */
+.opt-guide {
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.opt-guide-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+}
+
+.opt-guide-row:last-child { border-bottom: none; }
+
+.opt-guide-label {
+  padding: 0.6rem 1rem;
+  background: rgba(0, 0, 0, 0.02);
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border);
+}
+
+.opt-guide-value {
+  padding: 0.6rem 1rem;
+  color: var(--text);
+}
+
+/* Footer */
+.article-footer {
+  max-width: calc(var(--content-width) + var(--sidebar-width) + 80px);
+  margin: 0 auto;
+  padding: 2rem 24px 4rem;
+  border-top: 1px solid var(--border);
+}
+
+.article-footer p {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+
+.article-footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.article-footer a:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 1060px) {
+  .sidebar { display: none; }
+  .page-wrapper { display: block; }
+  .content { max-width: 100%; }
+}
+
+@media (max-width: 600px) {
+  html { font-size: 16px; }
+  h1 { font-size: 2rem; }
+  .concept-cards { grid-template-columns: 1fr; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .figure-canvas-wrap canvas { min-width: 500px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/stanfordnlp/dspy">Source repo</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <aside class="sidebar">
+    <nav id="toc">
+      <a href="#alchemy">The Alchemy Problem</a>
+      <a href="#three-pillars" class="sub">Three Pillars</a>
+      <a href="#signatures">Signatures</a>
+      <a href="#sig-demo" class="sub">Expansion Demo</a>
+      <a href="#modules">Modules</a>
+      <a href="#pipeline-demo" class="sub">Pipeline Composer</a>
+      <a href="#optimizer">The Optimizer</a>
+      <a href="#optimizer-demo" class="sub">Optimizer Simulator</a>
+      <a href="#example">Putting It Together</a>
+      <a href="#implications">Why This Matters</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="article-header">
+      <div class="overline">Stanford NLP / DSPy Framework</div>
+      <h1>DSPy: Programming - Not Prompting - Language Models</h1>
+      <p class="article-subtitle">
+        Stop hand-tuning prompt strings. Declare what your LM should do,
+        compose calls into pipelines, and let a compiler optimize the prompts automatically.
+      </p>
+      <div class="article-meta-header">
+        <span>April 2026</span>
+        <span>15 min read</span>
+        <span>3 interactive figures</span>
+      </div>
+    </header>
+
+    <!-- Section: The Alchemy Problem -->
+    <section id="alchemy">
+      <h2>The Alchemy Problem</h2>
+      <p class="lead">
+        Every LLM application starts the same way. You write a prompt. You test it.
+        It doesn't work. You add "think step by step." You rearrange the instructions.
+        You sprinkle in examples. Eventually it works - until you switch models and
+        everything breaks.
+      </p>
+      <p>
+        This is prompt engineering: optimization by intuition. You are hand-tuning a
+        string the same way early neural network practitioners hand-tuned features.
+        It works for small problems, but it does not scale. Consider what happens when
+        your pipeline has three LLM calls, each with its own prompt. Changing one prompt
+        may break the others. Adding a new model requires re-tuning everything. Your
+        "prompt library" becomes a collection of fragile, model-specific incantations.
+      </p>
+
+      <div class="epigraph">
+        <p>
+          DSPy shifts your focus from tinkering with prompt strings to programming
+          with structured and declarative natural-language modules.
+        </p>
+        <cite>DSPy Documentation</cite>
+      </div>
+
+      <p>
+        <a href="https://github.com/stanfordnlp/dspy">DSPy</a>, developed by
+        Omar Khattab and the Stanford NLP group, proposes a different paradigm: stop
+        writing prompts and start writing programs. Declare what each language model
+        call should do, compose calls into pipelines, define a quality metric, and let
+        a compiler figure out the prompts.
+      </p>
+
+      <div class="comparison-grid">
+        <div class="comparison-cell prompt-cell">
+          <h4>Traditional Prompting</h4>
+          <ul>
+            <li>Hand-craft prompt strings</li>
+            <li>Add examples manually</li>
+            <li>Fragile to model changes</li>
+            <li>Optimized by intuition</li>
+            <li>Hard to maintain at scale</li>
+          </ul>
+        </div>
+        <div class="comparison-cell program-cell">
+          <h4>DSPy Programming</h4>
+          <ul>
+            <li>Declare typed signatures</li>
+            <li>Compose reusable modules</li>
+            <li>Portable across models</li>
+            <li>Optimized by compiler</li>
+            <li>Maintainable Python code</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3 id="three-pillars">Three Pillars</h3>
+      <p>
+        DSPy is built on three core abstractions. Signatures declare
+        input/output behavior. Modules implement strategies for calling LMs.
+        Optimizers tune prompts and weights to maximize a metric. Together,
+        they form a programming model for language models that mirrors how
+        PyTorch works for neural networks.
+      </p>
+
+      <div class="concept-cards">
+        <div class="concept-card">
+          <div class="concept-card-badge badge-sig">Signature</div>
+          <div class="concept-card-name">dspy.Signature</div>
+          <div class="concept-card-desc">
+            Typed declaration of what your LM call should do. Inputs and outputs,
+            not prompt strings.
+          </div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-card-badge badge-mod">Module</div>
+          <div class="concept-card-name">dspy.Module</div>
+          <div class="concept-card-desc">
+            Composable building blocks like Predict, ChainOfThought,
+            and ReAct. Each carries learnable parameters.
+          </div>
+        </div>
+        <div class="concept-card">
+          <div class="concept-card-badge badge-opt">Optimizer</div>
+          <div class="concept-card-name">dspy.Optimizer</div>
+          <div class="concept-card-desc">
+            Algorithms that automatically tune prompts and weights.
+            BootstrapFewShot, MIPROv2, and more.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Signatures -->
+    <section id="signatures">
+      <h2>Signatures: Declaring What, Not How</h2>
+      <p>
+        The fundamental unit in DSPy is the <strong>signature</strong> - a typed
+        declaration of a language model's input/output behavior. Instead of writing
+        a paragraph of instructions, you write a concise specification:
+      </p>
+
+      <div class="code-block">
+classify = dspy.<span class="fn">Predict</span>(<span class="str">"sentence -> sentiment: bool"</span>)<br>
+classify(sentence=<span class="str">"it's a charming and often affecting journey."</span>)
+      </div>
+
+      <p>
+        This single line declares: given a sentence, produce a boolean sentiment. No
+        prompt template. No system message. No few-shot examples. Just the interface.
+      </p>
+      <p>
+        DSPy reads this signature and generates the actual prompt at runtime. It fills
+        in field names, types, instructions, and formatting. When you later compile
+        your program, the optimizer may add demonstrations, rewrite instructions, or
+        even finetune weights - but your code stays exactly the same.
+      </p>
+      <p>
+        Inline signatures support type annotations for structured outputs:
+      </p>
+
+      <div class="code-block">
+<span class="cm"># Basic question answering</span><br>
+qa = dspy.<span class="fn">Predict</span>(<span class="str">"question -> answer"</span>)<br>
+<br>
+<span class="cm"># RAG with context</span><br>
+rag = dspy.<span class="fn">ChainOfThought</span>(<span class="str">"context, question -> answer"</span>)<br>
+<br>
+<span class="cm"># Classification with constrained types</span><br>
+classify = dspy.<span class="fn">Predict</span>(<span class="str">"sentence -> sentiment: Literal['positive', 'negative', 'neutral']"</span>)
+      </div>
+
+      <p>
+        For complex tasks, class-based signatures add descriptions and field-level
+        constraints:
+      </p>
+
+      <div class="code-block">
+<span class="kw">class</span> <span class="ty">CheckFaithfulness</span>(dspy.Signature):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="str">"""Verify that the text is grounded in the provided context."""</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;context: <span class="ty">str</span> = dspy.<span class="fn">InputField</span>(desc=<span class="str">"facts assumed to be true"</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;text: <span class="ty">str</span> = dspy.<span class="fn">InputField</span>()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;faithfulness: <span class="ty">bool</span> = dspy.<span class="fn">OutputField</span>()
+      </div>
+
+      <div class="callout">
+        <strong>Key insight:</strong> A signature is a contract, not a prompt. It says
+        what the LM should accomplish. How it accomplishes it - the actual prompt text,
+        demonstrations, and formatting - is determined at compile time by the optimizer.
+      </div>
+
+      <div class="figure" id="sig-demo">
+        <div class="figure-label">Figure 1 - Signature Expansion</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-sig" width="720" height="380"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Signature:</span>
+          <button class="ctrl-btn active" data-sig="0">Basic QA</button>
+          <button class="ctrl-btn" data-sig="1">RAG</button>
+          <button class="ctrl-btn" data-sig="2">Classification</button>
+        </div>
+        <div class="figure-caption">
+          Select a signature to see how DSPy expands a compact declaration into a
+          structured prompt template. The optimizer can later inject demonstrations
+          and rewrite instructions.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Modules -->
+    <section id="modules">
+      <h2>Modules: Building Blocks for LM Programs</h2>
+      <p>
+        Signatures declare what to do. Modules decide <em>how</em> to do it.
+      </p>
+      <p>
+        <code>dspy.Predict</code> is the simplest module - it wraps a signature and
+        calls the LM directly. <code>dspy.ChainOfThought</code> does the same thing
+        but automatically injects a <code>reasoning</code> step before the output.
+        The LM must show its work before answering.
+        <code>dspy.ReAct</code> goes further, enabling the LM to use external tools.
+      </p>
+      <p>
+        Not every module calls an LM. <code>dspy.Retrieve</code> connects to a
+        retrieval index - a vector database, a ColBERT index, or any search backend
+        you configure. You set it up once via <code>dspy.configure(rm=your_retriever)</code>,
+        and then <code>dspy.Retrieve(k=3)</code> fetches the top-k relevant passages
+        for a given query. It returns a <code>Prediction</code> object with a
+        <code>.passages</code> field - a list of strings you can pass to downstream
+        modules as context.
+      </p>
+      <p>
+        The real power comes from composition. Inherit from <code>dspy.Module</code>,
+        define sub-modules in <code>__init__</code>, and wire them together in
+        <code>forward</code>. Here is a retrieval-augmented generation pipeline
+        that combines Retrieve with ChainOfThought:
+      </p>
+
+      <div class="code-block">
+<span class="cm"># Configure a retrieval model (once, at startup)</span><br>
+<span class="cm"># dspy.configure(lm=lm, rm=ColBERTv2(url="..."))</span><br>
+<br>
+<span class="kw">class</span> <span class="ty">RAG</span>(dspy.Module):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">__init__</span>(self, num_docs=<span class="num">3</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.retrieve = dspy.<span class="fn">Retrieve</span>(k=num_docs) &nbsp;<span class="cm"># fetches top-k passages</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.generate = dspy.<span class="fn">ChainOfThought</span>(<span class="str">"context, question -> answer"</span>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">forward</span>(self, question):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context = self.retrieve(question).passages &nbsp;<span class="cm"># list[str]</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> self.generate(context=context, question=question)
+      </div>
+
+      <p>
+        The data flow here is: <code>question</code> goes into Retrieve, which
+        queries the index and returns relevant passages. Those passages become
+        the <code>context</code> input for ChainOfThought, which reasons over
+        them and produces an <code>answer</code>. Retrieve handles search;
+        the LM never sees the full corpus, only the passages the retriever selects.
+      </p>
+      <p>
+        This pattern is deliberately reminiscent of PyTorch. <code>nn.Module</code>
+        becomes <code>dspy.Module</code>. Layers become LM calls (and retrieval
+        calls). The <code>forward</code> method defines data flow. Each module
+        carries learnable parameters - not neural weights, but prompt instructions
+        and demonstrations that the optimizer can tune.
+      </p>
+      <p>
+        You can use standard Python control flow - loops, conditionals, recursion -
+        inside <code>forward</code>. DSPy traces the LM calls at compile time, so
+        the optimizer can reach into any module in the pipeline.
+      </p>
+
+      <div class="figure" id="pipeline-demo">
+        <div class="figure-label">Figure 2 - Module Pipeline</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-pipeline" width="720" height="320"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Pipeline:</span>
+          <button class="ctrl-btn active" data-pipeline="0">Predict</button>
+          <button class="ctrl-btn" data-pipeline="1">Chain of Thought</button>
+          <button class="ctrl-btn" data-pipeline="2">RAG Pipeline</button>
+          <button class="ctrl-btn" data-pipeline="3">Multi-Hop</button>
+        </div>
+        <div class="figure-caption">
+          Explore different module compositions. Data flows left to right through
+          each module. More complex pipelines chain multiple LM calls, each with
+          its own learnable parameters.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: The Optimizer -->
+    <section id="optimizer">
+      <h2>The Optimizer: Compiling Your Program</h2>
+      <p>
+        Here is where DSPy diverges from everything else in the LLM ecosystem.
+        You do not manually tune your prompts. You define a
+        <strong>metric</strong> and let an <strong>optimizer</strong> do it for you.
+      </p>
+      <p>
+        The simplest optimizer, <code>BootstrapFewShot</code>, works in three steps:
+      </p>
+
+      <ol style="list-style: decimal; padding-left: 1.5rem; margin: 1rem 0;">
+        <li>Run your unoptimized pipeline on each training example</li>
+        <li>Check if the output passes your metric function</li>
+        <li>Collect passing input/output traces as few-shot demonstrations</li>
+      </ol>
+
+      <p>
+        The optimized program now includes these demonstrations in its prompts. The LM
+        sees concrete examples of successful behavior, not just abstract instructions.
+      </p>
+
+      <div class="code-block">
+<span class="kw">def</span> <span class="fn">metric</span>(example, prediction, trace=<span class="kw">None</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> example.answer.lower() == prediction.answer.lower()<br>
+<br>
+optimizer = dspy.<span class="fn">BootstrapFewShot</span>(metric=metric, max_bootstrapped_demos=<span class="num">4</span>)<br>
+optimized_rag = optimizer.<span class="fn">compile</span>(RAG(), trainset=trainset)
+      </div>
+
+      <p>
+        <code>MIPROv2</code> goes further. It generates candidate instructions for each
+        module, synthesizes demonstrations, and uses Bayesian optimization to search the
+        combined space of instructions and examples. A typical run costs about $2 and
+        takes 10 minutes - but can improve accuracy by 10-40%.
+      </p>
+
+      <div class="callout">
+        <strong>The compilation analogy:</strong> Calling <code>optimizer.compile()</code>
+        is like calling <code>model.fit()</code> in scikit-learn. You hand it your
+        program and training data. It returns an optimized version with tuned prompts.
+        Your code does not change - only the generated prompts improve.
+      </div>
+
+      <h3>Choosing an Optimizer</h3>
+
+      <div class="opt-guide">
+        <div class="opt-guide-row">
+          <div class="opt-guide-label">~10 examples</div>
+          <div class="opt-guide-value"><code>BootstrapFewShot</code> - fast, simple, good baseline</div>
+        </div>
+        <div class="opt-guide-row">
+          <div class="opt-guide-label">50+ examples</div>
+          <div class="opt-guide-value"><code>BootstrapFewShotWithRandomSearch</code> - tries multiple seeds</div>
+        </div>
+        <div class="opt-guide-row">
+          <div class="opt-guide-label">200+ examples</div>
+          <div class="opt-guide-value"><code>MIPROv2</code> - instruction + demo optimization via Bayesian search</div>
+        </div>
+        <div class="opt-guide-row">
+          <div class="opt-guide-label">Cost-sensitive</div>
+          <div class="opt-guide-value"><code>BootstrapFinetune</code> - distill into a smaller finetuned model</div>
+        </div>
+      </div>
+
+      <div class="figure" id="optimizer-demo">
+        <div class="figure-label">Figure 3 - BootstrapFewShot Optimizer</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-opt" width="720" height="400"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="btn-opt-step">Step</button>
+          <button class="ctrl-btn" id="btn-opt-play">Auto-run</button>
+          <button class="ctrl-btn" id="btn-opt-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="opt-status">Ready - click Step to begin</span>
+        </div>
+        <div class="figure-caption">
+          Watch BootstrapFewShot in action. Each step runs a training example through
+          the pipeline, checks if it passes the metric, and collects passing traces
+          as demonstrations. Accuracy improves as demonstrations accumulate.
+        </div>
+      </div>
+
+      <div class="callout" style="border-left-color: var(--opt-primary); background: var(--opt-light);">
+        <strong style="color: var(--opt-primary);">What the compiled prompt looks like:</strong>
+        After optimization, the collected demonstrations are injected directly into
+        the prompt. A compiled RAG module's prompt might look like this:
+      </div>
+
+      <div class="code-block">
+<span class="cm"># Compiled prompt for: context, question -> answer</span><br>
+<br>
+<span class="cm">---</span><br>
+<br>
+Follow the following format.<br>
+<br>
+Context: ${context}<br>
+Question: ${question}<br>
+Reasoning: Let's think step by step.<br>
+Answer: ${answer}<br>
+<br>
+<span class="cm">---</span><br>
+<br>
+<span class="cm"># Demo 1 (bootstrapped from training data)</span><br>
+Context: <span class="str">"France is a country in Western Europe. Its capital is Paris..."</span><br>
+Question: <span class="str">"What is the capital of France?"</span><br>
+Reasoning: <span class="str">"The context states that France's capital is Paris."</span><br>
+Answer: <span class="str">"Paris"</span><br>
+<br>
+<span class="cm"># Demo 2 (bootstrapped from training data)</span><br>
+Context: <span class="str">"DNA, or deoxyribonucleic acid, carries genetic instructions..."</span><br>
+Question: <span class="str">"What is DNA?"</span><br>
+Reasoning: <span class="str">"The context defines DNA as a molecule carrying genetic info."</span><br>
+Answer: <span class="str">"A molecule that carries genetic instructions for development"</span><br>
+<br>
+<span class="cm">---</span><br>
+<br>
+<span class="cm"># Current query</span><br>
+Context: <span class="str">"The aurora borealis occurs when charged particles from the sun..."</span><br>
+Question: <span class="str">"What causes the Northern Lights?"</span><br>
+Reasoning: <span class="dec">_</span>
+      </div>
+
+      <p>
+        The demonstrations teach the LM by example. Instead of hand-writing "answer
+        concisely based on the context," the optimizer found real input/output pairs
+        that passed the metric and injected them as few-shot examples. The LM sees
+        what good behavior looks like, not just a description of it.
+      </p>
+    </section>
+
+    <!-- Section: Putting It Together -->
+    <section id="example">
+      <h2>Putting It Together</h2>
+      <p>
+        Here is a complete DSPy program: a retrieval-augmented generation pipeline
+        that answers questions using a corpus of documents. In traditional prompt
+        engineering, this would require crafting separate prompts for retrieval
+        re-ranking, reasoning, and answer generation. In DSPy, it is a few lines
+        of Python:
+      </p>
+
+      <div class="code-block">
+<span class="kw">import</span> dspy<br>
+<br>
+<span class="cm"># 1. Configure the LM and retrieval backend</span><br>
+lm = dspy.<span class="fn">LM</span>(<span class="str">"openai/gpt-4o-mini"</span>)<br>
+rm = dspy.<span class="fn">ColBERTv2</span>(url=<span class="str">"http://localhost:8893/search"</span>)<br>
+dspy.<span class="fn">configure</span>(lm=lm, rm=rm)<br>
+<br>
+<span class="cm"># 2. Define the program</span><br>
+<span class="kw">class</span> <span class="ty">RAG</span>(dspy.Module):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">__init__</span>(self):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.retrieve = dspy.<span class="fn">Retrieve</span>(k=<span class="num">3</span>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.generate = dspy.<span class="fn">ChainOfThought</span>(<span class="str">"context, question -> answer"</span>)<br>
+<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">forward</span>(self, question):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context = self.retrieve(question).passages<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> self.generate(context=context, question=question)<br>
+<br>
+<span class="cm"># 3. Define the metric</span><br>
+<span class="kw">def</span> <span class="fn">answer_match</span>(example, pred, trace=<span class="kw">None</span>):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> example.answer.lower() <span class="kw">in</span> pred.answer.lower()<br>
+<br>
+<span class="cm"># 4. Compile</span><br>
+optimizer = dspy.<span class="fn">BootstrapFewShot</span>(metric=answer_match, max_bootstrapped_demos=<span class="num">4</span>)<br>
+optimized_rag = optimizer.<span class="fn">compile</span>(RAG(), trainset=trainset)<br>
+<br>
+<span class="cm"># 5. Use it</span><br>
+result = optimized_rag(question=<span class="str">"What causes the Northern Lights?"</span>)<br>
+print(result.answer)
+      </div>
+
+      <p>
+        Five steps. No prompt strings anywhere. The optimizer saw your training
+        examples, ran them through the pipeline, collected the ones that worked,
+        and injected them as demonstrations. If you later switch from GPT-4o-mini
+        to Claude or Llama, you re-run <code>compile()</code> and the optimizer
+        adapts the prompts to the new model's strengths.
+      </p>
+
+      <p>
+        You can save and load optimized programs:
+      </p>
+
+      <div class="code-block">
+<span class="cm"># Save the optimized program</span><br>
+optimized_rag.<span class="fn">save</span>(<span class="str">"optimized_rag.json"</span>)<br>
+<br>
+<span class="cm"># Load it later</span><br>
+loaded_rag = RAG()<br>
+loaded_rag.<span class="fn">load</span>(<span class="str">"optimized_rag.json"</span>)
+      </div>
+
+      <p>
+        The saved file contains the optimized instructions and demonstrations
+        in JSON format - no model weights, just the learned prompting strategy.
+      </p>
+    </section>
+
+    <!-- Section: Why This Matters -->
+    <section id="implications">
+      <h2>Why This Matters</h2>
+      <p>
+        The shift from prompting to programming mirrors what happened in deep
+        learning. Early practitioners hand-designed features - edge detectors,
+        color histograms, texture descriptors. Backpropagation made features
+        learnable. The field exploded.
+      </p>
+      <p>
+        DSPy is attempting the same transition for LLM applications. When prompts
+        are generated by a compiler rather than a human, several things change:
+      </p>
+      <p>
+        <strong>Programs become portable.</strong> The same DSPy code can target
+        GPT-4, Claude, or a local Llama model. The optimizer adapts to each model's
+        strengths - more demonstrations for smaller models, more concise instructions
+        for larger ones.
+      </p>
+      <p>
+        <strong>Optimization becomes systematic.</strong> Instead of "try adding
+        'think step by step' and see what happens," you define a metric, provide
+        examples, and let an algorithm search the space. This is repeatable,
+        measurable, and debuggable.
+      </p>
+      <p>
+        <strong>Complexity becomes manageable.</strong> A pipeline with five LM calls
+        is not five prompt engineering problems. It is one program with five modules.
+        The optimizer tunes them jointly, accounting for how changes in one module
+        affect downstream modules.
+      </p>
+      <p>
+        DSPy does not eliminate the need to think carefully about your task. You still
+        need good signatures, a meaningful metric, and representative training data.
+        But it moves the work from "guess the right prompt" to "specify the right
+        behavior" - from craft to engineering.
+      </p>
+
+      <div class="epigraph">
+        <p>
+          The key question is not "what prompt should I write?" but "what should
+          this module do, and how will I know if it's doing it well?"
+        </p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="article-footer">
+  <p>
+    Built by <a href="https://github.com/analyticalmonk">analyticalmonk</a>.
+    Inspired by <a href="https://distill.pub">distill.pub</a>.
+    DSPy by <a href="https://github.com/okhat">Omar Khattab</a> and
+    <a href="https://github.com/stanfordnlp/dspy">Stanford NLP</a>.
+  </p>
+</footer>
+
+<script>
+// ========== Shared ==========
+const dpr = window.devicePixelRatio || 1;
+
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const cssW = canvas.width;
+  const cssH = canvas.height;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: cssW, h: cssH };
+}
+
+// ========== Figure 1: Signature Expansion ==========
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-sig');
+  let currentSig = 0;
+  let time = 0;
+
+  const signatures = [
+    {
+      name: 'Basic QA',
+      inline: 'question -> answer',
+      inputs: [{ name: 'question', type: 'str' }],
+      outputs: [{ name: 'answer', type: 'str' }],
+      instruction: 'Given `question`, produce `answer`.',
+      format: ['Question: ${question}', 'Answer: ${answer}'],
+      example: { input: 'What is 2+2?', output: '4' }
+    },
+    {
+      name: 'RAG',
+      inline: 'context, question -> answer',
+      inputs: [{ name: 'context', type: 'str' }, { name: 'question', type: 'str' }],
+      outputs: [{ name: 'answer', type: 'str' }],
+      instruction: 'Given `context`, `question`, produce `answer`.',
+      format: ['Context: ${context}', 'Question: ${question}', 'Answer: ${answer}'],
+      example: { input: 'What causes rain?', output: 'Condensation of water vapor...' }
+    },
+    {
+      name: 'Classification',
+      inline: 'sentence -> sentiment: bool',
+      inputs: [{ name: 'sentence', type: 'str' }],
+      outputs: [{ name: 'sentiment', type: 'bool' }],
+      instruction: 'Given `sentence`, produce `sentiment`.',
+      format: ['Sentence: ${sentence}', 'Sentiment: ${sentiment}'],
+      example: { input: 'I love this movie!', output: 'True' }
+    }
+  ];
+
+  const COL = {
+    sig: '#D97706', sigLight: '#FEF3C7', sigBorder: '#FDE68A',
+    input: '#2563EB', inputLight: '#EFF6FF', inputBorder: '#BFDBFE',
+    output: '#059669', outputLight: '#ECFDF5', outputBorder: '#A7F3D0',
+    demo: '#7C3AED', demoLight: '#F5F0FF', demoBorder: '#DDD6FE',
+    gray: '#6B7280', grayLight: '#F9FAFB'
+  };
+
+  function drawRoundRect(x, y, rw, rh, r, fill, stroke, lineW) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, rw, rh, r);
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineW || 1; ctx.stroke(); }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.fillRect(0, 0, w, h);
+
+    const sig = signatures[currentSig];
+    const leftX = 15, leftW = 220, topY = 20;
+    const rightX = 325, rightW = 380;
+    const fullH = h - 40;
+
+    // Left panel: Your Code
+    drawRoundRect(leftX, topY, leftW, fullH, 8, '#fff', 'rgba(0,0,0,0.08)', 1);
+
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = COL.gray;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('YOUR CODE', leftX + 16, topY + 14);
+
+    // Signature string
+    let sy = topY + 44;
+    const codeFont = '10px "JetBrains Mono", monospace';
+    ctx.font = codeFont;
+    ctx.fillStyle = '#6B7280';
+    ctx.fillText('dspy.Predict(', leftX + 16, sy);
+    sy += 20;
+
+    // Colorize the inline signature
+    const parts = sig.inline.split(' -> ');
+    const inputStr = parts[0];
+    const outputStr = parts[1];
+
+    ctx.font = codeFont;
+    ctx.fillStyle = COL.gray;
+    ctx.fillText('"', leftX + 28, sy);
+    const quoteW = ctx.measureText('"').width;
+
+    ctx.fillStyle = COL.input;
+    ctx.fillText(inputStr, leftX + 28 + quoteW, sy);
+    const inputW = ctx.measureText(inputStr).width;
+
+    ctx.fillStyle = '#9CA3AF';
+    ctx.fillText(' -> ', leftX + 28 + quoteW + inputW, sy);
+    const arrowW = ctx.measureText(' -> ').width;
+
+    ctx.fillStyle = COL.output;
+    ctx.fillText(outputStr, leftX + 28 + quoteW + inputW + arrowW, sy);
+    const outW = ctx.measureText(outputStr).width;
+
+    ctx.fillStyle = COL.gray;
+    ctx.fillText('"', leftX + 28 + quoteW + inputW + arrowW + outW, sy);
+    sy += 20;
+
+    ctx.fillStyle = '#6B7280';
+    ctx.fillText(')', leftX + 16, sy);
+
+    // Parsed fields
+    sy += 40;
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = COL.input;
+    ctx.fillText('INPUT FIELDS', leftX + 16, sy);
+    sy += 20;
+
+    ctx.font = '10px "JetBrains Mono", monospace';
+    for (const inp of sig.inputs) {
+      drawRoundRect(leftX + 16, sy - 2, leftW - 32, 22, 4, COL.inputLight, COL.inputBorder, 0.5);
+      ctx.fillStyle = COL.input;
+      ctx.fillText(inp.name + ': ' + inp.type, leftX + 24, sy + 2);
+      sy += 30;
+    }
+
+    sy += 10;
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = COL.output;
+    ctx.fillText('OUTPUT FIELDS', leftX + 16, sy);
+    sy += 20;
+
+    ctx.font = '10px "JetBrains Mono", monospace';
+    for (const out of sig.outputs) {
+      drawRoundRect(leftX + 16, sy - 2, leftW - 32, 22, 4, COL.outputLight, COL.outputBorder, 0.5);
+      ctx.fillStyle = COL.output;
+      ctx.fillText(out.name + ': ' + out.type, leftX + 24, sy + 2);
+      sy += 30;
+    }
+
+    // Arrow between panels
+    const arrowCx = 280;
+    const arrowCy = h / 2;
+    const pulse = Math.sin(time * 2) * 0.2 + 0.8;
+
+    ctx.save();
+    ctx.globalAlpha = pulse;
+    ctx.strokeStyle = COL.sig;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(arrowCx - 12, arrowCy);
+    ctx.lineTo(arrowCx + 12, arrowCy);
+    ctx.stroke();
+    ctx.fillStyle = COL.sig;
+    ctx.beginPath();
+    ctx.moveTo(arrowCx + 12, arrowCy);
+    ctx.lineTo(arrowCx + 4, arrowCy - 5);
+    ctx.lineTo(arrowCx + 4, arrowCy + 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = COL.sig;
+    ctx.textAlign = 'center';
+    ctx.fillText('compiles to', arrowCx, arrowCy - 12);
+    ctx.textAlign = 'left';
+
+    // Right panel: Generated Prompt
+    drawRoundRect(rightX, topY, rightW, fullH, 8, '#fff', 'rgba(0,0,0,0.08)', 1);
+
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = COL.gray;
+    ctx.fillText('GENERATED PROMPT', rightX + 16, topY + 14);
+
+    let ry = topY + 42;
+
+    // Instructions section
+    drawRoundRect(rightX + 12, ry, rightW - 24, 50, 4, COL.grayLight, 'rgba(0,0,0,0.06)', 0.5);
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = COL.gray;
+    ctx.fillText('INSTRUCTIONS', rightX + 20, ry + 8);
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillText(sig.instruction, rightX + 20, ry + 26);
+    ry += 60;
+
+    // Format section
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillText('Follow the following format.', rightX + 16, ry + 4);
+    ry += 24;
+
+    // Format fields
+    for (const fmt of sig.format) {
+      const fieldName = fmt.split(':')[0];
+      const isInput = sig.inputs.some(i => fieldName.toLowerCase().includes(i.name));
+      const color = isInput ? COL.input : COL.output;
+      const lightColor = isInput ? COL.inputLight : COL.outputLight;
+      const borderColor = isInput ? COL.inputBorder : COL.outputBorder;
+
+      drawRoundRect(rightX + 12, ry, rightW - 24, 24, 4, lightColor, borderColor, 0.5);
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.fillStyle = color;
+      ctx.fillText(fmt, rightX + 20, ry + 6);
+      ry += 32;
+    }
+
+    // Demonstrations placeholder
+    ry += 6;
+    ctx.setLineDash([4, 4]);
+    drawRoundRect(rightX + 12, ry, rightW - 24, 50, 4, COL.demoLight, COL.demoBorder, 1);
+    ctx.setLineDash([]);
+
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = COL.demo;
+    ctx.fillText('DEMONSTRATIONS', rightX + 20, ry + 10);
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillText('Injected by optimizer at compile time', rightX + 20, ry + 28);
+
+    // Example query at bottom
+    ry += 62;
+    ctx.font = '600 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillText('CURRENT QUERY', rightX + 16, ry);
+    ry += 16;
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillStyle = COL.input;
+    ctx.fillText(sig.format[0].split('$')[0] + sig.example.input, rightX + 16, ry);
+    ry += 20;
+    ctx.fillStyle = COL.output;
+    const outLabel = sig.format[sig.format.length - 1].split('$')[0];
+
+    // Blinking cursor effect
+    const cursorVisible = Math.floor(time * 2) % 2 === 0;
+    ctx.fillText(outLabel + (cursorVisible ? '\u2588' : ''), rightX + 16, ry);
+
+    time += 0.016;
+    requestAnimationFrame(draw);
+  }
+
+  // Button handlers
+  document.querySelectorAll('[data-sig]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[data-sig]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentSig = parseInt(this.dataset.sig);
+    });
+  });
+
+  draw();
+})();
+
+// ========== Figure 2: Module Pipeline ==========
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-pipeline');
+  let currentPipeline = 0;
+  let time = 0;
+
+  const pipelines = [
+    {
+      name: 'Predict',
+      modules: [
+        { name: 'Predict', sig: 'question -> answer', color: '#2563EB', light: '#EFF6FF', border: '#BFDBFE' }
+      ]
+    },
+    {
+      name: 'Chain of Thought',
+      modules: [
+        { name: 'ChainOfThought', sig: 'question -> answer', color: '#7C3AED', light: '#F5F0FF', border: '#DDD6FE' }
+      ]
+    },
+    {
+      name: 'RAG Pipeline',
+      modules: [
+        { name: 'Retrieve', sig: 'question -> passages', color: '#D97706', light: '#FEF3C7', border: '#FDE68A' },
+        { name: 'ChainOfThought', sig: 'context, question -> answer', color: '#7C3AED', light: '#F5F0FF', border: '#DDD6FE' }
+      ]
+    },
+    {
+      name: 'Multi-Hop',
+      modules: [
+        { name: 'GenQuery', sig: 'claim -> query', color: '#2563EB', light: '#EFF6FF', border: '#BFDBFE' },
+        { name: 'Retrieve', sig: 'query -> context', color: '#D97706', light: '#FEF3C7', border: '#FDE68A' },
+        { name: 'ChainOfThought', sig: 'context, claim -> notes', color: '#7C3AED', light: '#F5F0FF', border: '#DDD6FE' }
+      ]
+    }
+  ];
+
+  // Particle system
+  let particles = [];
+  const PARTICLE_INTERVAL = 60; // frames
+  let frameCount = 0;
+
+  function getLayout(pipeline) {
+    const mods = pipeline.modules;
+    const modW = 130, modH = 70;
+    const ioW = 80, ioH = 40;
+    const totalMods = mods.length;
+
+    // Calculate total width
+    const gap = 50;
+    const totalWidth = ioW + gap + (modW * totalMods) + (gap * (totalMods - 1)) + gap + ioW;
+    const startX = (w - totalWidth) / 2;
+    const cy = h / 2;
+
+    const layout = {
+      input: { x: startX, y: cy - ioH / 2, w: ioW, h: ioH },
+      output: { x: startX + totalWidth - ioW, y: cy - ioH / 2, w: ioW, h: ioH },
+      modules: [],
+      segments: []
+    };
+
+    for (let i = 0; i < totalMods; i++) {
+      const mx = startX + ioW + gap + i * (modW + gap);
+      layout.modules.push({ x: mx, y: cy - modH / 2, w: modW, h: modH, ...mods[i] });
+    }
+
+    // Build path segments for particles
+    // Input -> first module
+    layout.segments.push({
+      x1: layout.input.x + layout.input.w,
+      y1: cy,
+      x2: layout.modules[0].x,
+      y2: cy
+    });
+    // Between modules
+    for (let i = 0; i < totalMods - 1; i++) {
+      layout.segments.push({
+        x1: layout.modules[i].x + layout.modules[i].w,
+        y1: cy,
+        x2: layout.modules[i + 1].x,
+        y2: cy
+      });
+    }
+    // Last module -> output
+    layout.segments.push({
+      x1: layout.modules[totalMods - 1].x + layout.modules[totalMods - 1].w,
+      y1: cy,
+      x2: layout.output.x,
+      y2: cy
+    });
+
+    return layout;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.fillRect(0, 0, w, h);
+
+    const pipeline = pipelines[currentPipeline];
+    const layout = getLayout(pipeline);
+    const cy = h / 2;
+
+    // Draw grid pattern (subtle)
+    ctx.strokeStyle = 'rgba(0,0,0,0.03)';
+    ctx.lineWidth = 0.5;
+    for (let gx = 0; gx < w; gx += 30) {
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+    }
+    for (let gy = 0; gy < h; gy += 30) {
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+    }
+
+    // Draw connection arrows
+    for (const seg of layout.segments) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(seg.x1 + 4, seg.y1);
+      ctx.lineTo(seg.x2 - 4, seg.y2);
+      ctx.stroke();
+
+      // Arrowhead
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.beginPath();
+      ctx.moveTo(seg.x2 - 4, seg.y2);
+      ctx.lineTo(seg.x2 - 12, seg.y2 - 4);
+      ctx.lineTo(seg.x2 - 12, seg.y2 + 4);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Draw input box
+    ctx.beginPath();
+    ctx.roundRect(layout.input.x, layout.input.y, layout.input.w, layout.input.h, 6);
+    ctx.fillStyle = '#F9FAFB';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = '#6B7280';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Input', layout.input.x + layout.input.w / 2, layout.input.y + layout.input.h / 2);
+
+    // Draw output box
+    ctx.beginPath();
+    ctx.roundRect(layout.output.x, layout.output.y, layout.output.w, layout.output.h, 6);
+    ctx.fillStyle = '#F9FAFB';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = '#6B7280';
+    ctx.fillText('Output', layout.output.x + layout.output.w / 2, layout.output.y + layout.output.h / 2);
+
+    // Draw modules
+    for (const mod of layout.modules) {
+      // Shadow
+      ctx.shadowColor = 'rgba(0,0,0,0.06)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 2;
+
+      ctx.beginPath();
+      ctx.roundRect(mod.x, mod.y, mod.w, mod.h, 8);
+      ctx.fillStyle = mod.light;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = mod.border;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Module name
+      ctx.font = '600 12px -apple-system, sans-serif';
+      ctx.fillStyle = mod.color;
+      ctx.textAlign = 'center';
+      ctx.fillText(mod.name, mod.x + mod.w / 2, mod.y + mod.h / 2 - 8);
+
+      // Signature
+      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.fillStyle = mod.color + '99';
+      ctx.fillText(mod.sig, mod.x + mod.w / 2, mod.y + mod.h / 2 + 12);
+
+      // Learnable params indicator
+      const paramY = mod.y + mod.h - 10;
+      ctx.fillStyle = mod.color + '30';
+      ctx.beginPath();
+      ctx.arc(mod.x + mod.w / 2 - 12, paramY, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(mod.x + mod.w / 2, paramY, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(mod.x + mod.w / 2 + 12, paramY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Spawn particles
+    frameCount++;
+    if (frameCount % PARTICLE_INTERVAL === 0) {
+      particles.push({ segIdx: 0, t: 0, color: pipeline.modules[0].color });
+    }
+
+    // Update & draw particles
+    const newParticles = [];
+    for (const p of particles) {
+      if (p.segIdx >= layout.segments.length) continue;
+      p.t += 0.02;
+      if (p.t >= 1) {
+        p.t = 0;
+        p.segIdx++;
+        if (p.segIdx < layout.modules.length) {
+          p.color = pipeline.modules[p.segIdx].color;
+        }
+        if (p.segIdx >= layout.segments.length) continue;
+      }
+
+      const seg = layout.segments[p.segIdx];
+      const px = seg.x1 + (seg.x2 - seg.x1) * p.t;
+      const py = seg.y1 + (seg.y2 - seg.y1) * p.t;
+
+      // Glow
+      ctx.fillStyle = p.color + '20';
+      ctx.beginPath();
+      ctx.arc(px, py, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dot
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      newParticles.push(p);
+    }
+    particles = newParticles;
+
+    // Pipeline label at top
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.textAlign = 'left';
+    ctx.fillText('dspy.Module', 20, 20);
+    ctx.textBaseline = 'alphabetic';
+
+    // Params legend at bottom
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Each module carries learnable parameters (instructions + demonstrations)', w / 2, h - 10);
+
+    time += 0.016;
+    requestAnimationFrame(draw);
+  }
+
+  // Button handlers
+  document.querySelectorAll('[data-pipeline]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[data-pipeline]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      currentPipeline = parseInt(this.dataset.pipeline);
+      particles = [];
+      frameCount = 0;
+    });
+  });
+
+  draw();
+})();
+
+// ========== Figure 3: Optimizer Simulator ==========
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-opt');
+  let time = 0;
+
+  // Training examples with predetermined outcomes
+  const examples = [
+    { q: 'What is photosynthesis?', pass: false },
+    { q: 'Capital of France?', pass: true },
+    { q: 'Why is the sky blue?', pass: false },
+    { q: 'What is DNA?', pass: true },
+    { q: 'How do volcanoes work?', pass: true },
+    { q: 'What is an atom?', pass: true },
+  ];
+
+  let state = {
+    round: -1,
+    demos: [],
+    scores: [0.32], // baseline accuracy
+    animPhase: 'idle', // idle, running, result
+    animT: 0,
+    playing: false,
+    playTimer: null
+  };
+
+  function computeScore(demoCount) {
+    // Accuracy improves with more demonstrations
+    const base = 0.32;
+    const max = 0.88;
+    const rate = 0.7; // how quickly it improves
+    return base + (max - base) * (1 - Math.exp(-rate * demoCount));
+  }
+
+  function step() {
+    if (state.round >= examples.length - 1) {
+      if (state.playing) stopPlay();
+      return;
+    }
+    state.round++;
+    state.animPhase = 'running';
+    state.animT = 0;
+  }
+
+  function stopPlay() {
+    state.playing = false;
+    if (state.playTimer) clearInterval(state.playTimer);
+    state.playTimer = null;
+    document.getElementById('btn-opt-play').textContent = 'Auto-run';
+  }
+
+  function reset() {
+    stopPlay();
+    state.round = -1;
+    state.demos = [];
+    state.scores = [0.32];
+    state.animPhase = 'idle';
+    state.animT = 0;
+    updateStatus();
+  }
+
+  function updateStatus() {
+    const el = document.getElementById('opt-status');
+    if (state.round < 0) {
+      el.textContent = 'Ready - click Step to begin';
+    } else if (state.round >= examples.length - 1 && state.animPhase === 'idle') {
+      el.textContent = 'Done! ' + state.demos.length + ' demos collected, accuracy: ' +
+        Math.round(state.scores[state.scores.length - 1] * 100) + '%';
+    } else {
+      el.textContent = 'Round ' + (state.round + 1) + '/' + examples.length +
+        ' | Demos: ' + state.demos.length +
+        ' | Accuracy: ' + Math.round(state.scores[state.scores.length - 1] * 100) + '%';
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FAFAFA';
+    ctx.fillRect(0, 0, w, h);
+
+    const leftW = 310, rightW = w - leftW - 40;
+    const leftX = 15, rightX = leftW + 30;
+
+    // ---- Left panel: Examples & Pipeline ----
+
+    // Section label
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('TRAINING EXAMPLES', leftX, 10);
+
+    // Example grid
+    const gridCols = 3, gridRows = 2;
+    const cellW = 90, cellH = 28;
+    const gridX = leftX, gridY = 28;
+
+    for (let i = 0; i < examples.length; i++) {
+      const col = i % gridCols;
+      const row = Math.floor(i / gridCols);
+      const cx = gridX + col * (cellW + 6);
+      const cy = gridY + row * (cellH + 5);
+
+      let fill = '#fff';
+      let border = 'rgba(0,0,0,0.08)';
+      let textColor = 'rgba(0,0,0,0.4)';
+
+      if (i < state.round || (i === state.round && state.animPhase === 'idle')) {
+        // Already processed
+        if (examples[i].pass) {
+          fill = '#ECFDF5';
+          border = '#A7F3D0';
+          textColor = '#059669';
+        } else {
+          fill = '#FEF2F2';
+          border = '#FECACA';
+          textColor = '#DC2626';
+        }
+      } else if (i === state.round && state.animPhase !== 'idle') {
+        // Currently processing
+        fill = '#FEF3C7';
+        border = '#FDE68A';
+        textColor = '#D97706';
+      }
+
+      ctx.beginPath();
+      ctx.roundRect(cx, cy, cellW, cellH, 4);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = border;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Truncate question
+      let label = examples[i].q;
+      if (label.length > 12) label = label.slice(0, 11) + '..';
+      ctx.fillText(label, cx + cellW / 2, cy + cellH / 2);
+    }
+
+    // Pipeline box
+    const pipeY = 135, pipeH = 55;
+    ctx.beginPath();
+    const pipeW = leftW - 20;
+    ctx.roundRect(leftX, pipeY, pipeW, pipeH, 8);
+    ctx.fillStyle = '#EFF6FF';
+    ctx.fill();
+    ctx.strokeStyle = '#BFDBFE';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.font = '600 12px -apple-system, sans-serif';
+    ctx.fillStyle = '#2563EB';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('RAG Pipeline', leftX + pipeW / 2, pipeY + pipeH / 2 - 8);
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#2563EB99';
+    ctx.fillText('Retrieve -> ChainOfThought', leftX + pipeW / 2, pipeY + pipeH / 2 + 10);
+
+    // Animation: particle flowing from example to pipeline
+    if (state.animPhase === 'running') {
+      state.animT += 0.025;
+      if (state.animT >= 1) {
+        state.animPhase = 'result';
+        state.animT = 0;
+      } else {
+        // Draw particle
+        const ei = state.round;
+        const col = ei % gridCols;
+        const row = Math.floor(ei / gridCols);
+        const startX = gridX + col * (cellW + 6) + cellW / 2;
+        const startY = gridY + row * (cellH + 5) + cellH;
+        const endX = leftX + pipeW / 2;
+        const endY = pipeY;
+
+        const px = startX + (endX - startX) * state.animT;
+        const py = startY + (endY - startY) * state.animT;
+
+        ctx.fillStyle = '#D9770640';
+        ctx.beginPath();
+        ctx.arc(px, py, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#D97706';
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Result animation
+    if (state.animPhase === 'result') {
+      state.animT += 0.03;
+      const ex = examples[state.round];
+
+      // Show pass/fail below pipeline
+      const resultY = pipeY + pipeH + 15;
+      const alpha = Math.min(1, state.animT * 3);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      if (ex.pass) {
+        ctx.fillStyle = '#059669';
+        ctx.font = '600 13px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('PASS - trace collected', leftX + pipeW / 2, resultY);
+      } else {
+        ctx.fillStyle = '#DC2626';
+        ctx.font = '600 13px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('FAIL - trace discarded', leftX + pipeW / 2, resultY);
+      }
+
+      ctx.restore();
+
+      if (state.animT >= 1.5) {
+        // Finalize this round
+        if (ex.pass) {
+          state.demos.push(state.round);
+        }
+        state.scores.push(computeScore(state.demos.length));
+        state.animPhase = 'idle';
+        state.animT = 0;
+        updateStatus();
+      }
+    }
+
+    // Collected demonstrations
+    const demoY = 225;
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('COLLECTED DEMONSTRATIONS', leftX, demoY);
+
+    if (state.demos.length === 0) {
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fillText('None yet - run examples through the pipeline', leftX, demoY + 18);
+    } else {
+      const cardSize = 32, cardGap = 4;
+      const cardStep = cardSize + cardGap;
+      const maxPerRow = Math.floor((leftW - 30) / cardStep);
+      for (let i = 0; i < state.demos.length; i++) {
+        const col = i % maxPerRow;
+        const row = Math.floor(i / maxPerRow);
+        const dx = leftX + col * cardStep;
+        const dy = demoY + 18 + row * (cardSize + cardGap);
+
+        ctx.beginPath();
+        ctx.roundRect(dx, dy, cardSize, cardSize, 4);
+        ctx.fillStyle = '#ECFDF5';
+        ctx.fill();
+        ctx.strokeStyle = '#A7F3D0';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.font = '600 8px -apple-system, sans-serif';
+        ctx.fillStyle = '#059669';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Demo', dx + cardSize / 2, dy + 11);
+        ctx.font = '600 13px -apple-system, sans-serif';
+        ctx.fillText(String(i + 1), dx + cardSize / 2, dy + 24);
+      }
+    }
+
+    // ---- Right panel: Accuracy Chart ----
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ACCURACY', rightX, 10);
+
+    const chartX = rightX + 30, chartY = 35;
+    const chartW = rightW - 60, chartH = h - 60;
+    const maxRounds = examples.length;
+
+    // Chart background
+    ctx.beginPath();
+    ctx.roundRect(rightX, chartY - 10, rightW - 10, chartH + 30, 6);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Y-axis labels and grid
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let pct = 0; pct <= 100; pct += 20) {
+      const yp = chartY + chartH - (pct / 100) * chartH;
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+      ctx.lineWidth = 0.5;
+      ctx.beginPath();
+      ctx.moveTo(chartX, yp);
+      ctx.lineTo(chartX + chartW, yp);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillText(pct + '%', chartX - 6, yp);
+    }
+
+    // X-axis label
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.25)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText('optimization round', chartX + chartW / 2, chartY + chartH + 8);
+
+    // Draw score line
+    if (state.scores.length > 1) {
+      // Filled area under curve
+      ctx.beginPath();
+      ctx.moveTo(chartX, chartY + chartH);
+      for (let i = 0; i < state.scores.length; i++) {
+        const sx = chartX + (i / maxRounds) * chartW;
+        const sy = chartY + chartH - state.scores[i] * chartH;
+        ctx.lineTo(sx, sy);
+      }
+      ctx.lineTo(chartX + ((state.scores.length - 1) / maxRounds) * chartW, chartY + chartH);
+      ctx.closePath();
+      ctx.fillStyle = '#2563EB10';
+      ctx.fill();
+
+      // Line
+      ctx.beginPath();
+      for (let i = 0; i < state.scores.length; i++) {
+        const sx = chartX + (i / maxRounds) * chartW;
+        const sy = chartY + chartH - state.scores[i] * chartH;
+        if (i === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+      ctx.strokeStyle = '#2563EB';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Dots
+      for (let i = 0; i < state.scores.length; i++) {
+        const sx = chartX + (i / maxRounds) * chartW;
+        const sy = chartY + chartH - state.scores[i] * chartH;
+
+        const isLatest = i === state.scores.length - 1;
+        if (isLatest && state.scores.length > 1) {
+          // Pulse on latest
+          const pulse = Math.sin(time * 3) * 0.3 + 0.7;
+          ctx.fillStyle = '#2563EB' + Math.floor(pulse * 40).toString(16).padStart(2, '0');
+          ctx.beginPath();
+          ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = i === 0 ? '#6B7280' : '#2563EB';
+        ctx.beginPath();
+        ctx.arc(sx, sy, isLatest ? 4 : 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Score label on latest
+        if (isLatest) {
+          ctx.font = '600 10px -apple-system, sans-serif';
+          ctx.fillStyle = '#2563EB';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(Math.round(state.scores[i] * 100) + '%', sx, sy - 10);
+        }
+      }
+    } else {
+      // Just the baseline dot
+      const sx = chartX;
+      const sy = chartY + chartH - state.scores[0] * chartH;
+      ctx.fillStyle = '#6B7280';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.fillStyle = '#6B7280';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('baseline: 32%', sx + 30, sy - 4);
+    }
+
+    // Baseline reference line
+    const baselineY = chartY + chartH - 0.32 * chartH;
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(chartX, baselineY);
+    ctx.lineTo(chartX + chartW, baselineY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    time += 0.016;
+    requestAnimationFrame(draw);
+  }
+
+  // Button handlers
+  document.getElementById('btn-opt-step').addEventListener('click', () => {
+    if (state.animPhase !== 'idle') return;
+    step();
+  });
+
+  document.getElementById('btn-opt-play').addEventListener('click', function() {
+    if (state.playing) {
+      stopPlay();
+      return;
+    }
+    state.playing = true;
+    this.textContent = 'Stop';
+    state.playTimer = setInterval(() => {
+      if (state.animPhase !== 'idle') return;
+      if (state.round >= examples.length - 1) {
+        stopPlay();
+        return;
+      }
+      step();
+    }, 600);
+  });
+
+  document.getElementById('btn-opt-reset').addEventListener('click', reset);
+
+  updateStatus();
+  draw();
+})();
+
+// ========== Sidebar scroll tracking ==========
+(function() {
+  const links = document.querySelectorAll('#toc a');
+  const sections = [];
+  links.forEach(link => {
+    const id = link.getAttribute('href').slice(1);
+    const el = document.getElementById(id);
+    if (el) sections.push({ id, el, link });
+  });
+
+  function update() {
+    const scrollY = window.scrollY + 80;
+    let current = sections[0];
+    for (const s of sections) {
+      if (s.el.offsetTop <= scrollY) current = s;
+    }
+    links.forEach(l => l.classList.remove('active'));
+    if (current) current.link.classList.add('active');
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+
+</body>
+</html>
