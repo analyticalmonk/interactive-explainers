@@ -809,28 +809,48 @@ classify = dspy.<span class="fn">Predict</span>(<span class="str">"sentence -> s
         <code>dspy.ReAct</code> goes further, enabling the LM to use external tools.
       </p>
       <p>
+        Not every module calls an LM. <code>dspy.Retrieve</code> connects to a
+        retrieval index - a vector database, a ColBERT index, or any search backend
+        you configure. You set it up once via <code>dspy.configure(rm=your_retriever)</code>,
+        and then <code>dspy.Retrieve(k=3)</code> fetches the top-k relevant passages
+        for a given query. It returns a <code>Prediction</code> object with a
+        <code>.passages</code> field - a list of strings you can pass to downstream
+        modules as context.
+      </p>
+      <p>
         The real power comes from composition. Inherit from <code>dspy.Module</code>,
         define sub-modules in <code>__init__</code>, and wire them together in
-        <code>forward</code>:
+        <code>forward</code>. Here is a retrieval-augmented generation pipeline
+        that combines Retrieve with ChainOfThought:
       </p>
 
       <div class="code-block">
+<span class="cm"># Configure a retrieval model (once, at startup)</span><br>
+<span class="cm"># dspy.configure(lm=lm, rm=ColBERTv2(url="..."))</span><br>
+<br>
 <span class="kw">class</span> <span class="ty">RAG</span>(dspy.Module):<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">__init__</span>(self, num_docs=<span class="num">3</span>):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.retrieve = dspy.<span class="fn">Retrieve</span>(k=num_docs)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.retrieve = dspy.<span class="fn">Retrieve</span>(k=num_docs) &nbsp;<span class="cm"># fetches top-k passages</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.generate = dspy.<span class="fn">ChainOfThought</span>(<span class="str">"context, question -> answer"</span>)<br>
 <br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">def</span> <span class="fn">forward</span>(self, question):<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context = self.retrieve(question).passages<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;context = self.retrieve(question).passages &nbsp;<span class="cm"># list[str]</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> self.generate(context=context, question=question)
       </div>
 
       <p>
-        This is deliberately reminiscent of PyTorch. <code>nn.Module</code> becomes
-        <code>dspy.Module</code>. Layers become LM calls. The <code>forward</code>
-        method defines data flow. Each module carries learnable parameters - not
-        neural weights, but prompt instructions and demonstrations that the optimizer
-        can tune.
+        The data flow here is: <code>question</code> goes into Retrieve, which
+        queries the index and returns relevant passages. Those passages become
+        the <code>context</code> input for ChainOfThought, which reasons over
+        them and produces an <code>answer</code>. Retrieve handles search;
+        the LM never sees the full corpus, only the passages the retriever selects.
+      </p>
+      <p>
+        This pattern is deliberately reminiscent of PyTorch. <code>nn.Module</code>
+        becomes <code>dspy.Module</code>. Layers become LM calls (and retrieval
+        calls). The <code>forward</code> method defines data flow. Each module
+        carries learnable parameters - not neural weights, but prompt instructions
+        and demonstrations that the optimizer can tune.
       </p>
       <p>
         You can use standard Python control flow - loops, conditionals, recursion -
@@ -1005,9 +1025,10 @@ Reasoning: <span class="dec">_</span>
       <div class="code-block">
 <span class="kw">import</span> dspy<br>
 <br>
-<span class="cm"># 1. Configure the language model</span><br>
+<span class="cm"># 1. Configure the LM and retrieval backend</span><br>
 lm = dspy.<span class="fn">LM</span>(<span class="str">"openai/gpt-4o-mini"</span>)<br>
-dspy.<span class="fn">configure</span>(lm=lm)<br>
+rm = dspy.<span class="fn">ColBERTv2</span>(url=<span class="str">"http://localhost:8893/search"</span>)<br>
+dspy.<span class="fn">configure</span>(lm=lm, rm=rm)<br>
 <br>
 <span class="cm"># 2. Define the program</span><br>
 <span class="kw">class</span> <span class="ty">RAG</span>(dspy.Module):<br>
