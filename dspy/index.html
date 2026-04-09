@@ -942,6 +942,53 @@ optimized_rag = optimizer.<span class="fn">compile</span>(RAG(), trainset=trains
           as demonstrations. Accuracy improves as demonstrations accumulate.
         </div>
       </div>
+
+      <div class="callout" style="border-left-color: var(--opt-primary); background: var(--opt-light);">
+        <strong style="color: var(--opt-primary);">What the compiled prompt looks like:</strong>
+        After optimization, the collected demonstrations are injected directly into
+        the prompt. A compiled RAG module's prompt might look like this:
+      </div>
+
+      <div class="code-block">
+<span class="cm"># Compiled prompt for: context, question -> answer</span><br>
+<br>
+<span class="cm">---</span><br>
+<br>
+Follow the following format.<br>
+<br>
+Context: ${context}<br>
+Question: ${question}<br>
+Reasoning: Let's think step by step.<br>
+Answer: ${answer}<br>
+<br>
+<span class="cm">---</span><br>
+<br>
+<span class="cm"># Demo 1 (bootstrapped from training data)</span><br>
+Context: <span class="str">"France is a country in Western Europe. Its capital is Paris..."</span><br>
+Question: <span class="str">"What is the capital of France?"</span><br>
+Reasoning: <span class="str">"The context states that France's capital is Paris."</span><br>
+Answer: <span class="str">"Paris"</span><br>
+<br>
+<span class="cm"># Demo 2 (bootstrapped from training data)</span><br>
+Context: <span class="str">"DNA, or deoxyribonucleic acid, carries genetic instructions..."</span><br>
+Question: <span class="str">"What is DNA?"</span><br>
+Reasoning: <span class="str">"The context defines DNA as a molecule carrying genetic info."</span><br>
+Answer: <span class="str">"A molecule that carries genetic instructions for development"</span><br>
+<br>
+<span class="cm">---</span><br>
+<br>
+<span class="cm"># Current query</span><br>
+Context: <span class="str">"The aurora borealis occurs when charged particles from the sun..."</span><br>
+Question: <span class="str">"What causes the Northern Lights?"</span><br>
+Reasoning: <span class="dec">_</span>
+      </div>
+
+      <p>
+        The demonstrations teach the LM by example. Instead of hand-writing "answer
+        concisely based on the context," the optimizer found real input/output pairs
+        that passed the metric and injected them as few-shot examples. The LM sees
+        what good behavior looks like, not just a description of it.
+      </p>
     </section>
 
     <!-- Section: Putting It Together -->
@@ -1620,13 +1667,7 @@ function initCanvas(id) {
     { q: 'Why is the sky blue?', pass: false },
     { q: 'What is DNA?', pass: true },
     { q: 'How do volcanoes work?', pass: true },
-    { q: 'Define gravity.', pass: false },
     { q: 'What is an atom?', pass: true },
-    { q: 'How do vaccines work?', pass: true },
-    { q: 'What causes tides?', pass: true },
-    { q: 'Explain evolution.', pass: true },
-    { q: 'What is dark matter?', pass: true },
-    { q: 'How does GPS work?', pass: true },
   ];
 
   let state = {
@@ -1693,8 +1734,8 @@ function initCanvas(id) {
     ctx.fillStyle = '#FAFAFA';
     ctx.fillRect(0, 0, w, h);
 
-    const leftW = 340, rightW = w - leftW - 20;
-    const leftX = 15, rightX = leftW + 25;
+    const leftW = 310, rightW = w - leftW - 40;
+    const leftX = 15, rightX = leftW + 30;
 
     // ---- Left panel: Examples & Pipeline ----
 
@@ -1706,8 +1747,8 @@ function initCanvas(id) {
     ctx.fillText('TRAINING EXAMPLES', leftX, 10);
 
     // Example grid
-    const gridCols = 4, gridRows = 3;
-    const cellW = 76, cellH = 28;
+    const gridCols = 3, gridRows = 2;
+    const cellW = 90, cellH = 28;
     const gridX = leftX, gridY = 28;
 
     for (let i = 0; i < examples.length; i++) {
@@ -1759,7 +1800,8 @@ function initCanvas(id) {
     // Pipeline box
     const pipeY = 135, pipeH = 55;
     ctx.beginPath();
-    ctx.roundRect(leftX, pipeY, leftW - 15, pipeH, 8);
+    const pipeW = leftW - 20;
+    ctx.roundRect(leftX, pipeY, pipeW, pipeH, 8);
     ctx.fillStyle = '#EFF6FF';
     ctx.fill();
     ctx.strokeStyle = '#BFDBFE';
@@ -1770,10 +1812,10 @@ function initCanvas(id) {
     ctx.fillStyle = '#2563EB';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('RAG Pipeline', leftX + (leftW - 15) / 2, pipeY + pipeH / 2 - 8);
+    ctx.fillText('RAG Pipeline', leftX + pipeW / 2, pipeY + pipeH / 2 - 8);
     ctx.font = '10px "JetBrains Mono", monospace';
     ctx.fillStyle = '#2563EB99';
-    ctx.fillText('Retrieve -> ChainOfThought', leftX + (leftW - 15) / 2, pipeY + pipeH / 2 + 10);
+    ctx.fillText('Retrieve -> ChainOfThought', leftX + pipeW / 2, pipeY + pipeH / 2 + 10);
 
     // Animation: particle flowing from example to pipeline
     if (state.animPhase === 'running') {
@@ -1788,7 +1830,7 @@ function initCanvas(id) {
         const row = Math.floor(ei / gridCols);
         const startX = gridX + col * (cellW + 6) + cellW / 2;
         const startY = gridY + row * (cellH + 5) + cellH;
-        const endX = leftX + (leftW - 15) / 2;
+        const endX = leftX + pipeW / 2;
         const endY = pipeY;
 
         const px = startX + (endX - startX) * state.animT;
@@ -1821,13 +1863,13 @@ function initCanvas(id) {
         ctx.font = '600 13px -apple-system, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('PASS - trace collected as demonstration', leftX + (leftW - 15) / 2, resultY);
+        ctx.fillText('PASS - trace collected', leftX + pipeW / 2, resultY);
       } else {
         ctx.fillStyle = '#DC2626';
         ctx.font = '600 13px -apple-system, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('FAIL - trace discarded', leftX + (leftW - 15) / 2, resultY);
+        ctx.fillText('FAIL - trace discarded', leftX + pipeW / 2, resultY);
       }
 
       ctx.restore();
@@ -1857,68 +1899,31 @@ function initCanvas(id) {
       ctx.fillStyle = 'rgba(0,0,0,0.2)';
       ctx.fillText('None yet - run examples through the pipeline', leftX, demoY + 18);
     } else {
+      const cardSize = 32, cardGap = 4;
+      const cardStep = cardSize + cardGap;
+      const maxPerRow = Math.floor((leftW - 30) / cardStep);
       for (let i = 0; i < state.demos.length; i++) {
-        const dx = leftX + i * 42;
-        const dy = demoY + 18;
+        const col = i % maxPerRow;
+        const row = Math.floor(i / maxPerRow);
+        const dx = leftX + col * cardStep;
+        const dy = demoY + 18 + row * (cardSize + cardGap);
 
         ctx.beginPath();
-        ctx.roundRect(dx, dy, 36, 36, 4);
+        ctx.roundRect(dx, dy, cardSize, cardSize, 4);
         ctx.fillStyle = '#ECFDF5';
         ctx.fill();
         ctx.strokeStyle = '#A7F3D0';
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        ctx.font = '600 9px -apple-system, sans-serif';
+        ctx.font = '600 8px -apple-system, sans-serif';
         ctx.fillStyle = '#059669';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Demo', dx + 18, dy + 13);
-        ctx.font = '600 14px -apple-system, sans-serif';
-        ctx.fillText(String(i + 1), dx + 18, dy + 27);
+        ctx.fillText('Demo', dx + cardSize / 2, dy + 11);
+        ctx.font = '600 13px -apple-system, sans-serif';
+        ctx.fillText(String(i + 1), dx + cardSize / 2, dy + 24);
       }
-    }
-
-    // Prompt preview
-    const promptY = 290;
-    ctx.font = '600 10px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText('OPTIMIZED PROMPT PREVIEW', leftX, promptY);
-
-    ctx.beginPath();
-    ctx.roundRect(leftX, promptY + 16, leftW - 15, h - promptY - 26, 6);
-    ctx.fillStyle = '#2C2C2C';
-    ctx.fill();
-
-    ctx.font = '10px "JetBrains Mono", monospace';
-    ctx.textBaseline = 'top';
-    let py = promptY + 26;
-    ctx.fillStyle = '#6A7280';
-    ctx.fillText('# Instructions', leftX + 10, py); py += 16;
-    ctx.fillStyle = '#E0E0E0';
-    ctx.fillText('Given context, question -> answer', leftX + 10, py); py += 20;
-    ctx.fillStyle = '#6A7280';
-    ctx.fillText('# Demonstrations: ' + state.demos.length, leftX + 10, py); py += 16;
-
-    if (state.demos.length > 0) {
-      ctx.fillStyle = '#C3E88D';
-      for (let i = 0; i < Math.min(state.demos.length, 3); i++) {
-        ctx.fillText('Q: ' + examples[state.demos[i]].q, leftX + 10, py);
-        py += 14;
-        ctx.fillStyle = '#89DDFF';
-        ctx.fillText('A: [correct answer]', leftX + 10, py);
-        py += 16;
-        ctx.fillStyle = '#C3E88D';
-      }
-      if (state.demos.length > 3) {
-        ctx.fillStyle = '#6A7280';
-        ctx.fillText('... +' + (state.demos.length - 3) + ' more', leftX + 10, py);
-      }
-    } else {
-      ctx.fillStyle = '#6A728080';
-      ctx.fillText('(none yet)', leftX + 10, py);
     }
 
     // ---- Right panel: Accuracy Chart ----
@@ -1929,12 +1934,12 @@ function initCanvas(id) {
     ctx.fillText('ACCURACY', rightX, 10);
 
     const chartX = rightX + 30, chartY = 35;
-    const chartW = rightW - 50, chartH = h - 60;
+    const chartW = rightW - 60, chartH = h - 60;
     const maxRounds = examples.length;
 
     // Chart background
     ctx.beginPath();
-    ctx.roundRect(rightX, chartY - 10, rightW, chartH + 30, 6);
+    ctx.roundRect(rightX, chartY - 10, rightW - 10, chartH + 30, 6);
     ctx.fillStyle = '#fff';
     ctx.fill();
     ctx.strokeStyle = 'rgba(0,0,0,0.06)';
