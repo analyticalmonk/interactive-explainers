@@ -1099,7 +1099,7 @@ function initCanvas(id) {
       inline: 'question -> answer',
       inputs: [{ name: 'question', type: 'str' }],
       outputs: [{ name: 'answer', type: 'str' }],
-      instruction: 'Given the fields `question`, produce the fields `answer`.',
+      instruction: 'Given `question`, produce `answer`.',
       format: ['Question: ${question}', 'Answer: ${answer}'],
       example: { input: 'What is 2+2?', output: '4' }
     },
@@ -1108,7 +1108,7 @@ function initCanvas(id) {
       inline: 'context, question -> answer',
       inputs: [{ name: 'context', type: 'str' }, { name: 'question', type: 'str' }],
       outputs: [{ name: 'answer', type: 'str' }],
-      instruction: 'Given the fields `context`, `question`, produce the fields `answer`.',
+      instruction: 'Given `context`, `question`, produce `answer`.',
       format: ['Context: ${context}', 'Question: ${question}', 'Answer: ${answer}'],
       example: { input: 'What causes rain?', output: 'Condensation of water vapor...' }
     },
@@ -1117,7 +1117,7 @@ function initCanvas(id) {
       inline: 'sentence -> sentiment: bool',
       inputs: [{ name: 'sentence', type: 'str' }],
       outputs: [{ name: 'sentiment', type: 'bool' }],
-      instruction: 'Given the fields `sentence`, produce the fields `sentiment`.',
+      instruction: 'Given `sentence`, produce `sentiment`.',
       format: ['Sentence: ${sentence}', 'Sentiment: ${sentiment}'],
       example: { input: 'I love this movie!', output: 'True' }
     }
@@ -1144,8 +1144,8 @@ function initCanvas(id) {
     ctx.fillRect(0, 0, w, h);
 
     const sig = signatures[currentSig];
-    const leftX = 20, leftW = 240, topY = 20;
-    const rightX = 310, rightW = 390;
+    const leftX = 15, leftW = 220, topY = 20;
+    const rightX = 325, rightW = 380;
     const fullH = h - 40;
 
     // Left panel: Your Code
@@ -1159,35 +1159,37 @@ function initCanvas(id) {
 
     // Signature string
     let sy = topY + 44;
-    ctx.font = '12px "JetBrains Mono", monospace';
+    const codeFont = '10px "JetBrains Mono", monospace';
+    ctx.font = codeFont;
     ctx.fillStyle = '#6B7280';
     ctx.fillText('dspy.Predict(', leftX + 16, sy);
-    sy += 22;
+    sy += 20;
 
     // Colorize the inline signature
     const parts = sig.inline.split(' -> ');
     const inputStr = parts[0];
     const outputStr = parts[1];
 
+    ctx.font = codeFont;
     ctx.fillStyle = COL.gray;
-    ctx.fillText('  "', leftX + 16, sy);
-    const quoteW = ctx.measureText('  "').width;
+    ctx.fillText('"', leftX + 28, sy);
+    const quoteW = ctx.measureText('"').width;
 
     ctx.fillStyle = COL.input;
-    ctx.fillText(inputStr, leftX + 16 + quoteW, sy);
+    ctx.fillText(inputStr, leftX + 28 + quoteW, sy);
     const inputW = ctx.measureText(inputStr).width;
 
     ctx.fillStyle = '#9CA3AF';
-    ctx.fillText(' -> ', leftX + 16 + quoteW + inputW, sy);
+    ctx.fillText(' -> ', leftX + 28 + quoteW + inputW, sy);
     const arrowW = ctx.measureText(' -> ').width;
 
     ctx.fillStyle = COL.output;
-    ctx.fillText(outputStr, leftX + 16 + quoteW + inputW + arrowW, sy);
+    ctx.fillText(outputStr, leftX + 28 + quoteW + inputW + arrowW, sy);
     const outW = ctx.measureText(outputStr).width;
 
     ctx.fillStyle = COL.gray;
-    ctx.fillText('"', leftX + 16 + quoteW + inputW + arrowW + outW, sy);
-    sy += 22;
+    ctx.fillText('"', leftX + 28 + quoteW + inputW + arrowW + outW, sy);
+    sy += 20;
 
     ctx.fillStyle = '#6B7280';
     ctx.fillText(')', leftX + 16, sy);
@@ -1199,7 +1201,7 @@ function initCanvas(id) {
     ctx.fillText('INPUT FIELDS', leftX + 16, sy);
     sy += 20;
 
-    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.font = '10px "JetBrains Mono", monospace';
     for (const inp of sig.inputs) {
       drawRoundRect(leftX + 16, sy - 2, leftW - 32, 22, 4, COL.inputLight, COL.inputBorder, 0.5);
       ctx.fillStyle = COL.input;
@@ -1213,7 +1215,7 @@ function initCanvas(id) {
     ctx.fillText('OUTPUT FIELDS', leftX + 16, sy);
     sy += 20;
 
-    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.font = '10px "JetBrains Mono", monospace';
     for (const out of sig.outputs) {
       drawRoundRect(leftX + 16, sy - 2, leftW - 32, 22, 4, COL.outputLight, COL.outputBorder, 0.5);
       ctx.fillStyle = COL.output;
@@ -1222,7 +1224,7 @@ function initCanvas(id) {
     }
 
     // Arrow between panels
-    const arrowCx = 275;
+    const arrowCx = 280;
     const arrowCy = h / 2;
     const pulse = Math.sin(time * 2) * 0.2 + 0.8;
 
