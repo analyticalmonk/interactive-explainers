@@ -654,7 +654,7 @@ input[type="range"]::-webkit-slider-thumb {
           <div class="ctrl-separator"></div>
           <span class="ctrl-label">Mission day</span>
           <input type="range" id="traj-slider" min="0" max="1000" value="0" step="1">
-          <span class="ctrl-label" id="traj-day" style="min-width:3.5rem;">Day 0</span>
+          <span class="ctrl-label" id="traj-day" style="min-width:4.5rem;">Day 0</span>
         </div>
         <div class="info-panel" id="traj-info">
           <div class="info-panel-title" id="traj-phase">Pre-launch</div>
@@ -1047,17 +1047,17 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   // Phases with timing (0-1 across the mission)
   // Day 0: launch -> Day 1: HEO + TLI -> Day 4: flyby -> Day 10: splashdown
   const phases = [
-    { t: 0.00, name: 'Pre-launch', desc: 'Integrity sits on Pad 39B. The mission is about to begin.', day: 0 },
-    { t: 0.02, name: 'Launch & ascent', desc: 'SLS lifts off. Core stage and boosters separate; Orion reaches orbit.', day: 0 },
-    { t: 0.08, name: 'High Earth orbit checkout', desc: 'ICPS raises orbit to ~100 mi perigee; crew verifies life support, avionics, comms over ~23 hours.', day: 1 },
-    { t: 0.14, name: 'Proximity operations', desc: 'Crew manually pilots Orion to approach the spent ICPS - a dress rehearsal for future docking with landers and Gateway.', day: 1 },
-    { t: 0.22, name: 'Translunar injection', desc: 'European Service Module main engine fires. Orion enters a free-return trajectory: lunar gravity will swing it back to Earth even with no further burns.', day: 2 },
-    { t: 0.45, name: 'Coast to the Moon', desc: 'Crew runs science, monitors radiation, tests laser communications, practices emergency procedures.', day: 3 },
-    { t: 0.58, name: 'Closest approach (4,067 mi)', desc: 'Orion swings behind the Moon. Brief communications blackout. Crew captures far-side imagery - most detailed human-observed lunar views since Apollo 17.', day: 4 },
-    { t: 0.62, name: 'Distance record: 252,756 mi', desc: 'The spacecraft reaches the farthest point any humans have ever been from Earth. Lunar gravity has now redirected the trajectory back homeward.', day: 5 },
-    { t: 0.85, name: 'Coast home', desc: 'Trajectory correction burns fine-tune the entry corridor. Radiation-shelter drill performed.', day: 8 },
-    { t: 0.95, name: 'Entry & splashdown', desc: 'Service module jettisoned. Capsule hits atmosphere at ~25,000 mph, ~5,000°F. Parachutes deploy; splashdown in Pacific, recovery by USS John P. Murtha.', day: 10 },
-    { t: 1.00, name: 'Mission complete', desc: 'Crew safely recovered. First humans beyond low Earth orbit in over 50 years.', day: 10 }
+    { t: 0.00, name: 'Pre-launch',                    desc: 'Integrity sits on Pad 39B. The mission is about to begin.', dayLabel: 'Day 0' },
+    { t: 0.02, name: 'Launch & ascent',               desc: 'SLS lifts off. Core stage and boosters separate; Orion reaches orbit.', dayLabel: 'Day 0' },
+    { t: 0.08, name: 'High Earth orbit checkout',     desc: 'The upper stage of SLS fires to raise Orion into a stretched, egg-shaped orbit around Earth. The crew spends ~23 hours checking life support, flight computers, and communications before committing to the Moon.', dayLabel: 'Day 0-1' },
+    { t: 0.14, name: 'Proximity operations',          desc: 'With the upper stage now spent and drifting nearby, the crew manually flies Orion up close to it - a dress rehearsal for future docking with lunar landers and Gateway.', dayLabel: 'Day 1' },
+    { t: 0.22, name: 'Translunar injection',          desc: 'The European Service Module main engine fires. This burn both sends Orion toward the Moon and shapes the path so that lunar gravity alone will slingshot the spacecraft back to Earth, even if no other engines ever fire again.', dayLabel: 'Day 1-2' },
+    { t: 0.45, name: 'Coast to the Moon',             desc: 'Crew runs science, monitors radiation, tests laser communications, practices emergency procedures.', dayLabel: 'Day 2-4' },
+    { t: 0.58, name: 'Closest approach (4,067 mi)',   desc: 'Orion swings behind the Moon. Brief communications blackout. Crew captures far-side imagery - most detailed human-observed lunar views since Apollo 17.', dayLabel: 'Day 4' },
+    { t: 0.62, name: 'Distance record: 252,756 mi',   desc: 'The spacecraft reaches the farthest point any humans have ever been from Earth. Lunar gravity has now redirected the trajectory back homeward.', dayLabel: 'Day 5' },
+    { t: 0.85, name: 'Coast home',                    desc: 'Trajectory correction burns fine-tune the entry corridor. Radiation-shelter drill performed.', dayLabel: 'Day 6-8' },
+    { t: 0.95, name: 'Entry & splashdown',            desc: 'Service module jettisoned. Capsule hits atmosphere at ~25,000 mph, ~5,000°F. Parachutes deploy; splashdown in Pacific, recovery by USS John P. Murtha.', dayLabel: 'Day 9' },
+    { t: 1.00, name: 'Mission complete',              desc: 'Crew safely recovered. First humans beyond low Earth orbit in over 50 years.', dayLabel: 'Day 9' }
   ];
 
   let t = 0;
@@ -1072,42 +1072,61 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     });
   }
 
-  // Trajectory path: parametric curve Earth -> HEO -> around Moon -> back to Earth
+  // HEO spiral parameters - chosen so the natural endpoint lands at heoExit
+  const heoTurns      = 2.5;                         // multiplier * PI total sweep
+  const heoRadiusEnd  = earth.r + 14 + 25;           // = 67
+  // At progress=1: angle = -PI/2 + 2.5*PI = 2*PI, so (cos, sin) = (1, 0)
+  const heoExit      = { x: earth.x + heoRadiusEnd, y: earth.y };
+  const moonApproach = { x: moon.x - moon.r - 5,    y: moon.y - moon.r * 0.35 };
+  const moonExit     = { x: moon.x - moon.r - 3,    y: moon.y + moon.r * 0.70 };
+  const earthReturn  = { x: earth.x + earth.r + 8,  y: earth.y + earth.r * 0.55 };
+
+  function cubicBezier(t, p0, p1, p2, p3) {
+    const mt = 1 - t;
+    return {
+      x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x,
+      y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y
+    };
+  }
+
   function trajPoint(u) {
-    // u: 0 (launch) to 1 (splashdown)
     if (u < 0.03) {
-      // On ground / launch
       return { x: earth.x, y: earth.y - earth.r };
     }
     if (u < 0.20) {
-      // High Earth orbit - loop around Earth
-      const angle = -Math.PI / 2 + (u - 0.03) / 0.17 * Math.PI * 1.8;
-      const r = earth.r + 30 + (u - 0.03) * 40;
-      return { x: earth.x + Math.cos(angle) * r, y: earth.y + Math.sin(angle) * r };
+      // High Earth orbit - spiral that naturally terminates at heoExit
+      const progress = (u - 0.03) / 0.17;
+      const angle = -Math.PI/2 + progress * Math.PI * heoTurns;
+      const radius = earth.r + 14 + progress * 25;
+      return {
+        x: earth.x + Math.cos(angle) * radius,
+        y: earth.y + Math.sin(angle) * radius * 0.78
+      };
     }
     if (u < 0.60) {
-      // Outbound coast to Moon - arc toward lunar flyby
-      const k = (u - 0.20) / 0.40; // 0..1
-      const mx = lerp(earth.x + 60, moon.x - 30, k);
-      const my = lerp(earth.y - 20, moon.y + 20, k);
-      // Add slight upward bow
-      const bow = Math.sin(k * Math.PI) * 30;
-      return { x: mx, y: my - bow };
+      // Outbound coast - cubic Bezier curving from HEO exit to the Moon
+      const k = (u - 0.20) / 0.40;
+      const c1 = { x: heoExit.x + 140, y: heoExit.y - 110 };
+      const c2 = { x: moonApproach.x - 150, y: moonApproach.y - 55 };
+      return cubicBezier(k, heoExit, c1, c2, moonApproach);
     }
     if (u < 0.68) {
-      // Lunar flyby - arc around far side
+      // Lunar flyby - sweep around the far (Earth-opposite) side of the Moon
       const k = (u - 0.60) / 0.08;
-      const ang = Math.PI + k * Math.PI;
-      const lr = moon.r + 20;
-      return { x: moon.x + Math.cos(ang) * lr, y: moon.y + Math.sin(ang) * lr };
+      const startAngle = Math.atan2(moonApproach.y - moon.y, moonApproach.x - moon.x);
+      const endAngle   = Math.atan2(moonExit.y - moon.y,     moonExit.x - moon.x);
+      let sweep = endAngle - startAngle;
+      if (sweep < Math.PI) sweep += 2 * Math.PI;
+      const angle = startAngle + k * sweep;
+      const r = Math.hypot(moonApproach.x - moon.x, moonApproach.y - moon.y);
+      return { x: moon.x + Math.cos(angle) * r, y: moon.y + Math.sin(angle) * r };
     }
     if (u < 1.0) {
-      // Return coast
+      // Return coast - cubic Bezier back to Earth, passing below the outbound arc
       const k = (u - 0.68) / 0.32;
-      const mx = lerp(moon.x + 10, earth.x, k);
-      const my = lerp(moon.y + 25, earth.y + 25, k);
-      const bow = Math.sin(k * Math.PI) * 40;
-      return { x: mx, y: my + bow };
+      const c1 = { x: moonExit.x - 150, y: moonExit.y + 70 };
+      const c2 = { x: earthReturn.x + 140, y: earthReturn.y + 90 };
+      return cubicBezier(k, moonExit, c1, c2, earthReturn);
     }
     return { x: earth.x, y: earth.y + earth.r + 6 };
   }
@@ -1236,7 +1255,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       ctx.fillText('Integrity', p.x + 10, p.y + 3);
       ctx.font = '9px -apple-system, sans-serif';
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.fillText('Day ' + phase.day, p.x + 10, p.y + 15);
+      ctx.fillText(phase.dayLabel, p.x + 10, p.y + 15);
     }
 
     // Header overlay
@@ -1248,15 +1267,15 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   function updatePanel() {
     const phase = currentPhase(t);
-    document.getElementById('traj-phase').textContent = 'Day ' + phase.day + ' · ' + phase.name;
+    document.getElementById('traj-phase').textContent = phase.dayLabel + ' · ' + phase.name;
     document.getElementById('traj-desc').textContent = phase.desc;
-    document.getElementById('traj-day').textContent = 'Day ' + phase.day;
+    document.getElementById('traj-day').textContent = phase.dayLabel;
     document.getElementById('traj-slider').value = Math.round(t * 1000);
   }
 
   function animate() {
     if (playing) {
-      t += 0.0025;
+      t += 0.0005;
       if (t >= 1.0) {
         t = 1.0;
         playing = false;
