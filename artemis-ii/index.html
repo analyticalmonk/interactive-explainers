@@ -779,7 +779,7 @@ input[type="range"]::-webkit-slider-thumb {
           <canvas id="canvas-orion" width="720" height="420"></canvas>
         </div>
         <div class="figure-controls">
-          <span class="ctrl-label">Click the labels or the spacecraft</span>
+          <span class="ctrl-label">Each label is clickable</span>
           <div class="ctrl-separator"></div>
           <button class="ctrl-btn" id="orion-reset">Reset</button>
         </div>
@@ -1525,52 +1525,71 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 (function() {
   const { canvas, ctx, w, h } = initCanvas('canvas-orion');
 
-  // Orion laid out horizontally: crew module (right) + service module (left)
+  // Orion laid out horizontally: crew module (right) + service module (left).
+  // Labels are the interactive targets; `target` is where the leader line points.
   const subsystems = [
     {
-      id: 'launch-abort',
-      title: 'Launch Abort System',
-      desc: 'A small rocket tower perched above the capsule. During the first minutes of flight, if the main rocket fails, it can yank the crew module away in under 2 seconds. Jettisoned once past max-Q.',
-      // Hit region coords
-      hit: { x: 590, y: 100, w: 60, h: 80 }
-    },
-    {
-      id: 'crew-module',
-      title: 'Crew Module',
-      desc: 'Carries 4 astronauts. 3 display screens and ~60 physical switches replace Apollo\'s thousand+ controls. Suits can sustain a crewmember for days in a depressurized cabin.',
-      hit: { x: 450, y: 180, w: 150, h: 110 }
-    },
-    {
-      id: 'heat-shield',
-      title: 'Heat Shield',
-      desc: '16.5 ft diameter. Uses Avcoat ablative material - it chars and flakes off, carrying heat away. Largest crewed heat shield ever flown. Faces ~5,000°F at lunar reentry speeds.',
-      hit: { x: 520, y: 290, w: 110, h: 35 }
-    },
-    {
-      id: 'solar',
-      title: 'Solar Arrays',
+      id: 'solar', label: 'Solar arrays', title: 'Solar Arrays',
       desc: '4 wings on the European Service Module generate up to 11 kW of power - enough for two three-bedroom homes. They rotate to track the Sun as Orion moves.',
-      hit: { x: 60, y: 130, w: 140, h: 50 }
+      labelPos: { x: 72, y: 108 }, target: { x: 130, y: 154 }
     },
     {
-      id: 'esm',
-      title: 'European Service Module',
-      desc: 'Built by ESA and Airbus. Contains 33 engines (main, aux, RCS), plus water, oxygen, nitrogen, and propellant. It is jettisoned and burns up before reentry - only the crew module comes home.',
-      hit: { x: 200, y: 180, w: 250, h: 110 }
+      id: 'launch-abort', label: 'Launch abort system', title: 'Launch Abort System',
+      desc: 'A small rocket tower perched above the capsule. During the first minutes of flight, if the main rocket fails, it can yank the crew module away in under 2 seconds. Jettisoned once past max-Q.',
+      labelPos: { x: 540, y: 78 }, target: { x: 617, y: 100 }
     },
     {
-      id: 'eclss',
-      title: 'Regenerative Life Support',
-      desc: 'A big deal. Instead of Apollo\'s single-use LiOH canisters (scrub CO₂ once, discard), Orion uses a regenerable molecular-sieve system that cycles indefinitely. Critical for long missions - no quick resupply possible in deep space.',
-      hit: { x: 485, y: 215, w: 80, h: 40 }
+      id: 'crew-module', label: 'Crew module', title: 'Crew Module',
+      desc: 'Carries 4 astronauts. 3 display screens and ~60 physical switches replace Apollo\'s thousand+ controls. Suits can sustain a crewmember for days in a depressurized cabin.',
+      labelPos: { x: 644, y: 225 }, target: { x: 585, y: 225 }
     },
     {
-      id: 'engine',
-      title: 'Main Engine (OMS-E)',
+      id: 'engine', label: 'Main engine', title: 'Main Engine (OMS-E)',
       desc: 'The ESM\'s main engine performs translunar injection, course corrections, and return burns. Repurposed from the Space Shuttle Orbital Maneuvering System - proven hardware, ~26 kN thrust.',
-      hit: { x: 150, y: 220, w: 55, h: 55 }
+      labelPos: { x: 18, y: 248 }, target: { x: 153, y: 245 }
+    },
+    {
+      id: 'esm', label: 'European Service Module', title: 'European Service Module',
+      desc: 'Built by ESA and Airbus. Contains 33 engines (main, aux, RCS), plus water, oxygen, nitrogen, and propellant. It is jettisoned and burns up before reentry - only the crew module comes home.',
+      labelPos: { x: 232, y: 365 }, target: { x: 327, y: 290 }
+    },
+    {
+      id: 'heat-shield', label: 'Heat shield', title: 'Heat Shield',
+      desc: '16.5 ft diameter. Uses Avcoat ablative material - it chars and flakes off, carrying heat away. Largest crewed heat shield ever flown. Faces ~5,000°F at lunar reentry speeds.',
+      labelPos: { x: 505, y: 360 }, target: { x: 535, y: 315 }
+    },
+    {
+      id: 'eclss', label: 'ECLSS (life support)', title: 'Regenerative Life Support',
+      desc: 'A big deal. Instead of Apollo\'s single-use LiOH canisters (scrub CO₂ once, discard), Orion uses a regenerable molecular-sieve system that cycles indefinitely. Critical for long missions - no quick resupply possible in deep space.',
+      labelPos: { x: 602, y: 395 }, target: { x: 565, y: 265 }
     }
   ];
+
+  // Pre-compute hit rectangles around each label using the label's rendered width.
+  // Use the bold font (the larger of the two states) so hovering never "drops off" when
+  // the label un-bolds on blur.
+  ctx.save();
+  ctx.font = 'bold 11px -apple-system, sans-serif';
+  for (const s of subsystems) {
+    const metrics = ctx.measureText(s.label);
+    const padX = 4, padY = 3;
+    const textHeight = 11;
+    s.labelRect = {
+      x: s.labelPos.x - padX,
+      y: s.labelPos.y - textHeight - padY + 2, // labelPos.y is baseline
+      w: metrics.width + padX * 2,
+      h: textHeight + padY * 2 + 2
+    };
+  }
+  ctx.restore();
+
+  function findLabelAt(mx, my) {
+    for (const s of subsystems) {
+      const r = s.labelRect;
+      if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) return s;
+    }
+    return null;
+  }
 
   let hover = null;
   let selected = null;
@@ -1734,49 +1753,72 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.fillRect(612, 155, 4, 10);
     ctx.fillRect(620, 155, 4, 10);
 
-    // Highlight hover/selected
     const highlight = selected || hover;
-    if (highlight) {
-      const sub = subsystems.find(s => s.id === highlight);
-      ctx.strokeStyle = '#1E3A8A';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 4]);
-      ctx.strokeRect(sub.hit.x, sub.hit.y, sub.hit.w, sub.hit.h);
-      ctx.setLineDash([]);
 
-      // Leader line + label
-      ctx.fillStyle = '#1E3A8A';
-      ctx.font = 'bold 11px -apple-system, sans-serif';
-      ctx.textAlign = 'left';
-      // Place label near top
-      const lx = sub.hit.x + sub.hit.w / 2;
-      const ly = sub.hit.y - 8;
-      ctx.textAlign = 'center';
-      ctx.fillText(sub.title, lx, ly);
+    // Heading hint - prominent instruction banner
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.fillStyle = '#1E3A8A';
+    ctx.fillText('Hover or tap any label to learn about that subsystem', w / 2, 30);
+    ctx.textAlign = 'left';
+
+    // Leader line + marker for the active subsystem (drawn first, under labels)
+    if (highlight) {
+      const active = subsystems.find(s => s.id === highlight);
+      if (active) {
+        const anchorX = active.labelRect.x + active.labelRect.w / 2;
+        // Anchor line to the edge of the label rect closest to the target
+        const above = active.target.y > active.labelRect.y + active.labelRect.h;
+        const anchorY = above ? active.labelRect.y + active.labelRect.h : active.labelRect.y;
+
+        ctx.strokeStyle = 'rgba(30, 58, 138, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(anchorX, anchorY);
+        ctx.lineTo(active.target.x, active.target.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Target marker ring
+        ctx.fillStyle = 'rgba(30, 58, 138, 0.15)';
+        ctx.beginPath();
+        ctx.arc(active.target.x, active.target.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#1E3A8A';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(active.target.x, active.target.y, 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
     }
 
-    // Labels around spacecraft (always visible)
-    ctx.textAlign = 'left';
-    ctx.font = '9.5px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
-    ctx.fillText('↓ click the labeled zones ↓', 20, 22);
-
-    // Small always-on labels
-    const alwaysLabels = [
-      { x: 618, y: 85, text: 'LAS', hit: 'launch-abort' },
-      { x: 545, y: 195, text: 'Crew module', hit: 'crew-module' },
-      { x: 560, y: 333, text: 'Heat shield', hit: 'heat-shield' },
-      { x: 70, y: 122, text: 'Solar arrays', hit: 'solar' },
-      { x: 260, y: 178, text: 'European Service Module', hit: 'esm' },
-      { x: 470, y: 400, text: 'ECLSS (inside crew module)', hit: 'eclss' },
-      { x: 150, y: 292, text: 'Main engine', hit: 'engine' }
-    ];
-    ctx.font = '10px -apple-system, sans-serif';
-    for (const lbl of alwaysLabels) {
-      const isActive = lbl.hit === highlight;
-      ctx.fillStyle = isActive ? '#1E3A8A' : 'rgba(0,0,0,0.5)';
-      ctx.font = isActive ? 'bold 10px -apple-system, sans-serif' : '10px -apple-system, sans-serif';
-      ctx.fillText(lbl.text, lbl.x, lbl.y);
+    // Labels (drawn on top). Active label gets a subtle pill background so it reads
+    // as an interactive chip, and no wide bounding box ever overlaps the spacecraft.
+    for (const s of subsystems) {
+      const isActive = s.id === highlight;
+      if (isActive) {
+        ctx.fillStyle = 'rgba(30, 58, 138, 0.10)';
+        ctx.beginPath();
+        const r = s.labelRect;
+        const radius = 4;
+        ctx.moveTo(r.x + radius, r.y);
+        ctx.lineTo(r.x + r.w - radius, r.y);
+        ctx.quadraticCurveTo(r.x + r.w, r.y, r.x + r.w, r.y + radius);
+        ctx.lineTo(r.x + r.w, r.y + r.h - radius);
+        ctx.quadraticCurveTo(r.x + r.w, r.y + r.h, r.x + r.w - radius, r.y + r.h);
+        ctx.lineTo(r.x + radius, r.y + r.h);
+        ctx.quadraticCurveTo(r.x, r.y + r.h, r.x, r.y + r.h - radius);
+        ctx.lineTo(r.x, r.y + radius);
+        ctx.quadraticCurveTo(r.x, r.y, r.x + radius, r.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = isActive ? '#1E3A8A' : 'rgba(0, 0, 0, 0.55)';
+      ctx.font = isActive
+        ? 'bold 11px -apple-system, sans-serif'
+        : '10.5px -apple-system, sans-serif';
+      ctx.fillText(s.label, s.labelPos.x, s.labelPos.y);
     }
   }
 
@@ -1784,14 +1826,9 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left) * (w / rect.width);
     const my = (e.clientY - rect.top) * (h / rect.height);
-    hover = null;
-    for (const s of subsystems) {
-      if (mx >= s.hit.x && mx <= s.hit.x + s.hit.w && my >= s.hit.y && my <= s.hit.y + s.hit.h) {
-        hover = s.id;
-        break;
-      }
-    }
-    canvas.style.cursor = hover ? 'pointer' : 'default';
+    const hit = findLabelAt(mx, my);
+    hover = hit ? hit.id : null;
+    canvas.style.cursor = hit ? 'pointer' : 'default';
     drawOrion();
   });
 
@@ -1804,14 +1841,12 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     const rect = canvas.getBoundingClientRect();
     const mx = (e.clientX - rect.left) * (w / rect.width);
     const my = (e.clientY - rect.top) * (h / rect.height);
-    for (const s of subsystems) {
-      if (mx >= s.hit.x && mx <= s.hit.x + s.hit.w && my >= s.hit.y && my <= s.hit.y + s.hit.h) {
-        selected = s.id;
-        document.getElementById('orion-title').textContent = s.title;
-        document.getElementById('orion-desc').textContent = s.desc;
-        drawOrion();
-        return;
-      }
+    const hit = findLabelAt(mx, my);
+    if (hit) {
+      selected = hit.id;
+      document.getElementById('orion-title').textContent = hit.title;
+      document.getElementById('orion-desc').textContent = hit.desc;
+      drawOrion();
     }
   });
 
