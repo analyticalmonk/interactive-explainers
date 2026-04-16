@@ -1,0 +1,2262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artemis II: Why Going Back to the Moon Is a Big Deal</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fff;
+  --bg-warm: #FAF8F4;
+  --bg-code: #f4f4f4;
+  --text: rgba(0, 0, 0, 0.82);
+  --text-secondary: rgba(0, 0, 0, 0.55);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --border: rgba(0, 0, 0, 0.09);
+  --border-light: rgba(0, 0, 0, 0.05);
+
+  --nasa-primary: #1E3A8A;
+  --nasa-light: #EFF6FF;
+  --nasa-border: #BFDBFE;
+  --nasa-dark: #1E40AF;
+
+  --lunar-primary: #B45309;
+  --lunar-light: #FEF3C7;
+  --lunar-border: #FCD34D;
+  --lunar-dark: #92400E;
+
+  --risk-primary: #B91C1C;
+  --risk-light: #FEF2F2;
+  --risk-border: #FCA5A5;
+  --risk-dark: #991B1B;
+
+  --future-primary: #7C3AED;
+  --future-light: #F5F3FF;
+  --future-border: #C4B5FD;
+  --future-dark: #5B21B6;
+
+  --accent: #C2410C;
+  --accent-light: #fff7ed;
+  --link: #004276;
+
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --content-width: 720px;
+  --sidebar-width: 220px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+
+.site-header-inner {
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.site-nav a {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-nav a:hover { color: var(--text); }
+
+.page-wrapper {
+  display: flex;
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  padding-right: 2.5rem;
+}
+
+.sidebar-inner {
+  position: sticky;
+  top: 2rem;
+  padding-top: 6rem;
+}
+
+.sidebar nav a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 0.35rem 0 0.35rem 0.85rem;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.sidebar nav a:hover { color: var(--text-secondary); }
+
+.sidebar nav a.active {
+  color: var(--text);
+  border-left-color: var(--nasa-primary);
+  font-weight: 600;
+}
+
+.sidebar nav a.sub {
+  padding-left: 1.6rem;
+  font-size: 0.67rem;
+}
+
+.content {
+  flex: 1;
+  max-width: var(--content-width);
+  min-width: 0;
+  padding-bottom: 6rem;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 4.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 3rem;
+  margin-bottom: 0.75rem;
+}
+
+p { margin-bottom: 1.25rem; }
+
+.lead {
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.subtitle {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  margin-bottom: 0.5rem;
+}
+
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+strong { font-weight: 600; }
+em { font-style: italic; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.math {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: var(--bg-code);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.article-header {
+  padding-top: 5rem;
+  margin-bottom: 3.5rem;
+}
+
+.article-header .overline {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--nasa-primary);
+  margin-bottom: 1rem;
+}
+
+.figure {
+  margin: 2.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.figure-canvas-wrap {
+  position: relative;
+  width: 100%;
+  background: #0B1020;
+}
+
+.figure-canvas-wrap.light {
+  background: #FEFEFE;
+}
+
+.figure-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+}
+
+.figure-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 0.5rem 1rem 0;
+}
+
+button.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+button.ctrl-btn:hover {
+  background: var(--bg);
+  border-color: var(--text-tertiary);
+}
+
+button.ctrl-btn.active {
+  background: var(--nasa-primary);
+  color: #fff;
+  border-color: var(--nasa-primary);
+}
+
+button.ctrl-btn.primary {
+  background: var(--nasa-primary);
+  color: #fff;
+  border-color: var(--nasa-primary);
+}
+
+button.ctrl-btn.primary:hover { opacity: 0.9; }
+
+.ctrl-label {
+  font-family: var(--font-sans);
+  font-size: 0.67rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.ctrl-separator {
+  width: 1px;
+  height: 1.2rem;
+  background: var(--border);
+  margin: 0 0.3rem;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 120px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--nasa-primary);
+  cursor: pointer;
+}
+
+.callout {
+  margin: 2rem 0;
+  padding: 1.25rem 1.5rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.95rem;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.stat-cell {
+  padding: 1rem;
+  background: var(--bg-warm);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 500;
+  color: var(--nasa-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+  line-height: 1.4;
+}
+
+.info-panel {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--text);
+  padding: 1rem 1.25rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+  min-height: 4.5rem;
+}
+
+.info-panel-title {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--nasa-primary);
+  margin-bottom: 0.3rem;
+  letter-spacing: 0.01em;
+}
+
+.timeline {
+  position: relative;
+  margin: 2.5rem 0;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.75rem;
+  padding-left: 1rem;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.65rem;
+  top: 0.55rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--text-tertiary);
+}
+
+.timeline-item.highlight::before {
+  background: var(--nasa-primary);
+  border-color: var(--nasa-primary);
+}
+
+.timeline-item.future::before {
+  background: var(--bg);
+  border-color: var(--future-primary);
+  border-style: dashed;
+}
+
+.timeline-year {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--nasa-primary);
+}
+
+.timeline-item.future .timeline-year { color: var(--future-primary); }
+
+.timeline-text {
+  font-size: 0.95rem;
+  margin-top: 0.15rem;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+}
+
+.comparison-table th,
+.comparison-table td {
+  text-align: left;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+}
+
+.comparison-table th {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border);
+}
+
+.comparison-table tr:last-child td { border-bottom: none; }
+
+.comparison-table .dim { color: var(--text-tertiary); font-weight: 600; }
+
+.article-footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+
+.article-footer a { color: var(--link); }
+
+@media (max-width: 1060px) {
+  .sidebar { display: none; }
+  .page-wrapper { padding: 0 1.25rem; }
+}
+
+@media (max-width: 600px) {
+  html { font-size: 16px; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .article-header { padding-top: 3rem; }
+  .figure-controls { gap: 0.4rem; }
+  .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .figure-canvas-wrap canvas { min-width: 500px; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.article-header h1 { animation: fadeInUp 0.6s ease 0.2s both; }
+.article-header .lead { animation: fadeIn 0.8s ease 0.4s both; }
+.figure { animation: fadeInUp 0.5s ease both; }
+</style>
+<script data-goatcounter="https://analyticalmonk.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <nav id="toc">
+        <a href="#intro">Why Artemis II Matters</a>
+        <a href="#mission">The Mission</a>
+        <a href="#trajectory" class="sub">Free-Return Trajectory</a>
+        <a href="#apollo-gap">Why the 50+ Year Gap?</a>
+        <a href="#vs-apollo" class="sub">Apollo vs Artemis</a>
+        <a href="#systems">The Spacecraft</a>
+        <a href="#orion-diagram" class="sub">Orion Subsystems</a>
+        <a href="#reentry" class="sub">Coming Home Hot</a>
+        <a href="#future">What Comes Next</a>
+        <a href="#campaign" class="sub">The Artemis Campaign</a>
+        <a href="#hard">Why It's Still Hard</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <header class="article-header" id="intro">
+      <div class="overline">Interactive Explainer</div>
+      <h1>Artemis II:<br>Why Going Back to the Moon Is a Big Deal</h1>
+      <p class="lead">
+        On April 10, 2026, four astronauts splashed down off San Diego after a nearly
+        10-day flight around the Moon - the first crew to leave low Earth orbit in
+        over 50 years. Apollo did this in 1969. So what's the fuss?
+      </p>
+      <div class="meta">April 2026 &middot; 14 min read &middot; 5 interactive figures</div>
+    </header>
+
+    <section>
+      <p>
+        The short answer: Artemis II is not a replay of Apollo. It is the first
+        crewed test of a completely different kind of Moon program - one built to
+        stay, not to visit. Apollo was a sprint. Artemis is infrastructure.
+      </p>
+      <p>
+        This explainer walks through what Artemis II actually did, how the
+        spacecraft works, why the 50+ year gap happened, and what the success of
+        this mission unlocks for the next decade of human spaceflight - including
+        Mars.
+      </p>
+
+      <div class="stat-grid">
+        <div class="stat-cell">
+          <div class="stat-value">4</div>
+          <div class="stat-label">crew members on "Integrity"</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value">252,756 mi</div>
+          <div class="stat-label">farthest humans have ever traveled from Earth</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value">4,067 mi</div>
+          <div class="stat-label">closest approach to the lunar surface</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value">~25,000 mph</div>
+          <div class="stat-label">reentry speed, ~5,000&deg;F peak heating</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="mission">The Mission</h2>
+      <p>
+        Artemis II launched from Kennedy Space Center's Pad 39B at 6:35 p.m. EDT
+        on April 1, 2026, carrying commander Reid Wiseman, pilot Victor Glover,
+        and mission specialists Christina Koch and Jeremy Hansen (of the Canadian
+        Space Agency). The crew nicknamed their Orion capsule
+        <em>Integrity</em>.
+      </p>
+      <p>
+        Unlike Apollo, Artemis II did not enter lunar orbit. The mission flew a
+        <strong>free-return trajectory</strong> - a carefully chosen path where
+        lunar gravity naturally swings the spacecraft back toward Earth, even if
+        every engine fails. This is the safest possible way to send people to
+        the Moon for the first time on a new rocket.
+      </p>
+
+      <!-- FIGURE 1: Trajectory animation -->
+      <div class="figure" id="trajectory">
+        <div class="figure-label">Figure 1 &mdash; Free-Return Lunar Flyby</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-trajectory" width="720" height="420"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="traj-play">Play</button>
+          <button class="ctrl-btn" id="traj-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label">Mission day</span>
+          <input type="range" id="traj-slider" min="0" max="1000" value="0" step="1">
+          <span class="ctrl-label" id="traj-day" style="min-width:4.5rem;">Day 0</span>
+        </div>
+        <div class="info-panel" id="traj-info">
+          <div class="info-panel-title" id="traj-phase">Pre-launch</div>
+          <div id="traj-desc">Integrity sits on Pad 39B. The mission is about to begin.</div>
+        </div>
+        <div class="figure-caption">
+          Scrub through Artemis II's actual trajectory. The mission spent about
+          a day in high Earth orbit for system checkouts, then fired the European
+          Service Module main engine for translunar injection. From there, the
+          spacecraft coasted on a path shaped so that lunar gravity alone would
+          return it to Earth - no additional engine burns required.
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>Why a flyby, not a landing?</strong> Artemis II is a
+          <em>system test</em>, not a destination mission. Before NASA commits
+          humans to lunar orbit or the surface, it needs to prove the rocket,
+          capsule, life support, communications, and heat shield all work
+          together with people on board. A free-return flyby is the conservative
+          way to collect that data.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="apollo-gap">Why the 50+ Year Gap?</h2>
+      <p>
+        Humans last walked on the Moon in December 1972. That Artemis II happened
+        at all in 2026 is easy to take for granted. It shouldn't be. The gap is
+        not because the Moon got harder - the Moon stayed the same. The gap is
+        about what we chose to build, and chose not to.
+      </p>
+
+      <p>
+        Three compounding reasons:
+      </p>
+
+      <p>
+        <strong>Budgets collapsed after Apollo.</strong> NASA's peak budget in
+        1966 was roughly 4.4% of federal spending. Today it sits near 0.4%. The
+        post-Apollo Apollo 18, 19, and 20 missions were cancelled not for
+        technical reasons but because the money went elsewhere.
+      </p>
+
+      <p>
+        <strong>Priorities shifted to low Earth orbit.</strong> The Space Shuttle
+        and International Space Station dominated American human spaceflight for
+        40 years. They were engineering triumphs but optimized for a different
+        goal: routine access to orbit, not deep-space exploration.
+      </p>
+
+      <p>
+        <strong>Every administration restarted the plan.</strong> The 1989 Space
+        Exploration Initiative proposed Moon-then-Mars. So did the 2004 Vision
+        for Space Exploration. So did Constellation in 2005. Each was cancelled
+        or restructured by the next administration. Artemis is the first such
+        program to survive a presidential transition and actually fly crew.
+      </p>
+
+      <!-- FIGURE 2: Apollo vs Artemis comparison -->
+      <div class="figure" id="vs-apollo">
+        <div class="figure-label">Figure 2 &mdash; Apollo vs Artemis II, Side by Side</div>
+        <div class="figure-canvas-wrap light">
+          <canvas id="canvas-compare" width="720" height="440"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Compare:</span>
+          <button class="ctrl-btn compare-btn active" data-mission="apollo8">Apollo 8</button>
+          <button class="ctrl-btn compare-btn" data-mission="apollo11">Apollo 11</button>
+          <button class="ctrl-btn compare-btn" data-mission="apollo17">Apollo 17</button>
+          <button class="ctrl-btn compare-btn" data-mission="artemis2">Artemis II</button>
+        </div>
+        <div class="info-panel" id="compare-info">
+          <div class="info-panel-title" id="compare-title">Apollo 8 &middot; December 1968</div>
+          <div id="compare-desc">
+            First crewed mission to leave Earth orbit. Entered lunar orbit,
+            returned safely. Single-use hardware, built for Cold War speed.
+          </div>
+        </div>
+        <div class="figure-caption">
+          The capsules look similar at a glance - both conical, both splash
+          down under parachutes. But Artemis II carries four instead of three,
+          uses regenerative life support instead of expendable chemical
+          scrubbers, runs on digital &quot;glass cockpit&quot; avionics instead
+          of paper checklists, and is designed as the first of many identical
+          missions rather than a one-shot sprint.
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>
+          Apollo won the race to the Moon in under a decade by accepting
+          enormous cost and accepting that it was a sprint. Artemis is trying
+          to build a program that lasts. The engineering looks similar. The
+          goal function is completely different.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2 id="systems">The Spacecraft</h2>
+      <p>
+        The Artemis stack has two main pieces: the
+        <strong>Space Launch System (SLS)</strong> - a two-stage heavy-lift
+        rocket that gets Orion out of Earth's gravity - and
+        <strong>Orion</strong> - the crew capsule plus its European-built
+        Service Module, which provides propulsion, power, and life support
+        for the trip.
+      </p>
+
+      <p>
+        Below is an interactive tour of Orion. Each subsystem is a real
+        engineering choice, often different from Apollo.
+      </p>
+
+      <!-- FIGURE 3: Orion subsystems -->
+      <div class="figure" id="orion-diagram">
+        <div class="figure-label">Figure 3 &mdash; Orion, Click Any Subsystem</div>
+        <div class="figure-canvas-wrap light">
+          <canvas id="canvas-orion" width="720" height="420"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Each label is clickable</span>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="orion-reset">Reset</button>
+        </div>
+        <div class="info-panel" id="orion-info">
+          <div class="info-panel-title" id="orion-title">Orion Overview</div>
+          <div id="orion-desc">
+            Click a highlighted subsystem to learn how it works and why it
+            matters for crewed deep-space flight.
+          </div>
+        </div>
+        <div class="figure-caption">
+          Orion's crew module carries four astronauts; the European Service
+          Module behind it carries 33 engines, four solar array wings, and
+          consumables. The two halves separate just before reentry - only
+          the crew module comes home.
+        </div>
+      </div>
+
+      <h3 id="reentry">Coming Home Hot</h3>
+      <p>
+        Of everything Artemis II demonstrated, the most consequential may be
+        the reentry. Orion hit the atmosphere at about
+        <strong>25,000 mph</strong> - roughly 40% faster than a vehicle
+        returning from the space station - and its heat shield faced peak
+        temperatures near <strong>5,000&deg;F</strong>, hot enough to glow
+        white.
+      </p>
+
+      <p>
+        This matters because of an unresolved issue from Artemis I. On that
+        uncrewed 2022 flight, the heat shield's Avcoat ablative material
+        cracked and shed more than expected. NASA's root-cause investigation
+        concluded that trapped gas couldn't escape the material fast enough
+        during a &quot;skip entry&quot; - where the capsule dips into the
+        atmosphere, bounces back out, then reenters - and the pressure
+        fractured the shield from within.
+      </p>
+
+      <!-- FIGURE 4: Reentry heating -->
+      <div class="figure">
+        <div class="figure-label">Figure 4 &mdash; Reentry Speeds &amp; Heating</div>
+        <div class="figure-canvas-wrap light">
+          <canvas id="canvas-reentry" width="720" height="380"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Compare:</span>
+          <button class="ctrl-btn reentry-btn" data-v="iss">ISS return</button>
+          <button class="ctrl-btn reentry-btn" data-v="shuttle">Shuttle</button>
+          <button class="ctrl-btn reentry-btn active" data-v="orion">Orion (Artemis II)</button>
+          <button class="ctrl-btn reentry-btn" data-v="mars">Mars return*</button>
+        </div>
+        <div class="info-panel" id="reentry-info">
+          <div class="info-panel-title">Orion: ~25,000 mph &middot; ~5,000&deg;F</div>
+          <div>
+            Returning from the Moon means entering the atmosphere 40% faster
+            than ISS crews. Kinetic energy scales with velocity squared, so
+            the heat load grows roughly 2&times;. Orion's Avcoat shield is
+            16.5 ft across - the largest flown on a crewed vehicle.
+          </div>
+        </div>
+        <div class="figure-caption">
+          *Mars-return estimate (~27,000-29,000 mph depending on mission
+          profile). A safely-flown Orion heat shield is a direct prerequisite
+          for any future Mars crew return.
+        </div>
+      </div>
+
+      <p>
+        For Artemis II, NASA didn't replace the shield. Instead, engineers
+        changed the entry trajectory so the skip phase was shorter and more
+        permeable to outgassing. The mission's successful splashdown validates
+        that call: real-world conditions matched the analysis, and the crew
+        came home safe.
+      </p>
+    </section>
+
+    <section>
+      <h2 id="future">What Comes Next</h2>
+      <p>
+        Artemis II was a transportation test. The next missions are where the
+        program's ambition becomes visible.
+      </p>
+
+      <h3 id="campaign">The Artemis Campaign</h3>
+      <p>
+        Hover or click any milestone in the timeline to see what it does.
+        NASA's February 2026 update reshuffled the plan around Artemis II's
+        success - and around the reality that the commercial lunar landers
+        aren't ready yet.
+      </p>
+
+      <!-- FIGURE 5: Campaign timeline -->
+      <div class="figure">
+        <div class="figure-label">Figure 5 &mdash; The Artemis Campaign, 2022-2028+</div>
+        <div class="figure-canvas-wrap light">
+          <canvas id="canvas-campaign" width="720" height="320"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Click a mission node for details</span>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="campaign-reset">Overview</button>
+        </div>
+        <div class="info-panel" id="campaign-info">
+          <div class="info-panel-title" id="campaign-title">Click any mission above</div>
+          <div id="campaign-desc">
+            From the uncrewed Artemis I test in 2022 to the first Artemis
+            crewed lunar landing targeted for 2028, the campaign is designed
+            to ramp from one mission every 2-3 years toward yearly landings.
+          </div>
+        </div>
+        <div class="figure-caption">
+          Solid nodes are flown missions. Dashed outlines are targets,
+          subject to hardware readiness and budget. NASA explicitly calls
+          dates beyond Artemis II "targets, not commitments."
+        </div>
+      </div>
+
+      <p>
+        The shape of the campaign tells a story the mission tooltips don't.
+        Artemis is not "Apollo redone with bigger rockets" - it is an
+        <em>integration program</em>. NASA builds the crew transport (SLS
+        and Orion) and acts as systems integrator; almost everything else
+        comes from partners. The landers are commercial (SpaceX's Starship
+        HLS, Blue Origin's Blue Moon). Spacesuits are commercial (Axiom's
+        AxEMU). Cargo deliveries come through the Commercial Lunar Payload
+        Services program. Gateway modules come from ESA, JAXA, CSA, and
+        MBRSC. The critical path to sustained presence runs through
+        commercial and international partners - which is both the program's
+        superpower (more delivery capacity, shared cost) and its central
+        risk (NASA controls far less of its own schedule than it did in 1969).
+      </p>
+
+      <p>
+        This also explains the sequence. Artemis I and II were primarily
+        <em>NASA</em> tests - proving the rocket, the capsule, and the
+        operations concepts. From Artemis III onward, every mission depends
+        on something NASA did not build: Starship HLS has to fly, Blue Moon
+        has to fly, AxEMU suits have to qualify, Gateway modules have to
+        assemble in lunar orbit. The real gating question is no longer "can
+        humans survive cislunar space?" - Artemis II just answered that. It
+        is "can this multi-vendor supply chain ramp to a yearly landing
+        cadence?"
+      </p>
+
+      <div class="callout">
+        <p>
+          <strong>Why Mars people care about Artemis II.</strong> Every
+          technology demoed on this flight - regenerative life support, deep-space
+          radiation monitoring, optical (laser) communications, lunar-speed
+          reentry - scales up to a Mars mission. You cannot build a Mars
+          program on top of Apollo hardware. You have to prove the next
+          generation of systems first, and the Moon is the nearest place to
+          prove them.
+        </p>
+      </div>
+
+      <h2 id="hard">Why It's Still Hard</h2>
+
+      <p>
+        Artemis II's success is real, but it doesn't solve the hardest problem:
+        <strong>affordability</strong>. NASA's Office of Inspector General has
+        estimated the per-flight operating cost of SLS + Orion at roughly
+        <strong>$4.1 billion</strong>, not counting the decade of development
+        that preceded it. That's a number built for rare missions, not annual
+        landings.
+      </p>
+
+      <p>
+        The forward risks for Artemis cluster in three areas:
+      </p>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Risk area</th>
+            <th>What it is</th>
+            <th>Why it matters</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="dim">Landers</td>
+            <td>SpaceX Starship HLS and Blue Origin Blue Moon both need many
+            more test flights before certifying to carry astronauts.</td>
+            <td>No lander = no landing. This is the gating schedule risk for
+            Artemis III and IV.</td>
+          </tr>
+          <tr>
+            <td class="dim">Spacesuits</td>
+            <td>Axiom Space is developing the AxEMU xEVA suit for lunar
+            surface operations.</td>
+            <td>Apollo suits don't meet modern safety standards and aren't
+            being rebuilt. New suits are on the critical path.</td>
+          </tr>
+          <tr>
+            <td class="dim">Ground infrastructure</td>
+            <td>Mobile Launcher 2 for the larger Block 1B rocket has ballooned
+            in cost and schedule (OIG estimates &gt;$2.7B, ready ~2029).</td>
+            <td>Without ML-2, the "evolved" Artemis stack can't fly. NASA has
+            hinted it may stay on the smaller Block 1 longer than planned.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        So: Artemis II moves the technical-feasibility debate from "can we do
+        this?" to "yes, we just did." It sharpens the economic-feasibility
+        debate in the same motion - the program will increasingly be judged on
+        throughput, cost per flight, and whether commercial partners can
+        deliver on schedule.
+      </p>
+
+      <p>
+        The 50-year gap happened because the program structure couldn't
+        survive political and budgetary cycles. The big deal about Artemis II
+        is not that it proved we can go to the Moon. It's that it proved,
+        with people on board, that a different kind of Moon program - one
+        designed to last - actually works. Whether it <em>will</em> last is
+        now a question about follow-through, not engineering.
+      </p>
+
+    </section>
+
+    <footer class="article-footer">
+      <p>
+        <strong>Sources &amp; further reading:</strong>
+        <a href="https://www.nasa.gov/mission/artemis-ii/">NASA Artemis II mission page</a> &middot;
+        <a href="https://www.nasa.gov/specials/artemis/">NASA Artemis program</a> &middot;
+        <a href="https://oig.nasa.gov/">NASA Office of Inspector General reports</a> &middot;
+        <a href="https://www.gao.gov/products/gao-24-106256">GAO NASA project assessments</a> &middot;
+        <a href="https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Orion">ESA European Service Module</a> &middot;
+        <a href="https://www.asc-csa.gc.ca/eng/astronauts/canadian-space-missions/artemis-ii/">Canadian Space Agency Artemis II</a>
+      </p>
+      <p style="margin-top:1rem;">
+        Built as an interactive explainer. Inspired by
+        <a href="https://distill.pub">distill.pub</a>.
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+const dpr = window.devicePixelRatio || 1;
+
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const cssW = canvas.width;
+  const cssH = canvas.height;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: cssW, h: cssH };
+}
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// ============================================
+// FIGURE 1: Free-return lunar flyby trajectory
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-trajectory');
+
+  // Earth on left, Moon on right. Trajectory loops around Moon and returns.
+  const earth = { x: w * 0.22, y: h * 0.55, r: 28 };
+  const moon = { x: w * 0.78, y: h * 0.40, r: 12 };
+
+  // Phases with timing (0-1 across the mission)
+  // Day 0: launch -> Day 1: HEO + TLI -> Day 4: flyby -> Day 10: splashdown
+  const phases = [
+    { t: 0.00, name: 'Pre-launch',                    desc: 'Integrity sits on Pad 39B. The mission is about to begin.', dayLabel: 'Day 0' },
+    { t: 0.02, name: 'Launch & ascent',               desc: 'SLS lifts off. Core stage and boosters separate; Orion reaches orbit.', dayLabel: 'Day 0' },
+    { t: 0.08, name: 'High Earth orbit checkout',     desc: 'The upper stage of SLS fires to raise Orion into a stretched, egg-shaped orbit around Earth. The crew spends ~23 hours checking life support, flight computers, and communications before committing to the Moon.', dayLabel: 'Day 0-1' },
+    { t: 0.14, name: 'Proximity operations',          desc: 'With the upper stage now spent and drifting nearby, the crew manually flies Orion up close to it - a dress rehearsal for future docking with lunar landers and Gateway.', dayLabel: 'Day 1' },
+    { t: 0.22, name: 'Translunar injection',          desc: 'The European Service Module main engine fires. This burn both sends Orion toward the Moon and shapes the path so that lunar gravity alone will slingshot the spacecraft back to Earth, even if no other engines ever fire again.', dayLabel: 'Day 1-2' },
+    { t: 0.45, name: 'Coast to the Moon',             desc: 'Crew runs science, monitors radiation, tests laser communications, practices emergency procedures.', dayLabel: 'Day 2-4' },
+    { t: 0.58, name: 'Closest approach (4,067 mi)',   desc: 'Orion swings behind the Moon. Brief communications blackout. Crew captures far-side imagery - most detailed human-observed lunar views since Apollo 17.', dayLabel: 'Day 4' },
+    { t: 0.62, name: 'Distance record: 252,756 mi',   desc: 'The spacecraft reaches the farthest point any humans have ever been from Earth. Lunar gravity has now redirected the trajectory back homeward.', dayLabel: 'Day 5' },
+    { t: 0.80, name: 'Coast home',                    desc: 'Trajectory correction burns fine-tune the entry corridor. Radiation-shelter drill performed.', dayLabel: 'Day 6-8' },
+    { t: 0.92, name: 'Service module jettison',       desc: 'The European Service Module separates and burns up in the atmosphere. Only the crew module - protected by its Avcoat heat shield - continues toward Earth.', dayLabel: 'Day 9' },
+    { t: 0.95, name: 'Entry interface',               desc: 'Orion hits the upper atmosphere at roughly 25,000 mph. Peak heating reaches ~5,000°F; a plasma sheath briefly cuts off radio. This is the exact phase that drove the Artemis I heat-shield investigation.', dayLabel: 'Day 9' },
+    { t: 0.98, name: 'Parachute descent',             desc: 'Forward bay cover jettisons, followed by drogues and then three main parachutes, slowing the capsule to ~17 mph for splashdown.', dayLabel: 'Day 9' },
+    { t: 1.00, name: 'Splashdown & recovery',         desc: 'Splashdown in the Pacific off San Diego. USS John P. Murtha recovers the capsule. First humans beyond low Earth orbit in over 50 years are safely home.', dayLabel: 'Day 9' }
+  ];
+
+  let t = 0;
+  let playing = false;
+  let stars = [];
+  for (let i = 0; i < 90; i++) {
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 0.9 + 0.2,
+      p: Math.random() * Math.PI * 2
+    });
+  }
+
+  // HEO spiral parameters - chosen so the natural endpoint lands at heoExit
+  const heoTurns      = 2.5;                         // multiplier * PI total sweep
+  const heoRadiusEnd  = earth.r + 14 + 25;           // = 67
+  // At progress=1: angle = -PI/2 + 2.5*PI = 2*PI, so (cos, sin) = (1, 0)
+  const heoExit      = { x: earth.x + heoRadiusEnd, y: earth.y };
+  const moonApproach = { x: moon.x - moon.r - 5,    y: moon.y - moon.r * 0.35 };
+  const moonExit     = { x: moon.x - moon.r - 3,    y: moon.y + moon.r * 0.70 };
+  // Entry interface point - a bit above/right of Earth, where the capsule begins reentry
+  const entryInterface = { x: earth.x + earth.r + 18, y: earth.y + earth.r * 0.35 };
+  // Splashdown point - on Earth's visual edge
+  const splashdown   = { x: earth.x + earth.r * 0.75, y: earth.y + earth.r * 0.75 };
+
+  function cubicBezier(t, p0, p1, p2, p3) {
+    const mt = 1 - t;
+    return {
+      x: mt*mt*mt*p0.x + 3*mt*mt*t*p1.x + 3*mt*t*t*p2.x + t*t*t*p3.x,
+      y: mt*mt*mt*p0.y + 3*mt*mt*t*p1.y + 3*mt*t*t*p2.y + t*t*t*p3.y
+    };
+  }
+
+  function trajPoint(u) {
+    if (u < 0.03) {
+      return { x: earth.x, y: earth.y - earth.r };
+    }
+    if (u < 0.20) {
+      // High Earth orbit - spiral that naturally terminates at heoExit
+      const progress = (u - 0.03) / 0.17;
+      const angle = -Math.PI/2 + progress * Math.PI * heoTurns;
+      const radius = earth.r + 14 + progress * 25;
+      return {
+        x: earth.x + Math.cos(angle) * radius,
+        y: earth.y + Math.sin(angle) * radius * 0.78
+      };
+    }
+    if (u < 0.60) {
+      // Outbound coast - cubic Bezier curving from HEO exit to the Moon
+      const k = (u - 0.20) / 0.40;
+      const c1 = { x: heoExit.x + 140, y: heoExit.y - 110 };
+      const c2 = { x: moonApproach.x - 150, y: moonApproach.y - 55 };
+      return cubicBezier(k, heoExit, c1, c2, moonApproach);
+    }
+    if (u < 0.68) {
+      // Lunar flyby - sweep around the far (Earth-opposite) side of the Moon
+      const k = (u - 0.60) / 0.08;
+      const startAngle = Math.atan2(moonApproach.y - moon.y, moonApproach.x - moon.x);
+      const endAngle   = Math.atan2(moonExit.y - moon.y,     moonExit.x - moon.x);
+      let sweep = endAngle - startAngle;
+      if (sweep < Math.PI) sweep += 2 * Math.PI;
+      const angle = startAngle + k * sweep;
+      const r = Math.hypot(moonApproach.x - moon.x, moonApproach.y - moon.y);
+      return { x: moon.x + Math.cos(angle) * r, y: moon.y + Math.sin(angle) * r };
+    }
+    if (u < 0.95) {
+      // Return coast - cubic Bezier from Moon all the way to the entry-interface point
+      const k = (u - 0.68) / 0.27;
+      const c1 = { x: moonExit.x - 150, y: moonExit.y + 70 };
+      const c2 = { x: entryInterface.x + 140, y: entryInterface.y + 90 };
+      return cubicBezier(k, moonExit, c1, c2, entryInterface);
+    }
+    if (u < 1.0) {
+      // Final descent - short arc from entry interface down to splashdown on Earth's surface
+      const k = (u - 0.95) / 0.05;
+      // Quadratic ease-in so the craft accelerates into splashdown, then settles
+      const eased = k * k * (3 - 2 * k);
+      return {
+        x: lerp(entryInterface.x, splashdown.x, eased),
+        y: lerp(entryInterface.y, splashdown.y, eased)
+      };
+    }
+    return splashdown;
+  }
+
+  function currentPhase(u) {
+    let best = phases[0];
+    for (const p of phases) {
+      if (u >= p.t) best = p;
+    }
+    return best;
+  }
+
+  function draw() {
+    // Starfield background
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#0B1020');
+    bg.addColorStop(1, '#161B30');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    for (const s of stars) {
+      const tw = 0.5 + Math.sin(Date.now() * 0.001 + s.p) * 0.5;
+      ctx.fillStyle = `rgba(255,255,255,${0.2 + tw * 0.6})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Path (already-flown portion solid, remainder faint)
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath();
+    for (let u = 0.02; u <= 1.0; u += 0.01) {
+      const p = trajPoint(u);
+      if (u === 0.02) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.strokeStyle = '#60A5FA';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let u = 0.02; u <= t; u += 0.005) {
+      const p = trajPoint(u);
+      if (u === 0.02) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+
+    // Earth
+    const egrad = ctx.createRadialGradient(earth.x - 8, earth.y - 8, 2, earth.x, earth.y, earth.r);
+    egrad.addColorStop(0, '#60A5FA');
+    egrad.addColorStop(0.6, '#1E40AF');
+    egrad.addColorStop(1, '#0F1E4E');
+    ctx.fillStyle = egrad;
+    ctx.beginPath();
+    ctx.arc(earth.x, earth.y, earth.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Continent splotches
+    ctx.fillStyle = 'rgba(52, 211, 153, 0.35)';
+    ctx.beginPath(); ctx.arc(earth.x - 6, earth.y - 4, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(earth.x + 8, earth.y + 6, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(earth.x + 2, earth.y + 12, 3, 0, Math.PI * 2); ctx.fill();
+
+    ctx.font = '11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Earth', earth.x, earth.y + earth.r + 16);
+
+    // Moon
+    const mgrad = ctx.createRadialGradient(moon.x - 3, moon.y - 3, 1, moon.x, moon.y, moon.r);
+    mgrad.addColorStop(0, '#E7E5E4');
+    mgrad.addColorStop(1, '#78716C');
+    ctx.fillStyle = mgrad;
+    ctx.beginPath();
+    ctx.arc(moon.x, moon.y, moon.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Craters
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath(); ctx.arc(moon.x - 3, moon.y - 2, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(moon.x + 4, moon.y + 2, 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(moon.x + 1, moon.y + 5, 1, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText('Moon', moon.x, moon.y + moon.r + 14);
+
+    // Distance scale (subtle)
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath();
+    ctx.moveTo(earth.x, earth.y);
+    ctx.lineTo(moon.x, moon.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillText('~238,900 mi', (earth.x + moon.x) / 2, (earth.y + moon.y) / 2 - 6);
+
+    // Orion craft
+    if (t > 0.02) {
+      const p = trajPoint(t);
+
+      // During reentry (roughly t 0.94 - 0.98), the craft is plasma-heated.
+      // Show a hotter red/orange glow that fades back to normal at splashdown.
+      let glowCenter = 'rgba(251, 191, 36, 0.6)';
+      let coreColor  = '#FBBF24';
+      let glowRadius = 16;
+      if (t >= 0.93 && t < 0.99) {
+        const intensity = 1 - Math.abs((t - 0.955) / 0.035); // peaks mid-entry
+        glowCenter = `rgba(249, 115, 22, ${0.55 + intensity * 0.35})`;
+        coreColor  = '#EF4444';
+        glowRadius = 16 + intensity * 10;
+      }
+
+      const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      glow.addColorStop(0, glowCenter);
+      glow.addColorStop(1, glowCenter.replace(/[\d.]+\)$/, '0)'));
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = coreColor;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Label
+      const phase = currentPhase(t);
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.textAlign = 'left';
+      ctx.fillText('Integrity', p.x + 10, p.y + 3);
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillText(phase.dayLabel, p.x + 10, p.y + 15);
+    }
+
+    // Header overlay
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText('ARTEMIS II  ·  APR 1-10, 2026', 16, 22);
+  }
+
+  function updatePanel() {
+    const phase = currentPhase(t);
+    document.getElementById('traj-phase').textContent = phase.dayLabel + ' · ' + phase.name;
+    document.getElementById('traj-desc').textContent = phase.desc;
+    document.getElementById('traj-day').textContent = phase.dayLabel;
+    document.getElementById('traj-slider').value = Math.round(t * 1000);
+  }
+
+  function animate() {
+    if (playing) {
+      t += 0.0005;
+      if (t >= 1.0) {
+        t = 1.0;
+        playing = false;
+        document.getElementById('traj-play').textContent = 'Replay';
+      }
+      updatePanel();
+    }
+    draw();
+    requestAnimationFrame(animate);
+  }
+
+  document.getElementById('traj-play').addEventListener('click', function() {
+    if (t >= 1.0) { t = 0; }
+    playing = !playing;
+    this.textContent = playing ? 'Pause' : (t >= 1.0 ? 'Replay' : 'Play');
+  });
+
+  document.getElementById('traj-reset').addEventListener('click', function() {
+    t = 0;
+    playing = false;
+    document.getElementById('traj-play').textContent = 'Play';
+    updatePanel();
+  });
+
+  document.getElementById('traj-slider').addEventListener('input', function(e) {
+    t = parseInt(e.target.value) / 1000;
+    playing = false;
+    document.getElementById('traj-play').textContent = t >= 1.0 ? 'Replay' : 'Play';
+    updatePanel();
+  });
+
+  updatePanel();
+  animate();
+})();
+
+// ============================================
+// FIGURE 2: Apollo vs Artemis comparison
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-compare');
+
+  const missions = {
+    apollo8:  { name: 'Apollo 8',   date: 'December 1968',  crew: 3, duration: 6,  trajectory: 'lunar orbit',   life: 'LiOH canisters', cockpit: 'analog', color: '#B45309', desc: 'First crewed mission to leave Earth orbit. Ten lunar orbits; tested reentry at lunar speeds. Single-use hardware, Cold War timeline.' },
+    apollo11: { name: 'Apollo 11',  date: 'July 1969',      crew: 3, duration: 8,  trajectory: 'lunar orbit + landing', life: 'LiOH canisters', cockpit: 'analog', color: '#991B1B', desc: 'First crewed lunar landing. Two astronauts spent ~21 hours on the surface. Objective: beat the Soviets.' },
+    apollo17: { name: 'Apollo 17',  date: 'December 1972',  crew: 3, duration: 13, trajectory: 'lunar orbit + landing', life: 'LiOH canisters', cockpit: 'analog', color: '#7C2D12', desc: 'Last crewed lunar landing. Most scientifically productive Apollo mission - three days on the surface with the lunar rover.' },
+    artemis2: { name: 'Artemis II', date: 'April 2026',     crew: 4, duration: 10, trajectory: 'free-return flyby', life: 'regenerative CO₂/H₂O', cockpit: 'digital glass', color: '#1E3A8A', desc: 'First crewed test of the Artemis deep-space stack. Free-return flyby - no lunar orbit, no landing. Designed as mission 2 of a sustained program.' }
+  };
+
+  let current = 'apollo8';
+
+  function drawCapsule(cx, cy, scale, color, type) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+
+    // Capsule (cone)
+    const grad = ctx.createLinearGradient(-35, 0, 35, 0);
+    grad.addColorStop(0, color + '80');
+    grad.addColorStop(0.5, color);
+    grad.addColorStop(1, color + '60');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(-40, 20);
+    ctx.lineTo(-30, -20);
+    ctx.lineTo(30, -20);
+    ctx.lineTo(40, 20);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Heat shield
+    ctx.fillStyle = '#3F3F46';
+    ctx.beginPath();
+    ctx.moveTo(-40, 20);
+    ctx.lineTo(40, 20);
+    ctx.lineTo(36, 26);
+    ctx.lineTo(-36, 26);
+    ctx.closePath();
+    ctx.fill();
+
+    // Window
+    ctx.fillStyle = '#FEF3C7';
+    ctx.fillRect(-5, -10, 10, 6);
+    ctx.strokeRect(-5, -10, 10, 6);
+
+    if (type === 'artemis2') {
+      // Solar arrays on service module
+      ctx.fillStyle = '#1E40AF';
+      ctx.fillRect(-36, 26, 72, 22);
+      ctx.strokeRect(-36, 26, 72, 22);
+      // Solar array wings
+      ctx.fillStyle = '#60A5FA';
+      ctx.fillRect(-75, 30, 35, 14);
+      ctx.strokeRect(-75, 30, 35, 14);
+      ctx.fillRect(40, 30, 35, 14);
+      ctx.strokeRect(40, 30, 35, 14);
+      // Panel lines
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      for (let i = 1; i < 4; i++) {
+        ctx.beginPath(); ctx.moveTo(-75 + i*8.75, 30); ctx.lineTo(-75 + i*8.75, 44); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(40 + i*8.75, 30); ctx.lineTo(40 + i*8.75, 44); ctx.stroke();
+      }
+      // Engine nozzle
+      ctx.fillStyle = '#44403C';
+      ctx.beginPath();
+      ctx.moveTo(-8, 48); ctx.lineTo(8, 48); ctx.lineTo(5, 58); ctx.lineTo(-5, 58); ctx.closePath();
+      ctx.fill();
+    } else {
+      // Apollo service module (cylinder)
+      ctx.fillStyle = '#6B7280';
+      ctx.fillRect(-30, 26, 60, 38);
+      ctx.strokeRect(-30, 26, 60, 38);
+      // High-gain antenna dish
+      ctx.fillStyle = '#9CA3AF';
+      ctx.beginPath();
+      ctx.arc(30, 40, 8, -Math.PI/2, Math.PI/2);
+      ctx.fill();
+      ctx.stroke();
+      // SPS engine nozzle
+      ctx.fillStyle = '#44403C';
+      ctx.beginPath();
+      ctx.moveTo(-10, 64); ctx.lineTo(10, 64); ctx.lineTo(6, 76); ctx.lineTo(-6, 76); ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  function drawTrajectory(cx, cy, type) {
+    const earth = { x: cx - 50, y: cy, r: 10 };
+    const moon = { x: cx + 50, y: cy - 8, r: 5 };
+
+    // Earth
+    ctx.fillStyle = '#1E40AF';
+    ctx.beginPath(); ctx.arc(earth.x, earth.y, earth.r, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#34D399';
+    ctx.beginPath(); ctx.arc(earth.x - 2, earth.y - 1, 2.5, 0, Math.PI*2); ctx.fill();
+
+    // Moon
+    ctx.fillStyle = '#A8A29E';
+    ctx.beginPath(); ctx.arc(moon.x, moon.y, moon.r, 0, Math.PI*2); ctx.fill();
+
+    // Trajectory
+    ctx.strokeStyle = missions[type].color;
+    ctx.lineWidth = 1.5;
+
+    if (type === 'artemis2') {
+      // Free-return: swings around moon, returns
+      ctx.beginPath();
+      ctx.moveTo(earth.x + earth.r, earth.y);
+      ctx.bezierCurveTo(cx, cy - 20, moon.x - 3, moon.y - 10, moon.x + moon.r + 2, moon.y - 2);
+      ctx.bezierCurveTo(moon.x + moon.r + 8, moon.y + 6, cx, cy + 20, earth.x + earth.r, earth.y + 2);
+      ctx.stroke();
+    } else {
+      // Lunar orbit
+      ctx.beginPath();
+      ctx.moveTo(earth.x + earth.r, earth.y);
+      ctx.bezierCurveTo(cx, cy - 18, moon.x - 5, moon.y - 10, moon.x - 2, moon.y - 6);
+      ctx.stroke();
+      // Orbit ellipse around moon
+      ctx.beginPath();
+      ctx.ellipse(moon.x, moon.y, 10, 7, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // Return
+      ctx.beginPath();
+      ctx.moveTo(moon.x - 2, moon.y + 6);
+      ctx.bezierCurveTo(cx, cy + 20, earth.x + earth.r + 2, earth.y + 6, earth.x + earth.r, earth.y + 2);
+      ctx.stroke();
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    ctx.fillStyle = '#FEFEFE';
+    ctx.fillRect(0, 0, w, h);
+
+    const m = missions[current];
+
+    // Left: capsule rendering
+    const capsuleX = w * 0.26;
+    const capsuleY = h * 0.38;
+    drawCapsule(capsuleX, capsuleY, 1.8, m.color, current);
+
+    // Right: stats
+    const rightX = w * 0.55;
+    const topY = 40;
+    const lineH = 34;
+
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 22px Crimson Pro, Georgia, serif';
+    ctx.fillStyle = m.color;
+    ctx.fillText(m.name, rightX, topY + 6);
+
+    ctx.font = '12px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillText(m.date, rightX, topY + 24);
+
+    const stats = [
+      ['Crew',          m.crew + (m.crew === 1 ? ' astronaut' : ' astronauts')],
+      ['Duration',      '~' + m.duration + ' days'],
+      ['Trajectory',    m.trajectory],
+      ['Life support',  m.life],
+      ['Cockpit',       m.cockpit + ' avionics']
+    ];
+    ctx.font = '11px -apple-system, sans-serif';
+    for (let i = 0; i < stats.length; i++) {
+      const y = topY + 60 + i * 28;
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.font = '600 10px -apple-system, sans-serif';
+      ctx.fillText(stats[i][0].toUpperCase(), rightX, y);
+      ctx.fillStyle = 'rgba(0,0,0,0.82)';
+      ctx.font = '14px -apple-system, sans-serif';
+      ctx.fillText(stats[i][1], rightX, y + 14);
+    }
+
+    // Trajectory diagram bottom
+    const trajY = h * 0.82;
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.textAlign = 'left';
+    ctx.fillText('TRAJECTORY', 40, trajY - 30);
+    drawTrajectory(180, trajY, current);
+  }
+
+  document.querySelectorAll('.compare-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.compare-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      current = this.dataset.mission;
+      const m = missions[current];
+      document.getElementById('compare-title').textContent = m.name + ' · ' + m.date;
+      document.getElementById('compare-desc').textContent = m.desc;
+      draw();
+    });
+  });
+
+  draw();
+})();
+
+// ============================================
+// FIGURE 3: Orion subsystems (interactive)
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-orion');
+
+  // Orion laid out horizontally: crew module (right) + service module (left).
+  // Labels are the interactive targets; `target` is where the leader line points.
+  const subsystems = [
+    {
+      id: 'solar', label: 'Solar arrays', title: 'Solar Arrays',
+      desc: '4 wings on the European Service Module generate up to 11 kW of power - enough for two three-bedroom homes. They rotate to track the Sun as Orion moves.',
+      labelPos: { x: 72, y: 108 }, target: { x: 130, y: 154 }
+    },
+    {
+      id: 'launch-abort', label: 'Launch abort system', title: 'Launch Abort System',
+      desc: 'A small rocket tower perched above the capsule. During the first minutes of flight, if the main rocket fails, it can yank the crew module away in under 2 seconds. Jettisoned once past max-Q.',
+      labelPos: { x: 540, y: 62 }, target: { x: 617, y: 95 }
+    },
+    {
+      id: 'crew-module', label: 'Crew module', title: 'Crew Module',
+      desc: 'Carries 4 astronauts. 3 display screens and ~60 physical switches replace Apollo\'s thousand+ controls. Suits can sustain a crewmember for days in a depressurized cabin.',
+      labelPos: { x: 628, y: 225 }, target: { x: 585, y: 225 }
+    },
+    {
+      id: 'engine', label: 'Main engine', title: 'Main Engine (OMS-E)',
+      desc: 'The ESM\'s main engine performs translunar injection, course corrections, and return burns. Repurposed from the Space Shuttle Orbital Maneuvering System - proven hardware, ~26 kN thrust.',
+      labelPos: { x: 18, y: 248 }, target: { x: 153, y: 245 }
+    },
+    {
+      id: 'esm', label: 'European Service Module', title: 'European Service Module',
+      desc: 'Built by ESA and Airbus. Contains 33 engines (main, aux, RCS), plus water, oxygen, nitrogen, and propellant. It is jettisoned and burns up before reentry - only the crew module comes home.',
+      labelPos: { x: 232, y: 365 }, target: { x: 327, y: 290 }
+    },
+    {
+      id: 'heat-shield', label: 'Heat shield', title: 'Heat Shield',
+      desc: '16.5 ft diameter. Uses Avcoat ablative material - it chars and flakes off, carrying heat away. Largest crewed heat shield ever flown. Faces ~5,000°F at lunar reentry speeds.',
+      labelPos: { x: 505, y: 360 }, target: { x: 535, y: 315 }
+    },
+    {
+      id: 'eclss', label: 'ECLSS (life support)', title: 'Regenerative Life Support',
+      desc: 'A big deal. Instead of Apollo\'s single-use LiOH canisters (scrub CO₂ once, discard), Orion uses a regenerable molecular-sieve system that cycles indefinitely. Critical for long missions - no quick resupply possible in deep space.',
+      labelPos: { x: 602, y: 395 }, target: { x: 565, y: 265 }
+    }
+  ];
+
+  // Pre-compute hit rectangles around each label using the label's rendered width.
+  // Use the bold font (the larger of the two states) so hovering never "drops off" when
+  // the label un-bolds on blur.
+  ctx.save();
+  ctx.font = 'bold 11px -apple-system, sans-serif';
+  for (const s of subsystems) {
+    const metrics = ctx.measureText(s.label);
+    const padX = 4, padY = 3;
+    const textHeight = 11;
+    s.labelRect = {
+      x: s.labelPos.x - padX,
+      y: s.labelPos.y - textHeight - padY + 2, // labelPos.y is baseline
+      w: metrics.width + padX * 2,
+      h: textHeight + padY * 2 + 2
+    };
+  }
+  ctx.restore();
+
+  function findLabelAt(mx, my) {
+    for (const s of subsystems) {
+      const r = s.labelRect;
+      if (mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) return s;
+    }
+    return null;
+  }
+
+  let hover = null;
+  let selected = null;
+
+  function drawOrion() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FEFEFE';
+    ctx.fillRect(0, 0, w, h);
+
+    // Background stars (subtle)
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    for (let i = 0; i < 30; i++) {
+      ctx.beginPath();
+      ctx.arc((i * 137) % w, (i * 241) % h, 1, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // Service module body
+    ctx.fillStyle = '#E5E7EB';
+    ctx.strokeStyle = '#4B5563';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.rect(205, 185, 245, 105);
+    ctx.fill();
+    ctx.stroke();
+    // Panel lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 0.5;
+    for (let i = 1; i < 5; i++) {
+      ctx.beginPath();
+      ctx.moveTo(205 + i * 49, 185);
+      ctx.lineTo(205 + i * 49, 290);
+      ctx.stroke();
+    }
+
+    // Engine nozzle (main)
+    ctx.fillStyle = '#374151';
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(205, 220);
+    ctx.lineTo(160, 215);
+    ctx.lineTo(150, 240);
+    ctx.lineTo(150, 258);
+    ctx.lineTo(160, 275);
+    ctx.lineTo(205, 265);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Nozzle inner
+    ctx.fillStyle = '#1F2937';
+    ctx.beginPath();
+    ctx.ellipse(170, 240, 6, 15, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // Solar arrays (4 wings -- drawn as 2 pairs)
+    ctx.fillStyle = '#1E3A8A';
+    ctx.strokeStyle = '#1E40AF';
+    ctx.lineWidth = 1;
+    // Upper
+    ctx.fillRect(60, 130, 140, 48);
+    ctx.strokeRect(60, 130, 140, 48);
+    // Lower (offset)
+    ctx.fillRect(60, 298, 140, 48);
+    ctx.strokeRect(60, 298, 140, 48);
+    // Cell grid
+    ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)';
+    ctx.lineWidth = 0.5;
+    for (let i = 1; i < 7; i++) {
+      ctx.beginPath(); ctx.moveTo(60 + i*20, 130); ctx.lineTo(60 + i*20, 178); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(60 + i*20, 298); ctx.lineTo(60 + i*20, 346); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(96, 165, 250, 0.4)';
+    for (let i = 1; i < 3; i++) {
+      ctx.beginPath(); ctx.moveTo(60, 130 + i*16); ctx.lineTo(200, 130 + i*16); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(60, 298 + i*16); ctx.lineTo(200, 298 + i*16); ctx.stroke();
+    }
+    // Array arm
+    ctx.strokeStyle = '#6B7280';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(200, 154); ctx.lineTo(215, 200); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(200, 322); ctx.lineTo(215, 275); ctx.stroke();
+
+    // Crew module (gumdrop cone)
+    const cmX = 520, cmY = 237;
+    ctx.fillStyle = '#F3F4F6';
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(450, 200);
+    ctx.lineTo(450, 275);
+    ctx.lineTo(520, 295);
+    ctx.lineTo(620, 290);
+    ctx.lineTo(620, 185);
+    ctx.lineTo(520, 180);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Windows
+    ctx.fillStyle = '#1E40AF';
+    ctx.strokeStyle = '#1F2937';
+    ctx.lineWidth = 1;
+    [[500, 215], [540, 212], [580, 214]].forEach(([x, y]) => {
+      ctx.beginPath(); ctx.rect(x, y, 14, 10); ctx.fill(); ctx.stroke();
+      // Window highlight
+      ctx.fillStyle = 'rgba(147, 197, 253, 0.6)';
+      ctx.fillRect(x + 1, y + 1, 6, 4);
+      ctx.fillStyle = '#1E40AF';
+    });
+
+    // Panel lines on CM
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath(); ctx.moveTo(450, 240); ctx.lineTo(620, 240); ctx.stroke();
+
+    // Heat shield
+    ctx.fillStyle = '#78716C';
+    ctx.strokeStyle = '#44403C';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(450, 275);
+    ctx.lineTo(520, 295);
+    ctx.lineTo(620, 290);
+    ctx.lineTo(625, 310);
+    ctx.lineTo(520, 320);
+    ctx.lineTo(445, 300);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Charring hint
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.arc(460 + i * 30, 302 + Math.sin(i) * 3, 3, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    // Launch abort system tower
+    ctx.fillStyle = '#DC2626';
+    ctx.strokeStyle = '#7F1D1D';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(600, 180);
+    ctx.lineTo(610, 90);
+    ctx.lineTo(625, 90);
+    ctx.lineTo(635, 180);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Tower tip
+    ctx.beginPath();
+    ctx.moveTo(610, 90);
+    ctx.lineTo(617, 75);
+    ctx.lineTo(625, 90);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Motor nozzles
+    ctx.fillStyle = '#44403C';
+    ctx.fillRect(612, 155, 4, 10);
+    ctx.fillRect(620, 155, 4, 10);
+
+    const highlight = selected || hover;
+
+    // Heading hint - prominent instruction banner
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 13px -apple-system, sans-serif';
+    ctx.fillStyle = '#1E3A8A';
+    ctx.fillText('Hover or tap any label to learn about that subsystem', w / 2, 30);
+    ctx.textAlign = 'left';
+
+    // Leader line + marker for the active subsystem (drawn first, under labels)
+    if (highlight) {
+      const active = subsystems.find(s => s.id === highlight);
+      if (active) {
+        const anchorX = active.labelRect.x + active.labelRect.w / 2;
+        // Anchor line to the edge of the label rect closest to the target
+        const above = active.target.y > active.labelRect.y + active.labelRect.h;
+        const anchorY = above ? active.labelRect.y + active.labelRect.h : active.labelRect.y;
+
+        ctx.strokeStyle = 'rgba(30, 58, 138, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(anchorX, anchorY);
+        ctx.lineTo(active.target.x, active.target.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Target marker ring
+        ctx.fillStyle = 'rgba(30, 58, 138, 0.15)';
+        ctx.beginPath();
+        ctx.arc(active.target.x, active.target.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#1E3A8A';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(active.target.x, active.target.y, 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // Labels (drawn on top). Active label gets a subtle pill background so it reads
+    // as an interactive chip, and no wide bounding box ever overlaps the spacecraft.
+    for (const s of subsystems) {
+      const isActive = s.id === highlight;
+      if (isActive) {
+        ctx.fillStyle = 'rgba(30, 58, 138, 0.10)';
+        ctx.beginPath();
+        const r = s.labelRect;
+        const radius = 4;
+        ctx.moveTo(r.x + radius, r.y);
+        ctx.lineTo(r.x + r.w - radius, r.y);
+        ctx.quadraticCurveTo(r.x + r.w, r.y, r.x + r.w, r.y + radius);
+        ctx.lineTo(r.x + r.w, r.y + r.h - radius);
+        ctx.quadraticCurveTo(r.x + r.w, r.y + r.h, r.x + r.w - radius, r.y + r.h);
+        ctx.lineTo(r.x + radius, r.y + r.h);
+        ctx.quadraticCurveTo(r.x, r.y + r.h, r.x, r.y + r.h - radius);
+        ctx.lineTo(r.x, r.y + radius);
+        ctx.quadraticCurveTo(r.x, r.y, r.x + radius, r.y);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.fillStyle = isActive ? '#1E3A8A' : 'rgba(0, 0, 0, 0.55)';
+      ctx.font = isActive
+        ? 'bold 11px -apple-system, sans-serif'
+        : '10.5px -apple-system, sans-serif';
+      ctx.fillText(s.label, s.labelPos.x, s.labelPos.y);
+    }
+  }
+
+  canvas.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (w / rect.width);
+    const my = (e.clientY - rect.top) * (h / rect.height);
+    const hit = findLabelAt(mx, my);
+    hover = hit ? hit.id : null;
+    canvas.style.cursor = hit ? 'pointer' : 'default';
+    drawOrion();
+  });
+
+  canvas.addEventListener('mouseleave', function() {
+    hover = null;
+    drawOrion();
+  });
+
+  canvas.addEventListener('click', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (w / rect.width);
+    const my = (e.clientY - rect.top) * (h / rect.height);
+    const hit = findLabelAt(mx, my);
+    if (hit) {
+      selected = hit.id;
+      document.getElementById('orion-title').textContent = hit.title;
+      document.getElementById('orion-desc').textContent = hit.desc;
+      drawOrion();
+    }
+  });
+
+  document.getElementById('orion-reset').addEventListener('click', function() {
+    selected = null;
+    document.getElementById('orion-title').textContent = 'Orion Overview';
+    document.getElementById('orion-desc').textContent = 'Click a highlighted subsystem to learn how it works and why it matters for crewed deep-space flight.';
+    drawOrion();
+  });
+
+  drawOrion();
+})();
+
+// ============================================
+// FIGURE 4: Reentry heating comparison
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-reentry');
+
+  const vehicles = {
+    iss:     { speed: 17500, temp: 3000, color: '#2563EB', label: 'ISS crew return', desc: 'Dragon or Starliner returning from the International Space Station. Standard orbital reentry - the baseline.' },
+    shuttle: { speed: 17500, temp: 3000, color: '#7C3AED', label: 'Space Shuttle', desc: 'Same speed as ISS returns, but glided home on wings. Ceramic tiles, not ablative. Required extraordinary maintenance between flights.' },
+    orion:   { speed: 25000, temp: 5000, color: '#DC2626', label: 'Orion (Artemis II)', desc: 'Lunar-return speed is ~40% faster than orbital. Kinetic energy scales as v². Heat load is roughly 2× ISS return. Avcoat ablative shield, 16.5 ft across - the largest crewed heat shield ever flown.' },
+    mars:    { speed: 28000, temp: 5700, color: '#B45309', label: 'Mars return (est.)', desc: 'No vehicle has done this yet. Entry speed depends heavily on mission profile, but direct-entry Mars returns could exceed 27,000 mph. Orion\'s heat shield is a stepping stone, not the final answer.' }
+  };
+
+  let current = 'orion';
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FEFEFE';
+    ctx.fillRect(0, 0, w, h);
+
+    // Chart area
+    const pad = { l: 60, r: 30, t: 50, b: 80 };
+    const cw = w - pad.l - pad.r;
+    const ch = h - pad.t - pad.b;
+
+    // Bar chart: speed and temperature
+    const names = Object.keys(vehicles);
+    const barW = cw / names.length * 0.5;
+    const spacing = cw / names.length;
+    const maxSpeed = 30000;
+    const maxTemp = 6000;
+
+    // Title
+    ctx.font = '600 13px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Reentry velocity (mph) and peak heating (°F)', pad.l, 28);
+
+    // Y axis (shared, dual)
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, pad.t);
+    ctx.lineTo(pad.l, pad.t + ch);
+    ctx.lineTo(pad.l + cw, pad.t + ch);
+    ctx.stroke();
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    for (let i = 1; i <= 5; i++) {
+      const y = pad.t + ch - (i / 5) * ch;
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(pad.l + cw, y);
+      ctx.stroke();
+    }
+
+    // Y labels
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+      const y = pad.t + ch - (i / 5) * ch;
+      const v = Math.round((i / 5) * maxSpeed / 1000);
+      ctx.fillText(v + 'k mph', pad.l - 6, y + 3);
+    }
+
+    // Right Y labels (temperature)
+    ctx.textAlign = 'left';
+    for (let i = 0; i <= 5; i++) {
+      const y = pad.t + ch - (i / 5) * ch;
+      const t = Math.round((i / 5) * maxTemp);
+      ctx.fillStyle = 'rgba(194, 65, 12, 0.55)';
+      ctx.fillText(t + '°F', pad.l + cw + 6, y + 3);
+    }
+
+    // Bars
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i];
+      const v = vehicles[name];
+      const x = pad.l + spacing * i + (spacing - barW) / 2;
+      const isActive = name === current;
+
+      const speedH = (v.speed / maxSpeed) * ch;
+      const tempH = (v.temp / maxTemp) * ch;
+
+      // Speed bar
+      ctx.fillStyle = isActive ? v.color : v.color + '55';
+      ctx.fillRect(x, pad.t + ch - speedH, barW * 0.48, speedH);
+
+      // Temp bar (adjacent, slim)
+      ctx.fillStyle = isActive ? '#C2410C' : '#C2410C55';
+      ctx.fillRect(x + barW * 0.52, pad.t + ch - tempH, barW * 0.48, tempH);
+
+      // Value labels
+      if (isActive) {
+        ctx.font = 'bold 10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = v.color;
+        ctx.fillText((v.speed / 1000).toFixed(1) + 'k', x + barW * 0.24, pad.t + ch - speedH - 6);
+        ctx.fillStyle = '#C2410C';
+        ctx.fillText(v.temp.toLocaleString(), x + barW * 0.76, pad.t + ch - tempH - 6);
+      }
+
+      // Category label
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillStyle = isActive ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.4)';
+      ctx.textAlign = 'center';
+      const lblX = pad.l + spacing * i + spacing / 2;
+      const parts = v.label.split(' ');
+      if (parts.length > 2) {
+        ctx.fillText(parts.slice(0, 2).join(' '), lblX, pad.t + ch + 16);
+        ctx.fillText(parts.slice(2).join(' '), lblX, pad.t + ch + 30);
+      } else {
+        ctx.fillText(v.label, lblX, pad.t + ch + 18);
+      }
+    }
+
+    // Legend
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    const legX = pad.l + 4, legY = pad.t + 12;
+    ctx.fillStyle = vehicles[current].color;
+    ctx.fillRect(legX, legY - 8, 10, 10);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillText('Velocity (mph)', legX + 14, legY);
+    ctx.fillStyle = '#C2410C';
+    ctx.fillRect(legX + 110, legY - 8, 10, 10);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillText('Peak heating (°F)', legX + 124, legY);
+  }
+
+  document.querySelectorAll('.reentry-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.reentry-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      current = this.dataset.v;
+      const v = vehicles[current];
+      document.querySelector('#reentry-info .info-panel-title').textContent =
+        v.label + ': ' + v.speed.toLocaleString() + ' mph · ~' + v.temp.toLocaleString() + '°F';
+      document.querySelector('#reentry-info div:last-child').textContent = v.desc;
+      draw();
+    });
+  });
+
+  draw();
+})();
+
+// ============================================
+// FIGURE 5: Artemis campaign timeline
+// ============================================
+(function() {
+  const { canvas, ctx, w, h } = initCanvas('canvas-campaign');
+
+  const events = [
+    { id: 'a1', x: 0.08, label: 'Artemis I',   year: '2022',  flown: true,  r: 14, color: '#1E3A8A',
+      title: 'Artemis I · November 2022',
+      desc: 'Uncrewed. 25.5-day test flight of SLS + Orion around the Moon. Validated the full integrated stack. Revealed the heat-shield char-loss issue that drove a deep investigation before Artemis II.' },
+    { id: 'a2', x: 0.22, label: 'Artemis II',  year: '2026',  flown: true,  r: 18, color: '#1E3A8A', highlight: true,
+      title: 'Artemis II · April 2026 (you are here)',
+      desc: 'Crewed. Free-return lunar flyby. 4 astronauts including Canada\'s Jeremy Hansen. First humans past the Moon in 54 years. Validated the crewed deep-space system end to end.' },
+    { id: 'a3', x: 0.44, label: 'Artemis III', year: '2027',  flown: false, r: 15, color: '#7C3AED',
+      title: 'Artemis III · target 2027',
+      desc: 'Redesigned in Feb 2026 as a low Earth orbit integrated test - Orion will rendezvous and dock with one or both commercial Human Landing Systems (SpaceX Starship HLS, Blue Origin Blue Moon). Surface landing pushed to Artemis IV.' },
+    { id: 'a4', x: 0.62, label: 'Artemis IV',  year: '2028',  flown: false, r: 17, color: '#7C3AED',
+      title: 'Artemis IV · target 2028',
+      desc: 'First Artemis lunar landing. First crew to visit Gateway. Uses the evolved SLS Block 1B configuration (if ML-2 is ready). Target: lunar south pole region.' },
+    { id: 'gw', x: 0.78, label: 'Gateway',     year: '2027+', flown: false, r: 13, color: '#059669',
+      title: 'Gateway · assembly begins 2027+',
+      desc: 'Small international space station in near-rectilinear halo orbit (NRHO) around the Moon. First two modules (PPE + HALO) launch together on Falcon Heavy, take ~1 year to transit to NRHO. Partners: ESA, JAXA, CSA, MBRSC.' },
+    { id: 'ann', x: 0.93, label: 'Annual cadence', year: '2029+', flown: false, r: 12, color: '#7C3AED',
+      title: 'Annual landings · 2029 and beyond',
+      desc: 'NASA\'s stated goal: at least one crewed lunar landing every year after Artemis IV. Requires yearly SLS production, ready landers, surface infrastructure, and stable funding. This is the part that could still unravel.' }
+  ];
+
+  let selected = null;
+  let hover = null;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FEFEFE';
+    ctx.fillRect(0, 0, w, h);
+
+    // Baseline
+    const baseY = h * 0.55;
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, baseY);
+    ctx.lineTo(w - 40, baseY);
+    ctx.stroke();
+
+    // "Now" marker - sits after Artemis II (flown Apr 2026), before Artemis III
+    const nowX = 40 + (w - 80) * 0.33;
+    ctx.strokeStyle = 'rgba(220,38,38,0.3)';
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(nowX, 40);
+    ctx.lineTo(nowX, h - 30);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Flown vs Future region labels
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(30,58,138,0.5)';
+    ctx.textAlign = 'left';
+    ctx.fillText('FLOWN', 48, 28);
+    ctx.fillStyle = 'rgba(124,58,237,0.5)';
+    ctx.fillText('PLANNED', nowX + 12, 28);
+
+    // Nodes
+    for (const e of events) {
+      const cx = 40 + (w - 80) * e.x;
+      const cy = baseY;
+      const isActive = e.id === (selected || hover);
+      const r = e.r * (isActive ? 1.15 : 1);
+
+      // Connecting tick
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - r);
+      ctx.lineTo(cx, cy - r - 20);
+      ctx.stroke();
+
+      // Glow if active or highlighted
+      if (isActive || e.highlight) {
+        const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, r + 14);
+        glow.addColorStop(0, e.color + '60');
+        glow.addColorStop(1, e.color + '00');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 14, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Main circle
+      if (e.flown) {
+        const grad = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.35, 0, cx, cy, r);
+        grad.addColorStop(0, e.color + 'EE');
+        grad.addColorStop(1, e.color);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = e.color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 3]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Label (above)
+      ctx.textAlign = 'center';
+      ctx.font = isActive ? 'bold 11px -apple-system, sans-serif' : '11px -apple-system, sans-serif';
+      ctx.fillStyle = isActive ? e.color : 'rgba(0,0,0,0.75)';
+      ctx.fillText(e.label, cx, cy - r - 26);
+
+      // Year (below)
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.fillStyle = isActive ? e.color : 'rgba(0,0,0,0.45)';
+      ctx.fillText(e.year, cx, cy + r + 18);
+    }
+
+    // Caption
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Solid = flown · Dashed outline = target date', w/2, h - 10);
+  }
+
+  function findHit(mx, my) {
+    const baseY = h * 0.55;
+    for (const e of events) {
+      const cx = 40 + (w - 80) * e.x;
+      const dx = mx - cx, dy = my - baseY;
+      if (Math.sqrt(dx*dx + dy*dy) <= e.r + 10) return e;
+    }
+    return null;
+  }
+
+  canvas.addEventListener('mousemove', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (w / rect.width);
+    const my = (e.clientY - rect.top) * (h / rect.height);
+    const hit = findHit(mx, my);
+    hover = hit ? hit.id : null;
+    canvas.style.cursor = hit ? 'pointer' : 'default';
+    draw();
+  });
+
+  canvas.addEventListener('mouseleave', function() { hover = null; draw(); });
+
+  canvas.addEventListener('click', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (w / rect.width);
+    const my = (e.clientY - rect.top) * (h / rect.height);
+    const hit = findHit(mx, my);
+    if (hit) {
+      selected = hit.id;
+      document.getElementById('campaign-title').textContent = hit.title;
+      document.getElementById('campaign-desc').textContent = hit.desc;
+      draw();
+    }
+  });
+
+  document.getElementById('campaign-reset').addEventListener('click', function() {
+    selected = null;
+    document.getElementById('campaign-title').textContent = 'Click any mission above';
+    document.getElementById('campaign-desc').textContent = 'From the uncrewed Artemis I test in 2022 to the first Artemis crewed lunar landing targeted for 2028, the campaign is designed to ramp from one mission every 2-3 years toward yearly landings.';
+    draw();
+  });
+
+  draw();
+})();
+
+// ============================================
+// Sidebar active section tracking
+// ============================================
+(function() {
+  const sections = document.querySelectorAll('section, .article-header');
+  const links = document.querySelectorAll('#toc a');
+
+  function onScroll() {
+    const scrollPos = window.scrollY + 150;
+    let active = null;
+
+    // Find section whose top is closest but above
+    const all = document.querySelectorAll('#toc a');
+    let bestId = null;
+    let bestTop = -Infinity;
+
+    all.forEach(a => {
+      const id = a.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (!target) return;
+      const top = target.getBoundingClientRect().top + window.scrollY;
+      if (top <= scrollPos && top > bestTop) {
+        bestTop = top;
+        bestId = id;
+      }
+    });
+
+    links.forEach(a => {
+      if (a.getAttribute('href').slice(1) === bestId) a.classList.add('active');
+      else a.classList.remove('active');
+    });
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+
+</body>
+</html>

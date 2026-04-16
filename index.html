@@ -241,6 +241,29 @@ body {
     <li class="article-entry">
       <div class="article-content">
         <h2 class="article-title">
+          <a href="artemis-ii/">Artemis II: Why Going Back to the Moon Is a Big Deal</a>
+        </h2>
+        <p class="article-excerpt">
+          On April 10, 2026, four astronauts splashed down after the first
+          crewed lunar flyby in over 50 years. Apollo already did this in 1968.
+          Explore what Artemis II actually proved, how Orion works, and why
+          this mission reshapes the next decade of human spaceflight.
+        </p>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>April 2026</span>
+          <span>14 min read</span>
+          <span>5 figures</span>
+        </div>
+      </div>
+      <div class="article-thumbnail">
+        <canvas id="thumb-artemis" width="480" height="280"></canvas>
+      </div>
+    </li>
+
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
           <a href="dspy/">DSPy: Programming - Not Prompting - Language Models</a>
         </h2>
         <p class="article-excerpt">
@@ -337,6 +360,140 @@ body {
 </footer>
 
 <script>
+// Thumbnail: Artemis II — Orion orbiting Moon with Earth in view
+(function() {
+  const canvas = document.getElementById('thumb-artemis');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  // Stars
+  const stars = [];
+  for (let i = 0; i < 80; i++) {
+    stars.push({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: Math.random() * 1 + 0.2,
+      p: Math.random() * Math.PI * 2
+    });
+  }
+
+  let t = 0;
+
+  // Earth bottom-left, Moon upper-right, Orion sweeping around moon
+  const earth = { x: w * 0.18, y: h * 0.78, r: 36 };
+  const moon  = { x: w * 0.74, y: h * 0.34, r: 22 };
+
+  function draw() {
+    // Deep space background
+    const bg = ctx.createLinearGradient(0, 0, 0, h);
+    bg.addColorStop(0, '#0A0F22');
+    bg.addColorStop(1, '#141A33');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Stars twinkling
+    for (const s of stars) {
+      const tw = 0.5 + Math.sin(t * 2 + s.p) * 0.5;
+      ctx.fillStyle = `rgba(255,255,255,${0.25 + tw * 0.55})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Trajectory path (faint)
+    ctx.strokeStyle = 'rgba(96, 165, 250, 0.2)';
+    ctx.setLineDash([3, 5]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(earth.x + earth.r, earth.y - earth.r * 0.5);
+    ctx.bezierCurveTo(
+      w * 0.45, h * 0.35,
+      moon.x - moon.r * 1.4, moon.y + moon.r * 0.4,
+      moon.x + moon.r + 8, moon.y + 2
+    );
+    ctx.bezierCurveTo(
+      moon.x + moon.r * 2, moon.y + moon.r * 0.6,
+      w * 0.6, h * 0.75,
+      earth.x + earth.r, earth.y + 4
+    );
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Earth
+    const eg = ctx.createRadialGradient(earth.x - 10, earth.y - 10, 3, earth.x, earth.y, earth.r);
+    eg.addColorStop(0, '#60A5FA');
+    eg.addColorStop(0.55, '#1E40AF');
+    eg.addColorStop(1, '#0B1A45');
+    ctx.fillStyle = eg;
+    ctx.beginPath();
+    ctx.arc(earth.x, earth.y, earth.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Continents
+    ctx.fillStyle = 'rgba(52, 211, 153, 0.5)';
+    ctx.beginPath(); ctx.arc(earth.x - 8, earth.y - 6, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(earth.x + 6, earth.y - 12, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(earth.x + 12, earth.y + 8, 7, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(earth.x - 2, earth.y + 16, 5, 0, Math.PI * 2); ctx.fill();
+
+    // Moon
+    const mg = ctx.createRadialGradient(moon.x - 6, moon.y - 6, 2, moon.x, moon.y, moon.r);
+    mg.addColorStop(0, '#F5F5F4');
+    mg.addColorStop(1, '#78716C');
+    ctx.fillStyle = mg;
+    ctx.beginPath();
+    ctx.arc(moon.x, moon.y, moon.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Craters
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.arc(moon.x - 6, moon.y - 3, 4, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(moon.x + 7, moon.y + 4, 3, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(moon.x + 2, moon.y + 10, 2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(moon.x - 10, moon.y + 8, 2.5, 0, Math.PI*2); ctx.fill();
+
+    // Orion moving along a loop near the moon
+    const u = (t * 0.15) % 1;
+    let ox, oy;
+    if (u < 0.5) {
+      const k = u / 0.5;
+      ox = lerp(earth.x + earth.r, moon.x + moon.r + 8, k);
+      oy = lerp(earth.y - earth.r * 0.3, moon.y + 2, k);
+      oy -= Math.sin(k * Math.PI) * 25;
+    } else {
+      const k = (u - 0.5) / 0.5;
+      ox = lerp(moon.x + moon.r + 8, earth.x + earth.r, k);
+      oy = lerp(moon.y + 2, earth.y + 4, k);
+      oy += Math.sin(k * Math.PI) * 28;
+    }
+
+    // Orion glow + craft
+    const glow = ctx.createRadialGradient(ox, oy, 0, ox, oy, 14);
+    glow.addColorStop(0, 'rgba(251,191,36,0.7)');
+    glow.addColorStop(1, 'rgba(251,191,36,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(ox, oy, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#FBBF24';
+    ctx.beginPath(); ctx.arc(ox, oy, 3.5, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    t += 0.01;
+    requestAnimationFrame(draw);
+  }
+
+  function lerp(a, b, k) { return a + (b - a) * k; }
+
+  draw();
+})();
+
 // Thumbnail: animated mini 3D scene
 (function() {
   const canvas = document.getElementById('thumb-world-models');
