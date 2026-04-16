@@ -2053,8 +2053,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.lineTo(w - 40, baseY);
     ctx.stroke();
 
-    // "Now" marker
-    const nowX = 40 + (w - 80) * 0.22; // right around Artemis II
+    // "Now" marker - sits after Artemis II (flown Apr 2026), before Artemis III
+    const nowX = 40 + (w - 80) * 0.33;
     ctx.strokeStyle = 'rgba(220,38,38,0.3)';
     ctx.setLineDash([4, 4]);
     ctx.lineWidth = 1;
