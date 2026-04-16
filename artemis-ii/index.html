@@ -1055,9 +1055,11 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     { t: 0.45, name: 'Coast to the Moon',             desc: 'Crew runs science, monitors radiation, tests laser communications, practices emergency procedures.', dayLabel: 'Day 2-4' },
     { t: 0.58, name: 'Closest approach (4,067 mi)',   desc: 'Orion swings behind the Moon. Brief communications blackout. Crew captures far-side imagery - most detailed human-observed lunar views since Apollo 17.', dayLabel: 'Day 4' },
     { t: 0.62, name: 'Distance record: 252,756 mi',   desc: 'The spacecraft reaches the farthest point any humans have ever been from Earth. Lunar gravity has now redirected the trajectory back homeward.', dayLabel: 'Day 5' },
-    { t: 0.85, name: 'Coast home',                    desc: 'Trajectory correction burns fine-tune the entry corridor. Radiation-shelter drill performed.', dayLabel: 'Day 6-8' },
-    { t: 0.95, name: 'Entry & splashdown',            desc: 'Service module jettisoned. Capsule hits atmosphere at ~25,000 mph, ~5,000°F. Parachutes deploy; splashdown in Pacific, recovery by USS John P. Murtha.', dayLabel: 'Day 9' },
-    { t: 1.00, name: 'Mission complete',              desc: 'Crew safely recovered. First humans beyond low Earth orbit in over 50 years.', dayLabel: 'Day 9' }
+    { t: 0.80, name: 'Coast home',                    desc: 'Trajectory correction burns fine-tune the entry corridor. Radiation-shelter drill performed.', dayLabel: 'Day 6-8' },
+    { t: 0.92, name: 'Service module jettison',       desc: 'The European Service Module separates and burns up in the atmosphere. Only the crew module - protected by its Avcoat heat shield - continues toward Earth.', dayLabel: 'Day 9' },
+    { t: 0.95, name: 'Entry interface',               desc: 'Orion hits the upper atmosphere at roughly 25,000 mph. Peak heating reaches ~5,000°F; a plasma sheath briefly cuts off radio. This is the exact phase that drove the Artemis I heat-shield investigation.', dayLabel: 'Day 9' },
+    { t: 0.98, name: 'Parachute descent',             desc: 'Forward bay cover jettisons, followed by drogues and then three main parachutes, slowing the capsule to ~17 mph for splashdown.', dayLabel: 'Day 9' },
+    { t: 1.00, name: 'Splashdown & recovery',         desc: 'Splashdown in the Pacific off San Diego. USS John P. Murtha recovers the capsule. First humans beyond low Earth orbit in over 50 years are safely home.', dayLabel: 'Day 9' }
   ];
 
   let t = 0;
@@ -1079,7 +1081,10 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
   const heoExit      = { x: earth.x + heoRadiusEnd, y: earth.y };
   const moonApproach = { x: moon.x - moon.r - 5,    y: moon.y - moon.r * 0.35 };
   const moonExit     = { x: moon.x - moon.r - 3,    y: moon.y + moon.r * 0.70 };
-  const earthReturn  = { x: earth.x + earth.r + 8,  y: earth.y + earth.r * 0.55 };
+  // Entry interface point - a bit above/right of Earth, where the capsule begins reentry
+  const entryInterface = { x: earth.x + earth.r + 18, y: earth.y + earth.r * 0.35 };
+  // Splashdown point - on Earth's visual edge
+  const splashdown   = { x: earth.x + earth.r * 0.75, y: earth.y + earth.r * 0.75 };
 
   function cubicBezier(t, p0, p1, p2, p3) {
     const mt = 1 - t;
@@ -1121,14 +1126,24 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       const r = Math.hypot(moonApproach.x - moon.x, moonApproach.y - moon.y);
       return { x: moon.x + Math.cos(angle) * r, y: moon.y + Math.sin(angle) * r };
     }
-    if (u < 1.0) {
-      // Return coast - cubic Bezier back to Earth, passing below the outbound arc
-      const k = (u - 0.68) / 0.32;
+    if (u < 0.95) {
+      // Return coast - cubic Bezier from Moon all the way to the entry-interface point
+      const k = (u - 0.68) / 0.27;
       const c1 = { x: moonExit.x - 150, y: moonExit.y + 70 };
-      const c2 = { x: earthReturn.x + 140, y: earthReturn.y + 90 };
-      return cubicBezier(k, moonExit, c1, c2, earthReturn);
+      const c2 = { x: entryInterface.x + 140, y: entryInterface.y + 90 };
+      return cubicBezier(k, moonExit, c1, c2, entryInterface);
     }
-    return { x: earth.x, y: earth.y + earth.r + 6 };
+    if (u < 1.0) {
+      // Final descent - short arc from entry interface down to splashdown on Earth's surface
+      const k = (u - 0.95) / 0.05;
+      // Quadratic ease-in so the craft accelerates into splashdown, then settles
+      const eased = k * k * (3 - 2 * k);
+      return {
+        x: lerp(entryInterface.x, splashdown.x, eased),
+        y: lerp(entryInterface.y, splashdown.y, eased)
+      };
+    }
+    return splashdown;
   }
 
   function currentPhase(u) {
@@ -1230,16 +1245,28 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     // Orion craft
     if (t > 0.02) {
       const p = trajPoint(t);
-      // Glow
-      const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 16);
-      glow.addColorStop(0, 'rgba(251, 191, 36, 0.6)');
-      glow.addColorStop(1, 'rgba(251, 191, 36, 0)');
+
+      // During reentry (roughly t 0.94 - 0.98), the craft is plasma-heated.
+      // Show a hotter red/orange glow that fades back to normal at splashdown.
+      let glowCenter = 'rgba(251, 191, 36, 0.6)';
+      let coreColor  = '#FBBF24';
+      let glowRadius = 16;
+      if (t >= 0.93 && t < 0.99) {
+        const intensity = 1 - Math.abs((t - 0.955) / 0.035); // peaks mid-entry
+        glowCenter = `rgba(249, 115, 22, ${0.55 + intensity * 0.35})`;
+        coreColor  = '#EF4444';
+        glowRadius = 16 + intensity * 10;
+      }
+
+      const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowRadius);
+      glow.addColorStop(0, glowCenter);
+      glow.addColorStop(1, glowCenter.replace(/[\d.]+\)$/, '0)'));
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 16, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, glowRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#FBBF24';
+      ctx.fillStyle = coreColor;
       ctx.beginPath();
       ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
       ctx.fill();
