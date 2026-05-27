@@ -1211,9 +1211,10 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 
       <p>
         Pulling everything together: here is the rubric Superpowers implicitly
-        teaches for evaluating any agent skill you write, in any framework.
-        The <em>must</em>s are the difference between a skill that fires and one
-        that gets ignored.
+        teaches for evaluating any agent skill you write, in any framework. Treat
+        the <em>must / should</em> weighting as empirical - it reflects how
+        late-2025 models and harnesses behaved - rather than as fixed law; the
+        note below the table covers what has already shifted.
       </p>
 
       <div class="scorecard">
@@ -1264,12 +1265,28 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         </div>
       </div>
 
+      <div class="callout">
+        <p>
+          <strong>A note on the date.</strong> This rubric encodes how models and
+          harnesses behaved when Superpowers shipped in October 2025, and some of
+          the Musts are already softening. Harnesses now surface skills natively -
+          Anthropic's Agent Skills became a cross-vendor open standard in December
+          2025 - so a plugin-level auto-bootstrap is less load-bearing than it
+          was. Stronger instruction-following makes a model less likely to skip a
+          skill's body just because the description summarized the steps. And much
+          larger context windows make the under-200-words token economy far less
+          binding. The tactics relax as models improve; the principle behind them
+          does not.
+        </p>
+      </div>
+
       <p>
-        The pattern that ties the rubric together: <strong>every choice optimizes
-        for the agent under pressure</strong>. An agent that is bored, certain,
-        or in a hurry. The cheerful path is easy. The hard part is the agent at
-        the moment it would otherwise rationalize, and every Superpowers
-        convention is a counter-measure for that exact moment.
+        And that principle is what ties the rubric together: <strong>every choice
+        optimizes for the agent under pressure</strong>. An agent that is bored,
+        certain, or in a hurry. The cheerful path is easy. The hard part is the
+        agent at the moment it would otherwise rationalize, and every Superpowers
+        convention is a counter-measure for that exact moment - however much the
+        moment recedes as models get better.
       </p>
     </section>
 
