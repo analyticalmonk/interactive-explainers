@@ -383,7 +383,7 @@ body {
 </footer>
 
 <script>
-// Thumbnail: Superpowers — pulsing meta-skill broadcasting to dormant skills
+// Thumbnail: Superpowers — using-superpowers hub broadcasting to the skill ring
 (function() {
   const canvas = document.getElementById('thumb-superpowers');
   if (!canvas) return;
@@ -397,17 +397,15 @@ body {
   ctx.scale(dpr, dpr);
   const w = cssW, h = cssH;
 
-  // Central meta-skill, surrounded by dormant skills
-  const cx = w / 2, cy = h / 2;
-  const skills = [];
+  // Hub lifted slightly to leave room for the caption below
+  const cx = w / 2, cy = h / 2 - 8;
   const N = 9;
+  const nodes = [];
   for (let i = 0; i < N; i++) {
     const ang = (i / N) * Math.PI * 2 - Math.PI / 2;
-    skills.push({
-      x: cx + Math.cos(ang) * 95,
-      y: cy + Math.sin(ang) * 75,
-      ang: ang,
-      label: ['tdd','debug','review','verify','plan','branch','worktree','exec','brainstorm'][i],
+    nodes.push({
+      x: cx + Math.cos(ang) * 104,
+      y: cy + Math.sin(ang) * 72,
       phase: i / N,
     });
   }
@@ -417,71 +415,97 @@ body {
   function draw() {
     ctx.clearRect(0, 0, w, h);
 
-    // bg gradient
+    // background
     const bg = ctx.createLinearGradient(0, 0, w, h);
     bg.addColorStop(0, '#F5F3FF');
-    bg.addColorStop(1, '#EDE9FE');
+    bg.addColorStop(1, '#E9E4FB');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
-    // pulsing ring (the bootstrap broadcast)
+    // broadcast pulse rings emanating from the hub
     for (let i = 0; i < 3; i++) {
-      const pr = ((t * 0.6 + i * 0.33) % 1);
-      const radius = 30 + pr * 110;
-      const alpha = (1 - pr) * 0.4;
-      ctx.strokeStyle = `rgba(109, 40, 217, ${alpha})`;
+      const pr = ((t * 0.5 + i / 3) % 1);
+      const radius = 26 + pr * 96;
+      const alpha = (1 - pr) * 0.32;
+      ctx.strokeStyle = `rgba(124, 58, 237, ${alpha})`;
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
     }
 
-    // connection lines (subtle)
-    for (const s of skills) {
-      const isActive = (t * 0.3 + s.phase) % 1 < 0.2;
-      ctx.strokeStyle = isActive ? 'rgba(124, 58, 237, 0.55)' : 'rgba(124, 58, 237, 0.12)';
-      ctx.lineWidth = isActive ? 1.5 : 1;
+    // sweep drives a smooth traveling activation around the ring
+    const sweep = (t * 0.18) % 1;
+    function intensity(phase) {
+      let d = Math.abs(phase - sweep);
+      d = Math.min(d, 1 - d);
+      return Math.max(0, 1 - d / 0.14);
+    }
+
+    // connection lines (brighten as the sweep passes)
+    for (const n of nodes) {
+      const a = intensity(n.phase);
+      ctx.strokeStyle = `rgba(124, 58, 237, ${0.1 + a * 0.5})`;
+      ctx.lineWidth = 1 + a * 1.2;
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      ctx.lineTo(s.x, s.y);
+      ctx.lineTo(n.x, n.y);
       ctx.stroke();
     }
 
-    // dormant skills (rings)
-    for (const s of skills) {
-      const isActive = (t * 0.3 + s.phase) % 1 < 0.2;
-      const r = isActive ? 14 : 11;
-      ctx.fillStyle = isActive ? '#7C3AED' : '#fff';
-      ctx.strokeStyle = isActive ? '#4C1D95' : '#A78BFA';
+    // skill nodes — no labels; white when dormant, violet when lit
+    for (const n of nodes) {
+      const a = intensity(n.phase);
+      const r = 8 + a * 4;
+      if (a > 0.05) {
+        ctx.fillStyle = `rgba(124, 58, 237, ${a * 0.22})`;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r + 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const rr = Math.round(255 + (124 - 255) * a);
+      const gg = Math.round(255 + (58 - 255) * a);
+      const bb = Math.round(255 + (237 - 255) * a);
+      ctx.fillStyle = `rgb(${rr}, ${gg}, ${bb})`;
+      ctx.strokeStyle = '#7C3AED';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-
-      ctx.font = '600 9px -apple-system, sans-serif';
-      ctx.fillStyle = 'rgba(76, 29, 149, 0.6)';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(s.label, s.x, s.y + 24);
     }
 
-    // central meta-skill
-    const pulse = Math.sin(t * 4) * 0.15 + 1;
-    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28 * pulse);
-    grad.addColorStop(0, '#A78BFA');
-    grad.addColorStop(1, '#4C1D95');
-    ctx.fillStyle = grad;
+    // central hub — soft outer glow
+    const breathe = 1 + Math.sin(t * 3) * 0.06;
+    const glow = ctx.createRadialGradient(cx, cy, 8, cx, cy, 46 * breathe);
+    glow.addColorStop(0, 'rgba(124, 58, 237, 0.33)');
+    glow.addColorStop(1, 'rgba(124, 58, 237, 0)');
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(cx, cy, 24, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 46 * breathe, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.font = '700 9px -apple-system, sans-serif';
-    ctx.fillStyle = '#fff';
+    // central hub — glossy sphere (no text inside)
+    const hubR = 26;
+    const sg = ctx.createRadialGradient(cx - 8, cy - 9, 2, cx, cy, hubR);
+    sg.addColorStop(0, '#C4B5FD');
+    sg.addColorStop(0.5, '#7C3AED');
+    sg.addColorStop(1, '#4C1D95');
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(cx - 7, cy - 9, 7, 4.5, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // caption labels the hub, in the open space below
+    ctx.font = '600 12px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillStyle = 'rgba(76, 29, 149, 0.55)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('using-', cx, cy - 5);
-    ctx.fillText('superpowers', cx, cy + 5);
+    ctx.fillText('using-superpowers', cx, h - 22);
 
     t += 0.012;
     requestAnimationFrame(draw);
