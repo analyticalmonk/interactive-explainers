@@ -241,6 +241,29 @@ body {
     <li class="article-entry">
       <div class="article-content">
         <h2 class="article-title">
+          <a href="superpowers/">Superpowers: The Anatomy of an Agent Skill</a>
+        </h2>
+        <p class="article-excerpt">
+          AI agents will skip your guardrails the moment they feel inconvenient.
+          Explore how Superpowers - the 200k-star agent-skills framework -
+          bootstraps itself into every session and what makes one skill stick
+          where another gets quietly ignored.
+        </p>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>May 2026</span>
+          <span>13 min read</span>
+          <span>4 figures</span>
+        </div>
+      </div>
+      <div class="article-thumbnail">
+        <canvas id="thumb-superpowers" width="480" height="280"></canvas>
+      </div>
+    </li>
+
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
           <a href="artemis-ii/">Artemis II: Why Going Back to the Moon Is a Big Deal</a>
         </h2>
         <p class="article-excerpt">
@@ -360,6 +383,112 @@ body {
 </footer>
 
 <script>
+// Thumbnail: Superpowers — pulsing meta-skill broadcasting to dormant skills
+(function() {
+  const canvas = document.getElementById('thumb-superpowers');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  // Central meta-skill, surrounded by dormant skills
+  const cx = w / 2, cy = h / 2;
+  const skills = [];
+  const N = 9;
+  for (let i = 0; i < N; i++) {
+    const ang = (i / N) * Math.PI * 2 - Math.PI / 2;
+    skills.push({
+      x: cx + Math.cos(ang) * 95,
+      y: cy + Math.sin(ang) * 75,
+      ang: ang,
+      label: ['tdd','debug','review','verify','plan','branch','worktree','exec','brainstorm'][i],
+      phase: i / N,
+    });
+  }
+
+  let t = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // bg gradient
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#F5F3FF');
+    bg.addColorStop(1, '#EDE9FE');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // pulsing ring (the bootstrap broadcast)
+    for (let i = 0; i < 3; i++) {
+      const pr = ((t * 0.6 + i * 0.33) % 1);
+      const radius = 30 + pr * 110;
+      const alpha = (1 - pr) * 0.4;
+      ctx.strokeStyle = `rgba(109, 40, 217, ${alpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // connection lines (subtle)
+    for (const s of skills) {
+      const isActive = (t * 0.3 + s.phase) % 1 < 0.2;
+      ctx.strokeStyle = isActive ? 'rgba(124, 58, 237, 0.55)' : 'rgba(124, 58, 237, 0.12)';
+      ctx.lineWidth = isActive ? 1.5 : 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(s.x, s.y);
+      ctx.stroke();
+    }
+
+    // dormant skills (rings)
+    for (const s of skills) {
+      const isActive = (t * 0.3 + s.phase) % 1 < 0.2;
+      const r = isActive ? 14 : 11;
+      ctx.fillStyle = isActive ? '#7C3AED' : '#fff';
+      ctx.strokeStyle = isActive ? '#4C1D95' : '#A78BFA';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '600 9px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(76, 29, 149, 0.6)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(s.label, s.x, s.y + 24);
+    }
+
+    // central meta-skill
+    const pulse = Math.sin(t * 4) * 0.15 + 1;
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28 * pulse);
+    grad.addColorStop(0, '#A78BFA');
+    grad.addColorStop(1, '#4C1D95');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 24, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.font = '700 9px -apple-system, sans-serif';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('using-', cx, cy - 5);
+    ctx.fillText('superpowers', cx, cy + 5);
+
+    t += 0.012;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
 // Thumbnail: Artemis II — Orion orbiting Moon with Earth in view
 (function() {
   const canvas = document.getElementById('thumb-artemis');
