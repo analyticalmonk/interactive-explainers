@@ -241,6 +241,29 @@ body {
     <li class="article-entry">
       <div class="article-content">
         <h2 class="article-title">
+          <a href="superpowers/">Superpowers: The Anatomy of an Agent Skill</a>
+        </h2>
+        <p class="article-excerpt">
+          AI agents will skip your guardrails the moment they feel inconvenient.
+          Explore how Superpowers - the 200k-star agent-skills framework -
+          bootstraps itself into every session and what makes one skill stick
+          where another gets quietly ignored.
+        </p>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>May 2026</span>
+          <span>13 min read</span>
+          <span>4 figures</span>
+        </div>
+      </div>
+      <div class="article-thumbnail">
+        <canvas id="thumb-superpowers" width="480" height="280"></canvas>
+      </div>
+    </li>
+
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
           <a href="artemis-ii/">Artemis II: Why Going Back to the Moon Is a Big Deal</a>
         </h2>
         <p class="article-excerpt">
@@ -360,6 +383,136 @@ body {
 </footer>
 
 <script>
+// Thumbnail: Superpowers — using-superpowers hub broadcasting to the skill ring
+(function() {
+  const canvas = document.getElementById('thumb-superpowers');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  // Hub lifted slightly to leave room for the caption below
+  const cx = w / 2, cy = h / 2 - 8;
+  const N = 9;
+  const nodes = [];
+  for (let i = 0; i < N; i++) {
+    const ang = (i / N) * Math.PI * 2 - Math.PI / 2;
+    nodes.push({
+      x: cx + Math.cos(ang) * 104,
+      y: cy + Math.sin(ang) * 72,
+      phase: i / N,
+    });
+  }
+
+  let t = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // background
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#F5F3FF');
+    bg.addColorStop(1, '#E9E4FB');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // broadcast pulse rings emanating from the hub
+    for (let i = 0; i < 3; i++) {
+      const pr = ((t * 0.5 + i / 3) % 1);
+      const radius = 26 + pr * 96;
+      const alpha = (1 - pr) * 0.32;
+      ctx.strokeStyle = `rgba(124, 58, 237, ${alpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // sweep drives a smooth traveling activation around the ring
+    const sweep = (t * 0.18) % 1;
+    function intensity(phase) {
+      let d = Math.abs(phase - sweep);
+      d = Math.min(d, 1 - d);
+      return Math.max(0, 1 - d / 0.14);
+    }
+
+    // connection lines (brighten as the sweep passes)
+    for (const n of nodes) {
+      const a = intensity(n.phase);
+      ctx.strokeStyle = `rgba(124, 58, 237, ${0.1 + a * 0.5})`;
+      ctx.lineWidth = 1 + a * 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(n.x, n.y);
+      ctx.stroke();
+    }
+
+    // skill nodes — no labels; white when dormant, violet when lit
+    for (const n of nodes) {
+      const a = intensity(n.phase);
+      const r = 8 + a * 4;
+      if (a > 0.05) {
+        ctx.fillStyle = `rgba(124, 58, 237, ${a * 0.22})`;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, r + 7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const rr = Math.round(255 + (124 - 255) * a);
+      const gg = Math.round(255 + (58 - 255) * a);
+      const bb = Math.round(255 + (237 - 255) * a);
+      ctx.fillStyle = `rgb(${rr}, ${gg}, ${bb})`;
+      ctx.strokeStyle = '#7C3AED';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // central hub — soft outer glow
+    const breathe = 1 + Math.sin(t * 3) * 0.06;
+    const glow = ctx.createRadialGradient(cx, cy, 8, cx, cy, 46 * breathe);
+    glow.addColorStop(0, 'rgba(124, 58, 237, 0.33)');
+    glow.addColorStop(1, 'rgba(124, 58, 237, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 46 * breathe, 0, Math.PI * 2);
+    ctx.fill();
+
+    // central hub — glossy sphere (no text inside)
+    const hubR = 26;
+    const sg = ctx.createRadialGradient(cx - 8, cy - 9, 2, cx, cy, hubR);
+    sg.addColorStop(0, '#C4B5FD');
+    sg.addColorStop(0.5, '#7C3AED');
+    sg.addColorStop(1, '#4C1D95');
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(cx, cy, hubR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(cx - 7, cy - 9, 7, 4.5, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // caption labels the hub, in the open space below
+    ctx.font = '600 12px "JetBrains Mono", ui-monospace, monospace';
+    ctx.fillStyle = 'rgba(76, 29, 149, 0.55)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('using-superpowers', cx, h - 22);
+
+    t += 0.012;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
 // Thumbnail: Artemis II — Orion orbiting Moon with Earth in view
 (function() {
   const canvas = document.getElementById('thumb-artemis');

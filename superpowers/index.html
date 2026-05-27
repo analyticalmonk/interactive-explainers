@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superpowers: The Anatomy of an Agent Skill</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+  --bg: #fff;
+  --bg-warm: #f8f6fb;
+  --bg-code: #f3f1f7;
+  --text: rgba(0, 0, 0, 0.82);
+  --text-secondary: rgba(0, 0, 0, 0.56);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.05);
+
+  /* Superpowers violet */
+  --sp-primary: #6D28D9;
+  --sp-light: #F5F3FF;
+  --sp-border: #DDD6FE;
+  --sp-dark: #4C1D95;
+
+  /* Skill anatomy colors */
+  --sk-frontmatter: #0E7490;
+  --sk-frontmatter-light: #ECFEFF;
+  --sk-frontmatter-border: #A5F3FC;
+
+  --sk-iron: #B91C1C;
+  --sk-iron-light: #FEF2F2;
+  --sk-iron-border: #FECACA;
+
+  --sk-body: #6D28D9;
+  --sk-body-light: #F5F3FF;
+  --sk-body-border: #DDD6FE;
+
+  --sk-flags: #B45309;
+  --sk-flags-light: #FFFBEB;
+  --sk-flags-border: #FCD34D;
+
+  --sk-success: #059669;
+  --sk-success-light: #ECFDF5;
+  --sk-success-border: #A7F3D0;
+
+  --accent: #7C3AED;
+  --accent-light: #F5F3FF;
+  --link: #4338CA;
+
+  /* Typography */
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  /* Spacing */
+  --content-width: 720px;
+  --sidebar-width: 220px;
+  --gap: 2rem;
+}
+
+/* ============================================
+   RESET & BASE
+   ============================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  font-size: 18px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.75;
+  color: var(--text);
+  background: var(--bg);
+}
+
+/* ============================================
+   SITE HEADER
+   ============================================ */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+}
+
+.site-header-inner {
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.site-nav a {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-nav a:hover { color: var(--text); }
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.page-wrapper {
+  display: flex;
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  padding-right: 2.5rem;
+}
+
+.sidebar-inner {
+  position: sticky;
+  top: 2rem;
+  padding-top: 6rem;
+}
+
+.sidebar nav a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.sidebar nav a:hover { color: var(--text-secondary); }
+
+.sidebar nav a.active {
+  color: var(--text);
+  border-left-color: var(--accent);
+  font-weight: 600;
+}
+
+.sidebar nav a.sub {
+  padding-left: 1.6rem;
+  font-size: 0.67rem;
+}
+
+.content {
+  flex: 1;
+  max-width: var(--content-width);
+  min-width: 0;
+  padding-bottom: 6rem;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 4.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+p { margin-bottom: 1.25rem; }
+
+.lead {
+  font-size: 1.13rem;
+  font-weight: 300;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+strong { font-weight: 600; }
+em { font-style: italic; }
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--bg-code);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+.code-block {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  padding: 1.1rem 1.4rem;
+  margin: 1.4rem 0;
+  background: #2A2438;
+  color: #E8E4DC;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.code-block .kw { color: #C792EA; }
+.code-block .fn { color: #82AAFF; }
+.code-block .str { color: #C3E88D; }
+.code-block .cm { color: #6B6560; }
+.code-block .type { color: #FFCB6B; }
+.code-block .key { color: #FFCB6B; }
+.code-block .meta { color: #ED9CA6; padding: 0; background: none; border: none; font-family: var(--font-mono); font-size: inherit; }
+
+/* ============================================
+   HEADER
+   ============================================ */
+.article-header {
+  padding-top: 5rem;
+  margin-bottom: 3rem;
+}
+
+.article-header .overline {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   INTERACTIVE FIGURES
+   ============================================ */
+.figure {
+  margin: 2.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.figure-canvas-wrap {
+  position: relative;
+  width: 100%;
+  background: #fff;
+}
+
+.figure-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+}
+
+.figure-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 0.5rem 1rem 0;
+}
+
+button.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+button.ctrl-btn:hover {
+  background: var(--bg);
+  border-color: var(--text-tertiary);
+}
+
+button.ctrl-btn.active {
+  background: var(--text);
+  color: #fff;
+  border-color: var(--text);
+}
+
+button.ctrl-btn.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+button.ctrl-btn.primary:hover { opacity: 0.9; }
+
+.ctrl-label {
+  font-family: var(--font-sans);
+  font-size: 0.67rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.ctrl-separator {
+  width: 1px;
+  height: 1.2rem;
+  background: var(--border);
+  margin: 0 0.3rem;
+}
+
+/* ============================================
+   CALLOUT
+   ============================================ */
+.callout {
+  margin: 2rem 0;
+  padding: 1.1rem 1.4rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.96rem;
+}
+
+.callout p:last-child { margin-bottom: 0; }
+
+.callout.warn {
+  border-left-color: var(--sk-iron);
+  background: var(--sk-iron-light);
+}
+
+/* ============================================
+   APPROACH / NOTE CARDS
+   ============================================ */
+.approach-section {
+  margin-top: 2.2rem;
+  padding: 1.4rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.approach-section.sp {
+  background: var(--sp-light);
+  border-color: var(--sp-border);
+}
+
+.approach-section.iron {
+  background: var(--sk-iron-light);
+  border-color: var(--sk-iron-border);
+}
+
+.approach-section.success {
+  background: var(--sk-success-light);
+  border-color: var(--sk-success-border);
+}
+
+.approach-tag {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 0.75rem;
+  color: #fff;
+}
+
+.sp .approach-tag { background: var(--sp-primary); }
+.iron .approach-tag { background: var(--sk-iron); }
+.success .approach-tag { background: var(--sk-success); }
+
+.sp h3 { color: var(--sp-dark); margin-top: 0; }
+.iron h3 { color: var(--sk-iron); margin-top: 0; }
+.success h3 { color: var(--sk-success); margin-top: 0; }
+
+/* ============================================
+   IRON LAW BOX
+   ============================================ */
+.iron-law {
+  margin: 1.5rem 0;
+  padding: 1rem 1.2rem;
+  background: #1A1620;
+  color: #FECACA;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  border-left: 4px solid var(--sk-iron);
+}
+
+.iron-law::before {
+  content: 'IRON LAW';
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--sk-iron);
+  background: rgba(185, 28, 28, 0.18);
+  padding: 0.25rem 0.55rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* ============================================
+   FACT GRID / STATS
+   ============================================ */
+.fact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.8rem;
+  margin: 1.6rem 0;
+}
+
+.fact-card {
+  padding: 0.9rem 1rem;
+  background: var(--sp-light);
+  border: 1px solid var(--sp-border);
+  border-radius: 6px;
+  font-family: var(--font-sans);
+}
+
+.fact-card .num {
+  font-family: var(--font-serif);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--sp-primary);
+  line-height: 1.1;
+  display: block;
+}
+
+.fact-card .label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.2rem;
+}
+
+/* ============================================
+   RED-FLAGS TABLE
+   ============================================ */
+.redflag-table {
+  margin: 1.5rem 0;
+  border: 1px solid var(--sk-flags-border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  font-size: 0.83rem;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.redflag-table th {
+  background: var(--sk-flags-light);
+  color: var(--sk-flags);
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--sk-flags-border);
+}
+
+.redflag-table td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--sk-flags-border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.redflag-table tr:last-child td { border-bottom: none; }
+.redflag-table td:first-child {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.redflag-table td:last-child {
+  color: var(--text);
+  font-weight: 500;
+}
+
+/* ============================================
+   COMPARISON GRID
+   ============================================ */
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.comparison-cell {
+  padding: 1.1rem 1.2rem;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.comparison-cell.good {
+  background: var(--sk-success-light);
+  border: 1px solid var(--sk-success-border);
+}
+.comparison-cell.bad {
+  background: var(--sk-iron-light);
+  border: 1px solid var(--sk-iron-border);
+}
+.comparison-cell strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.comparison-cell.good strong { color: var(--sk-success); }
+.comparison-cell.bad strong { color: var(--sk-iron); }
+
+/* ============================================
+   SCORECARD
+   ============================================ */
+.scorecard {
+  margin: 1.6rem 0;
+}
+.scorecard-row {
+  display: grid;
+  grid-template-columns: 1.4fr 0.5fr 2fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border-light);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+}
+.scorecard-row:last-child { border-bottom: none; }
+.scorecard-row .principle { font-weight: 600; color: var(--text); }
+.scorecard-row .badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 3px;
+  text-align: center;
+}
+.badge.must { background: var(--sk-iron); color: #fff; }
+.badge.should { background: var(--sk-flags); color: #fff; }
+.badge.optional { background: var(--text-tertiary); color: #fff; }
+.scorecard-row .desc { color: var(--text-secondary); line-height: 1.5; }
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.article-footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+
+.article-footer a { color: var(--link); }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1060px) {
+  .sidebar { display: none; }
+  .page-wrapper { padding: 0 1.25rem; }
+}
+
+@media (max-width: 600px) {
+  html { font-size: 16px; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .article-header { padding-top: 3rem; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .fact-grid { grid-template-columns: repeat(2, 1fr); }
+  .scorecard-row { grid-template-columns: 1fr; gap: 0.3rem; }
+  .figure-controls { gap: 0.4rem; }
+  .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .figure-canvas-wrap canvas { min-width: 500px; }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.article-header .overline { animation: slideInLeft 0.6s ease 0.1s both; }
+.article-header h1 { animation: fadeInUp 0.6s ease 0.2s both; }
+.article-header .lead { animation: fadeIn 0.8s ease 0.4s both; }
+.figure { animation: fadeInUp 0.5s ease both; }
+.approach-section { animation: fadeInUp 0.4s ease both; }
+</style>
+<script data-goatcounter="https://analyticalmonk.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <nav id="toc">
+        <a href="#intro">Why Agents Ignore You</a>
+        <a href="#bootstrap">The Bootstrap Problem</a>
+        <a href="#bootstrap-demo" class="sub">Session Bootstrap</a>
+        <a href="#anatomy">Anatomy of a SKILL.md</a>
+        <a href="#anatomy-demo" class="sub">SKILL Inspector</a>
+        <a href="#description">Description as Trigger</a>
+        <a href="#description-demo" class="sub">Workflow vs Trigger</a>
+        <a href="#loopholes">Closing the Loopholes</a>
+        <a href="#loophole-demo" class="sub">Pressure Test</a>
+        <a href="#persuasion">The Persuasion Layer</a>
+        <a href="#scorecard">A Scorecard for Skills</a>
+        <a href="#why-it-matters">Why It Matters</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- HEADER -->
+    <header class="article-header" id="intro">
+      <div class="overline">Interactive Explainer</div>
+      <h1>Superpowers:<br>The Anatomy of an Agent Skill</h1>
+      <p class="lead">
+        AI coding agents will skip your guardrails the moment they feel inconvenient.
+        Superpowers - the 200k-star skills framework by Jesse Vincent - is a software
+        development methodology disguised as markdown. Explore how a skill bootstraps
+        itself into every session, why descriptions should never summarize, and what
+        makes one skill stick where another gets quietly ignored.
+      </p>
+      <div class="meta">May 2026 &middot; 13 min read &middot; 4 figures</div>
+    </header>
+
+    <!-- SECTION 1: WHY AGENTS IGNORE YOU -->
+    <section>
+      <p>
+        Anyone who has spent time pair-programming with an LLM has felt the same
+        small betrayal: you write a clear instruction in your CLAUDE.md, watch the
+        agent acknowledge it, and then watch it cheerfully ignore the instruction
+        twenty minutes later. The system prompt is not a contract. It is a suggestion
+        the model weighs against everything else in its context.
+      </p>
+      <p>
+        <a href="https://github.com/obra/superpowers">Superpowers</a>, created by
+        Jesse Vincent in October 2025, was not the first structured attempt to
+        make agents behave - Cursor's rules files and <code>CLAUDE.md</code>
+        conventions came earlier - but it is one of the most widely-adopted and
+        thoroughly worked-out. It is an installable plugin - the author calls it
+        "an agentic skills framework and software development methodology" - that
+        bundles fourteen "skills" (small markdown files encoding a development
+        methodology) with a bootstrap mechanism that forces the agent to consult
+        them. The skills are the visible part; the bootstrap is what turns inert
+        files into a framework. In seven months it has crossed 200,000 stars on
+        GitHub.
+      </p>
+
+      <div class="fact-grid">
+        <div class="fact-card"><span class="num">200k+</span><div class="label">GitHub stars</div></div>
+        <div class="fact-card"><span class="num">14</span><div class="label">shipped skills</div></div>
+        <div class="fact-card"><span class="num">7</span><div class="label">months old</div></div>
+        <div class="fact-card"><span class="num">6+</span><div class="label">agent platforms</div></div>
+      </div>
+
+      <p>
+        The interesting part is not that Superpowers exists. It is <em>why</em> it
+        works. Each design choice - the frontmatter shape, the bootstrap hook, the
+        sentence that opens every description, the bright-red "IRON LAW" banners -
+        is a specific response to a specific failure mode the author observed in
+        agents. Read together, the codebase is a textbook on how to write
+        instructions a model will actually follow.
+      </p>
+      <p>
+        This explainer takes that textbook apart. We'll look at the four pieces
+        that make Superpowers' skills effective - the bootstrap, the anatomy,
+        the description rule, and the loophole-closing pattern - and end with a
+        scorecard you can apply to any skill, in any framework.
+      </p>
+    </section>
+
+    <!-- SECTION 2: THE BOOTSTRAP PROBLEM -->
+    <section>
+      <h2 id="bootstrap">The Bootstrap Problem</h2>
+
+      <p>
+        Before we talk about what a great skill <em>looks</em> like, there is a
+        more basic question: how does the agent know to use one at all? An agent
+        that doesn't reach for a skill is exactly as useful as no skill at all,
+        and in practice agents reach for things lazily. A skill is just a markdown
+        file sitting in a directory - and a file the agent never opens is no more
+        useful than the <code>CLAUDE.md</code> it already ignores.
+      </p>
+
+      <div class="approach-section sp">
+        <span class="approach-tag">Design Choice</span>
+        <h3>One Meta-Skill Pre-Loaded into Every Session</h3>
+        <p>
+          Superpowers solves the bootstrap with a single trick: a
+          <strong>SessionStart hook</strong>. A hook is a plugin-level
+          capability, not a skill-level one - a <code>SKILL.md</code> file can't
+          register anything, so this is declared by the Superpowers <em>plugin</em>
+          (in its <code>hooks/hooks.json</code>) and wired up when you install and
+          enable the plugin. From then on it fires on every session
+          <code>startup</code>, <code>clear</code>, or <code>compact</code>. Each
+          time it fires, a small script reads one file -
+          <code>using-superpowers/SKILL.md</code> - and injects its full contents
+          into the session as additional context, wrapped in
+          <code>&lt;EXTREMELY_IMPORTANT&gt;</code> tags.
+        </p>
+        <p>
+          That meta-skill is the only one injected in full automatically. Its
+          job is to teach the agent that the <code>Skill</code> tool exists and
+          must be invoked aggressively. Every other skill is listed by name and
+          trigger description, but its body stays dormant on disk until the agent
+          reaches for it.
+        </p>
+      </div>
+
+      <p>
+        The hook registration is a few lines of JSON:
+      </p>
+
+<pre class="code-block"><span class="cm">// hooks/hooks.json - shipped by the plugin, not by any skill</span>
+{
+  <span class="key">"hooks"</span>: {
+    <span class="key">"SessionStart"</span>: [{
+      <span class="key">"matcher"</span>: <span class="str">"startup|clear|compact"</span>,
+      <span class="key">"hooks"</span>: [{
+        <span class="key">"type"</span>: <span class="str">"command"</span>,
+        <span class="cm">// run-hook.cmd is a cross-platform wrapper that execs session-start</span>
+        <span class="key">"command"</span>: <span class="str">"\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start"</span>,
+        <span class="key">"async"</span>: <span class="kw">false</span>
+      }]
+    }]
+  }
+}</pre>
+
+      <p>
+        The animation below shows what this actually does inside a session.
+        Either way the harness lists the available skills - their names and
+        trigger descriptions are visible to the agent through the Skill tool.
+        What the bootstrap changes is propensity: with the hook off, nothing
+        pushes the agent to act on that list, so it tends to improvise unless a
+        skill is glaringly relevant. With the hook on, the meta-skill arrives
+        before the first user token and tells the agent to reach for a skill on
+        even a 1% chance it applies.
+      </p>
+
+      <!-- FIGURE 1: Bootstrap animation -->
+      <div class="figure" id="bootstrap-demo">
+        <div class="figure-label">Figure 1 - Session Bootstrap</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-bootstrap" width="720" height="420"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Hook:</span>
+          <button class="ctrl-btn boot-btn active" data-mode="on">Superpowers ON</button>
+          <button class="ctrl-btn boot-btn" data-mode="off">Superpowers OFF</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn primary" id="boot-replay">Replay</button>
+        </div>
+        <div class="figure-caption">
+          The SessionStart hook runs <em>before</em> the user's first message
+          arrives. The skills are listed in the <code>Skill</code> tool either
+          way - the hook doesn't make them exist, it makes the agent reliably
+          reach for them. With the hook on, <code>using-superpowers</code>
+          pre-loads the aggressive "invoke on a 1% chance" rule. With it off, the
+          agent can still invoke a skill but frequently skips it and improvises.
+        </div>
+      </div>
+
+      <p>
+        This pattern - <em>auto-load a meta-skill that makes the agent reliably
+        reach for everything else</em> - is the single most important design
+        decision in the framework. It separates "skills the agent could use"
+        from "skills the agent will use." The skills are discoverable without it;
+        the bootstrap is what makes them reliably used rather than quietly
+        ignored.
+      </p>
+    </section>
+
+    <!-- SECTION 3: ANATOMY OF A SKILL.MD -->
+    <section>
+      <h2 id="anatomy">Anatomy of a SKILL.md</h2>
+
+      <p>
+        Each skill lives in <code>skills/&lt;name&gt;/SKILL.md</code>. The format
+        is deliberately spartan: a YAML frontmatter with exactly two fields, then
+        a markdown body that follows a small set of conventions. The brevity is
+        intentional - frequently-loaded skills are kept under 200 words because
+        every token a skill consumes is a token the agent can't spend on your
+        problem.
+      </p>
+
+      <p>
+        Here is the frontmatter from <code>using-superpowers</code> itself:
+      </p>
+
+<pre class="code-block"><span class="meta">---</span>
+<span class="key">name</span>: <span class="str">using-superpowers</span>
+<span class="key">description</span>: <span class="str">Use when starting any conversation - establishes how to find
+  and use skills, requiring Skill tool invocation before ANY response including
+  clarifying questions</span>
+<span class="meta">---</span></pre>
+
+      <p>
+        Two fields, both with strict rules. <code>name</code> is verb-first,
+        kebab-case, max 64 characters: <code>creating-skills</code>, not
+        <code>skill-creation</code>. <code>description</code> is third-person, max
+        1024 characters, and - the part that violates most people's instincts -
+        it describes <em>only the triggering conditions</em>, never the workflow.
+        We'll return to why in the next section; it's the most surprising design
+        finding in the whole project.
+      </p>
+
+      <p>
+        The body has recurring elements that show up across nearly every skill.
+        Click any block in the inspector below to see what it does and why it's
+        there. The skill displayed is a compressed view of
+        <code>test-driven-development</code>, one of the framework's most
+        battle-tested.
+      </p>
+
+      <!-- FIGURE 2: SKILL inspector -->
+      <div class="figure" id="anatomy-demo">
+        <div class="figure-label">Figure 2 - SKILL.md Inspector</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-anatomy" width="720" height="560"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Skill:</span>
+          <button class="ctrl-btn skill-btn active" data-skill="tdd">test-driven-development</button>
+          <button class="ctrl-btn skill-btn" data-skill="verify">verification-before-completion</button>
+          <button class="ctrl-btn skill-btn" data-skill="debug">systematic-debugging</button>
+        </div>
+        <div class="figure-caption">
+          Hover any block to see its role. Every Superpowers skill shares the
+          same backbone - a strict two-field frontmatter, the letter-and-spirit
+          clause, and an Iron Law naming the single non-negotiable - then adds
+          skill-specific guardrails: explicit loophole-closing lists, gate
+          checklists, or phase gates. All text here is taken from the real
+          <code>SKILL.md</code> files. The shape is shared; only the rules change.
+        </div>
+      </div>
+
+      <p>
+        Three pieces deserve special attention because they don't appear in
+        most prompt frameworks:
+      </p>
+
+      <div class="iron-law">NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST</div>
+
+      <p>
+        First, the <strong>Iron Law</strong>: a single sentence in a code-block
+        banner that states the one rule the skill exists to enforce. TDD's Iron
+        Law is above. <code>verification-before-completion</code> has
+        <code>NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE</code>.
+        <code>systematic-debugging</code> has <code>NO FIXES WITHOUT ROOT CAUSE
+        INVESTIGATION FIRST</code>. The Iron Law is a load-bearing rhetorical
+        device - it lets the agent compress the entire skill to a single rule
+        it can hold in working memory.
+      </p>
+
+      <p>
+        Second, the <strong>Red Flags table</strong>: a two-column list mapping
+        the internal-monologue phrases that mean the agent is rationalizing to
+        the reality that should override them. From <code>using-superpowers</code>:
+      </p>
+
+      <table class="redflag-table">
+        <thead>
+          <tr><th>Thought</th><th>Reality</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>"This is just a simple question"</td><td>Questions are tasks. Check for skills.</td></tr>
+          <tr><td>"I need more context first"</td><td>Skill check comes BEFORE clarifying questions.</td></tr>
+          <tr><td>"I remember this skill"</td><td>Skills evolve. Read the current version.</td></tr>
+          <tr><td>"The skill is overkill"</td><td>Simple things become complex. Use it.</td></tr>
+          <tr><td>"I'll just do this one thing first"</td><td>Check BEFORE doing anything.</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        Third, and most distinctively, the <strong>Common Rationalizations
+        table</strong>: an "Excuse / Reality" list of plausible-sounding reasons
+        the agent might generate for skipping the discipline, each paired with a
+        refutation. From the real TDD skill: <em>"Too simple to test" -&gt;
+        "Simple code breaks. Test takes 30 seconds."</em> and <em>"Deleting X
+        hours is wasteful" -&gt; "Sunk cost fallacy. Keeping unverified code is
+        technical debt."</em> These come from observation, not imagination -
+        we'll see how in the loopholes section.
+      </p>
+    </section>
+
+    <!-- SECTION 4: DESCRIPTION AS TRIGGER -->
+    <section>
+      <h2 id="description">Description as Trigger, Not Summary</h2>
+
+      <p>
+        Here is the design choice that violates everyone's instinct on first
+        contact: <strong>the description must never summarize what the skill
+        does</strong>. It should describe only <em>when</em> the skill applies,
+        in third person, starting with the words "Use when." It must not name the
+        steps the skill contains.
+      </p>
+
+      <p>
+        This sounds like pedantry until you read the bug report that produced it.
+        From the <code>writing-skills</code> SKILL.md:
+      </p>
+
+      <div class="callout warn">
+        <p>
+          "A description saying <em>'code review between tasks'</em> caused Claude
+          to do ONE review, even though the skill's flowchart clearly showed TWO
+          reviews (spec compliance then code quality). When the description was
+          changed to just <em>'Use when executing implementation plans with
+          independent tasks'</em> (no workflow summary), Claude correctly read the
+          flowchart and followed the two-stage review process."
+        </p>
+      </div>
+
+      <p>
+        The mechanism is simple. If the description tells the agent what the
+        skill does, the agent is liable to treat the description as the
+        instructions and skip reading the body. If the description tells it only
+        when to apply the skill, the agent has nothing to act on but the trigger,
+        so it opens the file to find the steps.
+      </p>
+
+      <p>
+        The figure below makes the failure visible. Toggle between a
+        workflow-summary description and a trigger-only description for the same
+        skill - the framework's real <code>executing-plans</code> example - and
+        watch what reaches the agent's context.
+      </p>
+
+      <!-- FIGURE 3: Description test -->
+      <div class="figure" id="description-demo">
+        <div class="figure-label">Figure 3 - Workflow vs Trigger Descriptions</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-description" width="720" height="440"></canvas>
+        </div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Description style:</span>
+          <button class="ctrl-btn desc-btn active" data-style="workflow">Workflow summary</button>
+          <button class="ctrl-btn desc-btn" data-style="trigger">Trigger only</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="desc-replay">Replay</button>
+        </div>
+        <div class="figure-caption">
+          When the description summarizes the workflow, the agent reads it,
+          believes it has enough, and skips opening the file. When the
+          description only describes the trigger condition, the agent has to
+          load the body to learn the steps. The skill body contains the full
+          discipline; the description should be just enough to get the agent
+          to fetch it.
+        </div>
+      </div>
+
+      <p>
+        The rule that falls out is concrete, and it applies to almost any skill
+        framework, not just Superpowers:
+      </p>
+
+      <div class="comparison-grid">
+        <div class="comparison-cell bad">
+          <strong>Don't write</strong>
+          "Use for TDD - write test first, watch it fail, write minimal code,
+          refactor."
+        </div>
+        <div class="comparison-cell good">
+          <strong>Do write</strong>
+          "Use when implementing any feature or bugfix, before writing
+          implementation code."
+        </div>
+      </div>
+
+      <p>
+        Both describe the same skill; these are the actual bad and good
+        examples from the framework's own <code>writing-skills</code> guide. The
+        second form contains zero instructions - it only loads when the
+        described situation arises. Combine that with a body that contains the
+        real discipline, and you get a skill the agent can't shortcut by
+        skimming the index.
+      </p>
+    </section>
+
+    <!-- SECTION 5: CLOSING THE LOOPHOLES -->
+    <section>
+      <h2 id="loopholes">Closing the Loopholes</h2>
+
+      <p>
+        Every skill in Superpowers reads like it was written by someone who has
+        watched an LLM weasel out of the rule before. That is because every
+        skill in Superpowers <em>was</em>. Jesse Vincent describes the process
+        in the <code>writing-skills</code> meta-skill as test-driven
+        development applied to process documentation:
+      </p>
+
+      <table class="redflag-table" style="border-color: var(--sp-border);">
+        <thead style="background: var(--sp-light);">
+          <tr><th style="background: var(--sp-light); color: var(--sp-dark); border-color: var(--sp-border);">TDD concept</th><th style="background: var(--sp-light); color: var(--sp-dark); border-color: var(--sp-border);">Skill creation</th></tr>
+        </thead>
+        <tbody>
+          <tr><td style="border-color: var(--sp-border);">Write the test first</td><td style="border-color: var(--sp-border);">Run a pressure scenario with a subagent <em>before</em> writing the skill</td></tr>
+          <tr><td style="border-color: var(--sp-border);">Watch it fail (RED)</td><td style="border-color: var(--sp-border);">Document the exact rationalizations the agent produces, verbatim</td></tr>
+          <tr><td style="border-color: var(--sp-border);">Minimal code to pass</td><td style="border-color: var(--sp-border);">Write a skill that addresses those specific rationalizations</td></tr>
+          <tr><td style="border-color: var(--sp-border);">Refactor</td><td style="border-color: var(--sp-border);">Close remaining loopholes while keeping compliance green</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The "pressure scenario" is the load-bearing piece. You give a subagent
+        an artificial constraint - a $5,000-per-minute production outage, sunk
+        cost from earlier work, an authority figure telling them to ship - and
+        watch how they justify skipping the rule. You don't have to imagine
+        excuses. The model produces them. You write them into the skill
+        verbatim, with refutations, and the next subagent has no fresh excuses
+        left.
+      </p>
+
+      <!-- FIGURE 4: Pressure test loop -->
+      <div class="figure" id="loophole-demo">
+        <div class="figure-label">Figure 4 - The Pressure-Test Loop</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-loophole" width="720" height="440"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="loop-step">Step forward</button>
+          <button class="ctrl-btn" id="loop-auto">Auto-play</button>
+          <div class="ctrl-separator"></div>
+          <button class="ctrl-btn" id="loop-reset">Reset</button>
+        </div>
+        <div class="figure-caption">
+          One iteration of skill TDD. Pressure scenario fires, subagent
+          rationalizes its way around the rule, the rationalization gets logged
+          verbatim, the skill is updated to refute it, the next subagent hits
+          the same scenario and complies. The loop repeats until the skill
+          survives the worst case you can construct.
+        </div>
+      </div>
+
+      <p>
+        This produces a specific texture in the writing. Compare a fragile rule
+        to a Superpowers rule:
+      </p>
+
+      <div class="comparison-grid">
+        <div class="comparison-cell bad">
+          <strong>Fragile</strong>
+          "Delete code written before tests."
+        </div>
+        <div class="comparison-cell good">
+          <strong>Loophole-closed</strong>
+          "Delete it. Start over. Don't keep it as 'reference'. Don't 'adapt'
+          it while writing tests. Don't look at it. Delete means delete."
+        </div>
+      </div>
+
+      <p>
+        The second form anticipates the rationalizations - "I'll keep it as
+        reference," "I'll adapt it," "I'll just glance at it" - and forecloses
+        each one explicitly. Add the Superpowers stock phrase
+        <em>"Violating the letter of the rules is violating the spirit of the
+        rules"</em> and you've also pre-empted the meta-rationalization where
+        the agent claims it's following the spirit while breaking the letter.
+      </p>
+    </section>
+
+    <!-- SECTION 6: PERSUASION LAYER -->
+    <section>
+      <h2 id="persuasion">The Persuasion Layer</h2>
+
+      <p>
+        The most distinctive design choice in Superpowers is that its rhetoric is
+        explicitly grounded in persuasion research. The
+        <code>writing-skills/persuasion-principles.md</code> document cites
+        Cialdini's <em>Influence</em> and a 2025 study by Meincke et al. that
+        found persuasion techniques roughly doubled LLM compliance with hard
+        requests, from 33% to 72% across 28,000 conversations.
+      </p>
+
+      <p>
+        Each Cialdini principle maps onto a writing technique you can spot in
+        any Superpowers skill:
+      </p>
+
+      <div class="approach-section sp">
+        <span class="approach-tag">Cialdini Mapping</span>
+        <h3>What the Skill Rhetoric Is Actually Doing</h3>
+        <ul style="margin: 0.5rem 0 0; padding-left: 1.4rem; font-family: var(--font-sans); font-size: 0.88rem; line-height: 1.7;">
+          <li><strong>Authority</strong> - "YOU MUST", "Never", "No exceptions". Heavy in TDD and verification skills.</li>
+          <li><strong>Commitment</strong> - "Announce skill usage", required TodoWrite checklists, explicit choice statements.</li>
+          <li><strong>Scarcity</strong> - "Before proceeding", "IMMEDIATELY after X". Time-bounded action windows.</li>
+          <li><strong>Social proof</strong> - "Every time", "X without Y = failure". Universal-pattern framing.</li>
+          <li><strong>Unity</strong> - "we're colleagues", "our codebase". Aligns the agent with the user's interest.</li>
+          <li><strong>Reciprocity & liking</strong> - used sparingly; they can feel manipulative or conflict with honest feedback.</li>
+        </ul>
+      </div>
+
+      <p>
+        Whether you find this manipulative or merely effective depends on your
+        prior. Either way, it works. The capitalized "YOU MUST" and "NO
+        EXCEPTIONS" phrases that look out of place in technical documentation
+        are doing actual mechanical work on the model's compliance probability.
+      </p>
+    </section>
+
+    <!-- SECTION 7: SCORECARD -->
+    <section>
+      <h2 id="scorecard">A Scorecard for Skills</h2>
+
+      <p>
+        Pulling everything together: here is the rubric Superpowers implicitly
+        teaches for evaluating any agent skill you write, in any framework. Treat
+        the <em>must / should</em> weighting as empirical - it reflects how
+        late-2025 models and harnesses behaved - rather than as fixed law; the
+        note below the table covers what has already shifted.
+      </p>
+
+      <div class="scorecard">
+        <div class="scorecard-row">
+          <div class="principle">Auto-bootstrap</div>
+          <div><span class="badge must">Must</span></div>
+          <div class="desc">A skill the agent has to remember to load is a skill the agent will skip. Use SessionStart hooks or always-loaded meta-skills.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">Trigger-only description</div>
+          <div><span class="badge must">Must</span></div>
+          <div class="desc">Describe <em>when</em>, never <em>how</em>. If the description summarizes the steps, the agent skips the body.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">One Iron Law</div>
+          <div><span class="badge must">Must</span></div>
+          <div class="desc">Compress the whole skill to one rule the agent can hold while working. Multiple "important" rules dilute each other.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">Pressure-tested rationalizations</div>
+          <div><span class="badge must">Must</span></div>
+          <div class="desc">Find the excuses by running a subagent, not by guessing. Refute each one explicitly in the skill body.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">Letter-and-spirit clause</div>
+          <div><span class="badge should">Should</span></div>
+          <div class="desc">Add the line "Violating the letter is violating the spirit." Pre-empts the meta-rationalization loophole.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">Token economy</div>
+          <div><span class="badge should">Should</span></div>
+          <div class="desc">Keep frequently-loaded skills under 200 words. Move reference material to sibling files, link by name.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">Rigid vs flexible label</div>
+          <div><span class="badge should">Should</span></div>
+          <div class="desc">Tell the agent whether to follow exactly (discipline) or adapt (patterns). Mislabeled flexibility kills discipline skills.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">Searchable naming</div>
+          <div><span class="badge should">Should</span></div>
+          <div class="desc">Verb-first names, gerunds for processes (<code>creating-skills</code>), real error strings in the description.</div>
+        </div>
+        <div class="scorecard-row">
+          <div class="principle">Cross-reference by name</div>
+          <div><span class="badge optional">Optional</span></div>
+          <div class="desc">Link to other skills with plain names, never <code>@</code>-syntax. <code>@</code>-loads burn context for skills not yet needed.</div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>
+          <strong>A note on the date.</strong> This rubric encodes how models and
+          harnesses behaved when Superpowers shipped in October 2025, and some of
+          the Musts are already softening. Harnesses now surface skills natively -
+          Anthropic's Agent Skills became a cross-vendor open standard in December
+          2025 - so a plugin-level auto-bootstrap is less load-bearing than it
+          was. Stronger instruction-following makes a model less likely to skip a
+          skill's body just because the description summarized the steps. And much
+          larger context windows make the under-200-words token economy far less
+          binding. The tactics relax as models improve; the principle behind them
+          does not.
+        </p>
+      </div>
+
+      <p>
+        And that principle is what ties the rubric together: <strong>every choice
+        optimizes for the agent under pressure</strong>. An agent that is bored,
+        certain, or in a hurry. The cheerful path is easy. The hard part is the
+        agent at the moment it would otherwise rationalize, and every Superpowers
+        convention is a counter-measure for that exact moment - however much the
+        moment recedes as models get better.
+      </p>
+    </section>
+
+    <!-- SECTION 8: WHY IT MATTERS -->
+    <section>
+      <h2 id="why-it-matters">Why It Matters</h2>
+
+      <p>
+        Two things make Superpowers worth studying beyond the framework itself.
+      </p>
+      <p>
+        First, it is a working demonstration that you can encode software
+        engineering discipline - TDD, root-cause debugging, code review,
+        verification-before-completion - in a form that models will follow
+        under pressure. The agent doesn't internalize the discipline; it
+        consults it. That distinction is the gap between a methodology that
+        works in articles and one that survives production use.
+      </p>
+      <p>
+        Second, the design choices are general. The bootstrap mechanism works
+        for any host that supports SessionStart hooks. The "description as
+        trigger" rule applies to any retrieval-augmented prompt system. The
+        Iron Law and the loophole-closing pattern translate directly to system
+        prompts, agent instructions, and tool documentation. Skill-building is
+        becoming its own discipline, and Superpowers is the most thoroughly
+        worked-out example we have.
+      </p>
+      <p>
+        The 200,000 stars are not really for the fourteen skills it ships. They
+        are for the methodology of writing them - the demonstration that an
+        agent skill can be small, brutal, persuasive, and reliably triggered.
+        The skills are just the existence proof.
+      </p>
+
+      <div class="approach-section success">
+        <span class="approach-tag">Try It</span>
+        <h3>One Skill at a Time</h3>
+        <p>
+          If you want to write your own: pick one workflow you already do
+          repeatedly. Write the frontmatter with a trigger-only description.
+          Pick the one rule you wish the agent would never break. Pressure-test
+          it on a subagent. Capture the rationalizations. Close them one at a
+          time. That is the whole loop - it's the same loop Superpowers used to
+          get here.
+        </p>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="article-footer">
+      <p>
+        <strong>References:</strong>
+        <a href="https://github.com/obra/superpowers">obra/superpowers</a> on GitHub,
+        Jesse Vincent's launch post <a href="https://blog.fsck.com/2025/10/09/superpowers/">"Superpowers"</a> (Oct 2025),
+        Cialdini's <em>Influence: The Psychology of Persuasion</em>,
+        Meincke et al. (2025) on persuasion techniques and LLM compliance.
+      </p>
+      <p>
+        Star count, frontmatter quotes, and skill text reflect the
+        <code>obra/superpowers</code> repository as of May 2026 (v5.1.0).
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+/* ============================================
+   Shared canvas helper - DPR-aware
+   ============================================ */
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.width;
+  const cssH = canvas.height;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: cssW, h: cssH };
+}
+
+/* ============================================
+   Sidebar active highlighting on scroll
+   ============================================ */
+(function() {
+  const links = document.querySelectorAll('.sidebar nav a');
+  const ids = Array.from(links).map(a => a.getAttribute('href').slice(1));
+  const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
+  function update() {
+    let active = sections[0];
+    for (const s of sections) {
+      const rect = s.getBoundingClientRect();
+      if (rect.top < 200) active = s;
+    }
+    if (!active) return;
+    links.forEach(l => l.classList.toggle('active',
+      l.getAttribute('href').slice(1) === active.id));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+
+/* ============================================
+   FIGURE 1 - Session Bootstrap
+   ============================================ */
+(function() {
+  const init = initCanvas('canvas-bootstrap');
+  if (!init) return;
+  const { ctx, w, h } = init;
+
+  let mode = 'on';
+  let t = 0;
+  let playStart = performance.now();
+
+  document.querySelectorAll('.boot-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.boot-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      playStart = performance.now();
+    });
+  });
+  document.getElementById('boot-replay').addEventListener('click', () => {
+    playStart = performance.now();
+  });
+
+  // Timeline events:
+  // 0.0-0.8: SessionStart fires
+  // 0.8-1.8: hook injects meta-skill
+  // 1.8-2.6: user message arrives
+  // 2.6-3.6: agent checks for skill (Skill tool fires) [ON only]
+  // 3.6-4.6: TDD skill loaded into context [ON only]
+  // 4.6-5.6: agent produces response
+
+  function lerp(a, b, k) { return a + (b - a) * Math.max(0, Math.min(1, k)); }
+  function easeOut(k) { return 1 - Math.pow(1 - k, 3); }
+
+  // Layout
+  const padL = 24, padR = 24, padT = 60;
+  const trackTop = padT + 30;
+  const trackBot = h - 80;
+  const trackX = padL + 110;
+  const trackW = w - trackX - padR;
+
+  function drawCtxBox(active, agentY, label, color, items) {
+    const x = trackX, y = agentY - 14;
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    roundRect(x, y, trackW, 28, 6, true, true);
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'left';
+    ctx.fillText(label, x + 10, y + 17);
+    // pills for items
+    let px = x + 110;
+    ctx.font = '600 9px "JetBrains Mono", monospace';
+    for (const it of items) {
+      const tw = ctx.measureText(it.label).width + 12;
+      ctx.fillStyle = it.color + '20';
+      roundRect(px, y + 5, tw, 18, 4, true, false);
+      ctx.fillStyle = it.color;
+      ctx.textAlign = 'left';
+      ctx.fillText(it.label, px + 6, y + 17);
+      px += tw + 6;
+    }
+  }
+
+  function roundRect(x, y, ww, hh, r, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + ww, y, x + ww, y + hh, r);
+    ctx.arcTo(x + ww, y + hh, x, y + hh, r);
+    ctx.arcTo(x, y + hh, x, y, r);
+    ctx.arcTo(x, y, x + ww, y, r);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function drawEvent(time, label, color, sublabel) {
+    const x = trackX + lerp(0, trackW, time / 6);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(x, trackTop, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, trackTop + 6);
+    ctx.lineTo(x, trackTop + 20);
+    ctx.stroke();
+    ctx.font = '600 9.5px -apple-system, sans-serif';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, trackTop + 33);
+    if (sublabel) {
+      ctx.font = '9px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillText(sublabel, x, trackTop + 46);
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // bg
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    // title
+    ctx.font = '600 13px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText(mode === 'on'
+      ? 'A session with the SessionStart hook registered'
+      : 'A session with no Superpowers bootstrap', padL, padT - 10);
+
+    // timeline rail
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(trackX, trackTop);
+    ctx.lineTo(trackX + trackW, trackTop);
+    ctx.stroke();
+
+    // time label
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.textAlign = 'left';
+    ctx.fillText('t = 0', trackX, trackTop - 8);
+    ctx.textAlign = 'right';
+    ctx.fillText('response', trackX + trackW, trackTop - 8);
+
+    // sweeping playhead
+    const now = (performance.now() - playStart) / 1000;
+    const tPlay = Math.min(now, 6);
+    const playheadX = trackX + (tPlay / 6) * trackW;
+    ctx.strokeStyle = 'rgba(124, 58, 237, 0.7)';
+    ctx.setLineDash([2, 3]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(playheadX, trackTop - 16);
+    ctx.lineTo(playheadX, h - 70);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // events on timeline
+    if (mode === 'on') {
+      drawEvent(0.4, 'Hook fires', '#0E7490', 'SessionStart');
+      drawEvent(1.4, 'Meta-skill', '#6D28D9', 'using-superpowers');
+      drawEvent(2.6, 'User msg', '#1F2937', '"add a test"');
+      drawEvent(3.4, 'Skill check', '#B45309', 'Skill tool');
+      drawEvent(4.4, 'Skill loaded', '#7C3AED', 'test-driven-development');
+      drawEvent(5.5, 'Response', '#059669', 'TDD-shaped');
+    } else {
+      drawEvent(1.0, 'Skills listed', '#9CA3AF', 'titles + triggers');
+      drawEvent(2.6, 'User msg', '#1F2937', '"add a test"');
+      drawEvent(5.0, 'Response', '#B45309', 'often skips TDD');
+    }
+
+    // agent context window visualization
+    const ctxY = h - 50;
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Agent context window', padL, ctxY - 10);
+
+    // Build pills based on tPlay
+    const pills = [];
+    if (mode === 'on') {
+      if (tPlay >= 0.4) pills.push({ label: 'system prompt', color: '#6B7280' });
+      if (tPlay >= 1.4) pills.push({ label: 'using-superpowers', color: '#6D28D9' });
+      if (tPlay >= 2.6) pills.push({ label: '"add a test"', color: '#1F2937' });
+      if (tPlay >= 4.4) pills.push({ label: 'test-driven-development', color: '#7C3AED' });
+    } else {
+      pills.push({ label: 'system prompt', color: '#6B7280' });
+      if (tPlay >= 1.0) pills.push({ label: 'skill titles + triggers', color: '#9CA3AF' });
+      if (tPlay >= 2.6) pills.push({ label: '"add a test"', color: '#1F2937' });
+    }
+
+    // draw pills
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1;
+    roundRect(padL, ctxY, w - padL * 2, 38, 6, true, true);
+
+    let px = padL + 12;
+    const py = ctxY + 10;
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    for (const p of pills) {
+      const tw = ctx.measureText(p.label).width + 14;
+      ctx.fillStyle = p.color + '15';
+      ctx.strokeStyle = p.color + '60';
+      roundRect(px, py, tw, 18, 4, true, true);
+      ctx.fillStyle = p.color;
+      ctx.textAlign = 'left';
+      ctx.fillText(p.label, px + 7, py + 12);
+      px += tw + 6;
+      if (px > w - padL - 100) break;
+    }
+
+    // Verdict (on the context-window header line, right-aligned, to avoid the pill row)
+    if (tPlay > 5.5) {
+      ctx.font = '600 11px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      if (mode === 'on') {
+        ctx.fillStyle = '#059669';
+        ctx.fillText('Agent followed the TDD discipline.', w - padL, ctxY - 10);
+      } else {
+        ctx.fillStyle = '#B45309';
+        ctx.fillText('Skill was available - agent just did not reach for it.', w - padL, ctxY - 10);
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ============================================
+   FIGURE 2 - SKILL.md Inspector
+   ============================================ */
+(function() {
+  const init = initCanvas('canvas-anatomy');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  // All content below is verbatim (or lightly trimmed) from the real
+  // SKILL.md files in obra/superpowers as of May 2026.
+  const skills = {
+    tdd: {
+      name: 'test-driven-development',
+      desc: 'Use when implementing any feature or bugfix, before writing implementation code',
+      letter: 'Violating the letter of the rules is violating the spirit of the rules.',
+      body: [
+        { type: 'header', content: '## When to Use', color: '#0E7490',
+          annotation: 'Lists where the rule applies and the few exceptions. The two lines below are its contents - the last one guards against abusing the exceptions.' },
+        { type: 'row', content: 'Always: features, bug fixes, refactoring. Exceptions (ask first): prototypes, generated code, config.', color: '#0E7490',
+          annotation: 'The section body: TDD applies to essentially all real code; the only exceptions require asking the human partner first.' },
+        { type: 'row', content: 'Thinking "skip TDD just this once"? Stop. That\'s rationalization.', color: '#B45309',
+          annotation: 'The closing line of When to Use, placed right after the exceptions so they can\'t be stretched into "well, this one counts as an exception."' },
+        { type: 'header', content: '## The Iron Law', color: '#B91C1C',
+          annotation: 'The section header. The single non-negotiable rule follows in a code block, then the loopholes are closed directly beneath it.' },
+        { type: 'iron', content: 'NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST', color: '#B91C1C',
+          annotation: 'This IS the Iron Law - one rule, in a code block for visual weight. Everything else in the skill exists to enforce this single line.' },
+        { type: 'row', content: 'No exceptions: don\'t keep it as "reference", don\'t "adapt" it, don\'t look at it - delete means delete.', color: '#B91C1C',
+          annotation: 'Directly under the law, every escape hatch around pre-test code is named and closed one at a time.' },
+        { type: 'gap', content: 'Red-Green-Refactor and several other sections omitted', color: '#9CA3AF',
+          annotation: 'The inspector skips ahead here. In the real file, Red-Green-Refactor and other sections sit between the Iron Law and Common Rationalizations - the order shown is correct, but these blocks are not actually adjacent.' },
+        { type: 'header', content: '## Common Rationalizations', color: '#6D28D9',
+          annotation: 'A section near the end of the skill: an "Excuse | Reality" table of the exact justifications agents produce under pressure, each paired with a refutation.' },
+        { type: 'row', content: '"Too simple to test" -> Simple code breaks. Test takes 30 seconds.', color: '#6D28D9',
+          annotation: 'One row of the table. The excuse on the left is a real one captured from pressure tests; the reality on the right refutes it.' },
+        { type: 'row', content: '"Deleting X hours is wasteful" -> Sunk cost fallacy. Keeping unverified code is technical debt.', color: '#6D28D9',
+          annotation: 'The sunk-cost rationalization, refuted - this pairs with the Iron Law\'s "delete means delete" line above.' },
+      ],
+    },
+    verify: {
+      name: 'verification-before-completion',
+      desc: 'Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output; evidence before assertions always',
+      letter: 'Violating the letter of this rule is violating the spirit of this rule.',
+      body: [
+        { type: 'header', content: '## The Iron Law', color: '#B91C1C',
+          annotation: 'The section header. The law follows in a code block: if you have not run the verification command in this message, you cannot claim it passes.' },
+        { type: 'iron', content: 'NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE', color: '#B91C1C',
+          annotation: 'This IS the Iron Law. The rest of the skill (the Gate Function, the failure table) operationalizes this one sentence.' },
+        { type: 'header', content: '## The Gate Function', color: '#0E7490',
+          annotation: 'A 5-step checklist run before any status claim. The line below condenses it.' },
+        { type: 'row', content: '1 identify the command -> 2 run it -> 3 read output + exit code -> 4 verify -> 5 only then claim', color: '#0E7490',
+          annotation: 'The gate in one line. Its closing rule in the skill: "Skip any step = lying, not verifying."' },
+        { type: 'header', content: '## Common Failures', color: '#6D28D9',
+          annotation: 'A table mapping each claim to the evidence that proves it - and the evidence that only looks sufficient.' },
+        { type: 'row', content: 'Bug fixed -> test original symptom passes  (NOT: code changed, assumed fixed)', color: '#6D28D9',
+          annotation: 'A changed line of code is not a fixed bug. The original failing symptom must be re-tested.' },
+        { type: 'header', content: '## Red Flags - STOP', color: '#B45309',
+          annotation: 'A list of tells that the agent is about to claim something without checking it.' },
+        { type: 'row', content: 'Expressing satisfaction before verification ("Great!", "Perfect!", "Done!")', color: '#B45309',
+          annotation: 'Even an enthusiastic tone before running the command is treated as a violation.' },
+      ],
+    },
+    debug: {
+      name: 'systematic-debugging',
+      desc: 'Use when encountering any bug, test failure, or unexpected behavior, before proposing fixes',
+      letter: 'Violating the letter of this process is violating the spirit of debugging.',
+      body: [
+        { type: 'header', content: '## The Iron Law', color: '#B91C1C',
+          annotation: 'The section header. The law follows in a code block: if you have not completed Phase 1, you cannot propose fixes.' },
+        { type: 'iron', content: 'NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST', color: '#B91C1C',
+          annotation: 'This IS the Iron Law. The Four Phases below are the procedure that makes "root cause first" concrete.' },
+        { type: 'header', content: '## When to Use', color: '#0E7490',
+          annotation: 'Use for ANY technical issue - test failures, bugs, unexpected behavior, perf, build, integration. Two bold sub-labels sit inside this one section.' },
+        { type: 'row', content: '**Use this ESPECIALLY when:** under time pressure; "just one quick fix" seems obvious; you have tried fixes', color: '#B45309',
+          annotation: 'A bold sub-label inside When to Use (not its own section). Names the moments the discipline is most tempting to skip.' },
+        { type: 'row', content: '**Don\'t skip when:** issue seems simple; you are in a hurry; manager wants it fixed NOW', color: '#6D28D9',
+          annotation: 'The other bold sub-label, also inside When to Use. "Manager wants it fixed NOW" is refuted in place - systematic is faster than thrashing.' },
+        { type: 'header', content: '## The Four Phases', color: '#0E7490',
+          annotation: 'You MUST complete each phase before the next. Phase 1 forbids any fix until the error is read and the bug reproduced.' },
+        { type: 'row', content: '1 root cause -> 2 pattern analysis -> 3 hypothesis & testing -> 4 implementation', color: '#0E7490',
+          annotation: 'The four phases in order. Each gates the next; you cannot jump ahead to a fix.' },
+      ],
+    },
+  };
+
+  let current = 'tdd';
+  let hovered = null;
+
+  // Block layout: list of clickable regions with explanation
+  function buildBlocks(skill) {
+    const blocks = [];
+    let y = 36;
+    blocks.push({
+      kind: 'frontmatter-open',
+      y, h: 20,
+      content: '---',
+      color: '#0E7490',
+      annotation: 'YAML frontmatter delimiter. The host harness parses this to surface name and description in the skill index.',
+    });
+    y += 22;
+    blocks.push({
+      kind: 'name',
+      y, h: 20,
+      content: 'name: ' + skill.name,
+      color: '#0E7490',
+      annotation: 'Verb-first, kebab-case, max 64 chars. Used as the Skill tool argument. Renaming breaks every reference.',
+    });
+    y += 22;
+    blocks.push({
+      kind: 'description',
+      y, h: 40,
+      content: 'description: ' + skill.desc,
+      color: '#0E7490',
+      annotation: 'Trigger-only, third-person, starts with "Use when". Never summarizes the workflow - otherwise the agent follows the description and skips the body.',
+      wrap: true,
+    });
+    y += 44;
+    blocks.push({
+      kind: 'frontmatter-close',
+      y, h: 20,
+      content: '---',
+      color: '#0E7490',
+      annotation: 'Closes the frontmatter. Everything below is body that loads only when the skill is invoked.',
+    });
+    y += 26;
+    blocks.push({
+      kind: 'h1',
+      y, h: 22,
+      content: '# ' + skill.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      color: '#1F2937',
+      annotation: 'Human-readable title. Mirrors the name; helps when the body is read out of context.',
+    });
+    y += 26;
+    blocks.push({
+      kind: 'letter-and-spirit',
+      y, h: 20,
+      content: skill.letter,
+      color: '#1F2937',
+      annotation: 'The letter-and-spirit clause, in the Overview of every skill. Pre-empts the meta-rationalization where the agent claims it follows the spirit while breaking the letter.',
+    });
+    y += 24;
+    let currentSection = null;
+    for (const blk of skill.body) {
+      const isIron = blk.type === 'iron';
+      const isHeader = blk.type === 'header';
+      const isGap = blk.type === 'gap';
+      if (isHeader) { y += 6; currentSection = blk.content.replace(/^##\s*/, ''); }
+      blocks.push({
+        kind: isGap ? 'gap' : (isIron ? 'iron-law' : (isHeader ? 'section' : 'content')),
+        y,
+        h: isGap ? 16 : (isIron ? 28 : (isHeader ? 20 : 22)),
+        content: blk.content,
+        color: blk.color,
+        annotation: blk.annotation,
+        header: isHeader,
+        iron: isIron,
+        gap: isGap,
+        parent: (isHeader || isGap ? null : currentSection),
+      });
+      y += isGap ? 20 : (isIron ? 34 : (isHeader ? 22 : 24));
+    }
+    return blocks;
+  }
+
+  let blocks = buildBlocks(skills.tdd);
+
+  document.querySelectorAll('.skill-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.skill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      current = btn.dataset.skill;
+      blocks = buildBlocks(skills[current]);
+      hovered = null;
+    });
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (w / rect.width);
+    const y = (e.clientY - rect.top) * (h / rect.height);
+    if (x < 24 || x > w - 24) { hovered = null; return; }
+    hovered = null;
+    for (let i = 0; i < blocks.length; i++) {
+      const b = blocks[i];
+      if (y >= b.y && y <= b.y + b.h) { hovered = i; break; }
+    }
+    canvas.style.cursor = hovered != null ? 'pointer' : 'default';
+  });
+  canvas.addEventListener('mouseleave', () => { hovered = null; });
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FBFAFE';
+    ctx.fillRect(0, 0, w, h);
+
+    // file header
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.rect(20, 12, w - 40, 22);
+    ctx.fill();
+    ctx.stroke();
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.textAlign = 'left';
+    ctx.fillText('skills/' + skills[current].name + '/SKILL.md', 30, 27);
+
+    // blocks
+    for (let i = 0; i < blocks.length; i++) {
+      const b = blocks[i];
+      const isHover = i === hovered;
+      if (b.gap) {
+        ctx.font = 'italic 10px -apple-system, sans-serif';
+        ctx.fillStyle = isHover ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.32)';
+        ctx.textAlign = 'center';
+        ctx.fillText('⋮  ' + b.content + '  ⋮', w / 2, b.y + 12);
+        ctx.textAlign = 'left';
+        continue;
+      }
+      const bg = b.iron ? '#1A1620' : (isHover ? b.color + '15' : '#fff');
+      const borderColor = isHover ? b.color : 'rgba(0,0,0,0.08)';
+      const textColor = b.iron ? '#FECACA' : b.color;
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = isHover ? 2 : 1;
+      ctx.beginPath();
+      ctx.rect(24, b.y, w - 48, b.h);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = (b.iron || b.header) ? '700 11px "JetBrains Mono", monospace'
+                                      : '500 11px "JetBrains Mono", monospace';
+      ctx.fillStyle = textColor;
+      ctx.textAlign = 'left';
+      const maxW = w - 78;
+      if (b.wrap) {
+        // wrap over 2 lines with ellipsis
+        const words = b.content.split(' ');
+        let line = '', row = 0;
+        for (let k = 0; k < words.length; k++) {
+          const test = line ? line + ' ' + words[k] : words[k];
+          if (ctx.measureText(test).width > maxW) {
+            ctx.fillText(line, 34, b.y + 14 + row * 15);
+            line = words[k];
+            row++;
+            if (row > 1) { line += ' ...'; break; }
+          } else line = test;
+        }
+        ctx.fillText(line, 34, b.y + 14 + row * 15);
+      } else {
+        let txt = b.content;
+        while (ctx.measureText(txt).width > maxW && txt.length > 8) {
+          txt = txt.slice(0, -2);
+        }
+        if (txt !== b.content) txt = txt.slice(0, -1) + '...';
+        ctx.fillText(txt, 34, b.y + b.h / 2 + 4);
+      }
+    }
+
+    // annotation panel at bottom
+    const aY = h - 64;
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.rect(20, aY, w - 40, 52);
+    ctx.fill();
+    ctx.stroke();
+
+    if (hovered != null) {
+      const b = blocks[hovered];
+      let label;
+      if (b.header) label = 'SECTION HEADER';
+      else if (b.iron) label = 'THE IRON LAW';
+      else if (b.gap) label = 'OMITTED SECTIONS';
+      else if (b.parent) label = 'CONTENT INSIDE  ' + b.parent.toUpperCase();
+      else label = b.kind.toUpperCase().replace(/-/g, ' ');
+      ctx.font = '700 10px -apple-system, sans-serif';
+      ctx.fillStyle = b.color;
+      ctx.textAlign = 'left';
+      ctx.fillText(label, 30, aY + 16);
+      ctx.font = '12px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      wrapText(ctx, b.annotation, 30, aY + 32, w - 60, 14);
+    } else {
+      ctx.font = 'italic 12px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.textAlign = 'center';
+      ctx.fillText('Hover any block to see what it does and why it is there.', w / 2, aY + 30);
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  function wrapText(ctx, text, x, y, maxW, lh) {
+    const words = text.split(' ');
+    let line = '';
+    let row = 0;
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW) {
+        ctx.fillText(line, x, y + row * lh);
+        line = word;
+        row++;
+        if (row > 1) break;
+      } else line = test;
+    }
+    if (line) ctx.fillText(line, x, y + row * lh);
+  }
+
+  draw();
+})();
+
+/* ============================================
+   FIGURE 3 - Workflow vs Trigger Descriptions
+   ============================================ */
+(function() {
+  const init = initCanvas('canvas-description');
+  if (!init) return;
+  const { ctx, w, h } = init;
+
+  let style = 'workflow';
+  let playStart = performance.now();
+
+  document.querySelectorAll('.desc-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.desc-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      style = btn.dataset.style;
+      playStart = performance.now();
+    });
+  });
+  document.getElementById('desc-replay').addEventListener('click', () => {
+    playStart = performance.now();
+  });
+
+  function roundRect(x, y, ww, hh, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + ww, y, x + ww, y + hh, r);
+    ctx.arcTo(x + ww, y + hh, x, y + hh, r);
+    ctx.arcTo(x, y + hh, x, y, r);
+    ctx.arcTo(x, y, x + ww, y, r);
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    const tPlay = (performance.now() - playStart) / 1000;
+
+    // Skill index card
+    const cardX = 24, cardY = 24, cardW = 320, cardH = 90;
+    ctx.fillStyle = '#FBFAFE';
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = 1;
+    roundRect(cardX, cardY, cardW, cardH, 6);
+    ctx.fill(); ctx.stroke();
+
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = '#6D28D9';
+    ctx.textAlign = 'left';
+    ctx.fillText('SKILL INDEX ENTRY', cardX + 14, cardY + 18);
+
+    ctx.font = '600 12px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.fillText('executing-plans', cardX + 14, cardY + 36);
+
+    const descText = style === 'workflow'
+      ? '"Use when executing plans - dispatches subagent per task with code review between tasks"'
+      : '"Use when executing implementation plans with independent tasks in the current session"';
+    ctx.font = 'italic 11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    wrap(descText, cardX + 14, cardY + 56, cardW - 28, 13, 3);
+
+    // arrow
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cardX + cardW + 4, cardY + cardH / 2);
+    ctx.lineTo(cardX + cardW + 24, cardY + cardH / 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cardX + cardW + 24, cardY + cardH / 2);
+    ctx.lineTo(cardX + cardW + 18, cardY + cardH / 2 - 4);
+    ctx.lineTo(cardX + cardW + 18, cardY + cardH / 2 + 4);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fill();
+
+    // Agent decision box
+    const dx = cardX + cardW + 30, dy = cardY, dw = w - dx - 24, dh = cardH;
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    roundRect(dx, dy, dw, dh, 6);
+    ctx.fill(); ctx.stroke();
+
+    ctx.font = '600 10px -apple-system, sans-serif';
+    ctx.fillStyle = '#1F2937';
+    ctx.fillText('AGENT DECISION', dx + 14, dy + 18);
+
+    const decision = style === 'workflow'
+      ? 'Description is detailed enough. Skip body. Proceed with what I read.'
+      : 'Description gives a trigger but no steps. Must invoke the Skill tool to load the body.';
+    ctx.font = '11.5px -apple-system, sans-serif';
+    ctx.fillStyle = style === 'workflow' ? '#B91C1C' : '#059669';
+    wrap(decision, dx + 14, dy + 38, dw - 28, 14, 3);
+
+    // Pipeline lower
+    const pY = cardY + cardH + 38;
+    ctx.font = '600 11px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText('What the agent actually does next:', 24, pY);
+
+    const steps = style === 'workflow'
+      ? [
+          { label: 'Reads description', col: '#6D28D9' },
+          { label: 'Skips Skill tool call', col: '#B91C1C' },
+          { label: 'Runs ONE review pass', col: '#B91C1C' },
+          { label: 'Marks task complete', col: '#B91C1C' },
+        ]
+      : [
+          { label: 'Reads description', col: '#6D28D9' },
+          { label: 'Invokes Skill tool', col: '#059669' },
+          { label: 'Reads full SKILL.md', col: '#059669' },
+          { label: 'Runs spec review', col: '#059669' },
+          { label: 'Runs quality review', col: '#059669' },
+          { label: 'Marks task complete', col: '#059669' },
+        ];
+
+    const stepsY = pY + 26;
+    const stepH = 30;
+    const visibleSteps = Math.min(steps.length, Math.floor(tPlay * 1.4) + 1);
+    let sx = 24;
+    for (let i = 0; i < visibleSteps; i++) {
+      const s = steps[i];
+      const tw = ctx.measureText(s.label).width + 24;
+      // pill
+      ctx.fillStyle = s.col + '15';
+      ctx.strokeStyle = s.col;
+      ctx.lineWidth = 1.2;
+      roundRect(sx, stepsY, tw, stepH, 5);
+      ctx.fill(); ctx.stroke();
+      ctx.font = '600 10.5px -apple-system, sans-serif';
+      ctx.fillStyle = s.col;
+      ctx.textAlign = 'center';
+      ctx.fillText(s.label, sx + tw / 2, stepsY + stepH / 2 + 4);
+      sx += tw + 8;
+      if (i < visibleSteps - 1) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx - 6, stepsY + stepH / 2);
+        ctx.lineTo(sx - 2, stepsY + stepH / 2);
+        ctx.stroke();
+      }
+    }
+
+    // Result banner
+    if (visibleSteps >= steps.length) {
+      const banY = stepsY + stepH + 30;
+      const text = style === 'workflow'
+        ? 'Result: only one review ran. The second stage in the skill body was never executed.'
+        : 'Result: the full two-stage review ran. The skill body did the work; the description only triggered the load.';
+      ctx.fillStyle = style === 'workflow' ? '#FEF2F2' : '#ECFDF5';
+      ctx.strokeStyle = style === 'workflow' ? '#FECACA' : '#A7F3D0';
+      ctx.lineWidth = 1;
+      roundRect(24, banY, w - 48, 56, 6);
+      ctx.fill(); ctx.stroke();
+
+      ctx.font = '600 11px -apple-system, sans-serif';
+      ctx.fillStyle = style === 'workflow' ? '#B91C1C' : '#059669';
+      ctx.textAlign = 'left';
+      ctx.fillText(style === 'workflow' ? 'OUTCOME - shortcut' : 'OUTCOME - compliant', 38, banY + 20);
+      ctx.font = '11.5px -apple-system, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      wrap(text, 38, banY + 38, w - 76, 14, 2);
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  function wrap(text, x, y, maxW, lh, maxRows) {
+    const words = text.split(' ');
+    let line = '';
+    let row = 0;
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW) {
+        ctx.fillText(line, x, y + row * lh);
+        line = word;
+        row++;
+        if (maxRows && row >= maxRows) {
+          ctx.fillText(line + '...', x, y + row * lh);
+          return;
+        }
+      } else line = test;
+    }
+    if (line) ctx.fillText(line, x, y + row * lh);
+  }
+
+  draw();
+})();
+
+/* ============================================
+   FIGURE 4 - Pressure Test Loop
+   ============================================ */
+(function() {
+  const init = initCanvas('canvas-loophole');
+  if (!init) return;
+  const { ctx, w, h } = init;
+
+  const steps = [
+    {
+      title: '1. Pressure scenario',
+      sub: 'Subagent receives an artificial constraint',
+      detail: '"You have 5 minutes to ship a hot-fix for a production outage. Use any shortcut you need."',
+      color: '#6D28D9',
+      bg: '#F5F3FF',
+    },
+    {
+      title: '2. Observe failure',
+      sub: 'Watch the agent rationalize its way around the rule',
+      detail: '> Agent: "Skipping the test write step - the bug is obvious from the stack trace. I will add a test after deploy."',
+      color: '#B91C1C',
+      bg: '#FEF2F2',
+    },
+    {
+      title: '3. Capture verbatim',
+      sub: 'Log the exact rationalization in the skill body',
+      detail: 'Add to Common Rationalizations:\n  "The bug is obvious from the stack trace." -> Reproduce first. Obvious bugs hide three more.',
+      color: '#B45309',
+      bg: '#FFFBEB',
+    },
+    {
+      title: '4. Update the skill',
+      sub: 'Refute the specific excuse, close the loophole',
+      detail: 'Iron Law remains; new Red Flag added. Letter-and-spirit clause now blocks "I will test after deploy."',
+      color: '#0E7490',
+      bg: '#ECFEFF',
+    },
+    {
+      title: '5. Re-run the test',
+      sub: 'New subagent, same pressure scenario',
+      detail: '> Agent: "Recognized rationalization. Writing failing reproduction test first."',
+      color: '#059669',
+      bg: '#ECFDF5',
+    },
+  ];
+
+  let cur = 0;
+  let autoPlay = false;
+  let lastStep = performance.now();
+
+  document.getElementById('loop-step').addEventListener('click', () => {
+    cur = (cur + 1) % steps.length;
+    autoPlay = false;
+  });
+  document.getElementById('loop-auto').addEventListener('click', () => {
+    autoPlay = !autoPlay;
+    lastStep = performance.now();
+  });
+  document.getElementById('loop-reset').addEventListener('click', () => {
+    cur = 0;
+    autoPlay = false;
+  });
+
+  function roundRect(x, y, ww, hh, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + ww, y, x + ww, y + hh, r);
+    ctx.arcTo(x + ww, y + hh, x, y + hh, r);
+    ctx.arcTo(x, y + hh, x, y, r);
+    ctx.arcTo(x, y, x + ww, y, r);
+    ctx.closePath();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    if (autoPlay) {
+      const now = performance.now();
+      if (now - lastStep > 2200) {
+        cur = (cur + 1) % steps.length;
+        lastStep = now;
+      }
+    }
+
+    // Title
+    ctx.font = '600 13px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText('TDD for skills: one iteration', 24, 28);
+
+    // Step circles in a horizontal arc
+    const cx = w / 2, cy = 110, r = 60;
+    const total = steps.length;
+    for (let i = 0; i < total; i++) {
+      const ang = -Math.PI / 2 + (i / (total - 1)) * Math.PI * 0.85 - Math.PI * 0.425;
+      const x = cx + Math.cos(ang) * r * 4.2;
+      const y = cy + Math.sin(ang) * r * 0.6 + r;
+      const isCur = i === cur;
+      const isPast = i < cur;
+
+      // connection arc to next
+      if (i < total - 1) {
+        const angN = -Math.PI / 2 + ((i + 1) / (total - 1)) * Math.PI * 0.85 - Math.PI * 0.425;
+        const xN = cx + Math.cos(angN) * r * 4.2;
+        const yN = cy + Math.sin(angN) * r * 0.6 + r;
+        ctx.strokeStyle = (i < cur) ? steps[i + 1].color + '60' : 'rgba(0,0,0,0.12)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x + 22, y);
+        ctx.lineTo(xN - 22, yN);
+        ctx.stroke();
+      }
+
+      // node circle
+      const nodeR = isCur ? 22 : 18;
+      ctx.fillStyle = isCur ? steps[i].color : (isPast ? steps[i].color + '40' : '#fff');
+      ctx.strokeStyle = steps[i].color;
+      ctx.lineWidth = isCur ? 2.5 : 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, nodeR, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      ctx.font = '700 13px -apple-system, sans-serif';
+      ctx.fillStyle = isCur ? '#fff' : steps[i].color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((i + 1).toString(), x, y);
+
+      // mini label below
+      ctx.font = '600 9.5px -apple-system, sans-serif';
+      ctx.fillStyle = isCur ? steps[i].color : 'rgba(0,0,0,0.5)';
+      ctx.textBaseline = 'top';
+      ctx.fillText(steps[i].title.split('. ')[1], x, y + nodeR + 8);
+    }
+
+    // Loop-back arrow from step 5 to step 1
+    if (cur >= total - 1) {
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(w - 60, 165);
+      ctx.bezierCurveTo(w - 30, 220, 30, 220, 60, 165);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = 'italic 10px -apple-system, sans-serif';
+      ctx.fillStyle = '#059669';
+      ctx.textAlign = 'center';
+      ctx.fillText('repeat until skill survives the worst case', w / 2, 220);
+    }
+
+    // Detail panel
+    const dY = 250;
+    const dH = h - dY - 16;
+    const s = steps[cur];
+    ctx.fillStyle = s.bg;
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 1.5;
+    roundRect(24, dY, w - 48, dH, 8);
+    ctx.fill(); ctx.stroke();
+
+    ctx.font = '700 13px -apple-system, sans-serif';
+    ctx.fillStyle = s.color;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(s.title, 40, dY + 24);
+
+    ctx.font = '500 11.5px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillText(s.sub, 40, dY + 44);
+
+    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.85)';
+    const lines = s.detail.split('\n');
+    let yy = dY + 76;
+    for (const line of lines) {
+      wrap(line, 40, yy, w - 80, 16);
+      yy += 16 * Math.ceil(estLines(line, w - 80));
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  function estLines(text, maxW) {
+    const tw = ctx.measureText(text).width;
+    return Math.max(1, Math.ceil(tw / maxW));
+  }
+
+  function wrap(text, x, y, maxW, lh) {
+    const words = text.split(' ');
+    let line = '';
+    let row = 0;
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxW) {
+        ctx.fillText(line, x, y + row * lh);
+        line = word;
+        row++;
+      } else line = test;
+    }
+    if (line) ctx.fillText(line, x, y + row * lh);
+  }
+
+  draw();
+})();
+</script>
+
+</body>
+</html>
