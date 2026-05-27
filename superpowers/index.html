@@ -996,10 +996,10 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 
       <p>
         Here is the design choice that violates everyone's instinct on first
-        contact: <strong>the description must never summarize the skill</strong>.
-        It should describe only <em>when</em> the skill applies, in third person,
-        starting with the words "Use when." It must not name the steps the skill
-        contains.
+        contact: <strong>the description must never summarize what the skill
+        does</strong>. It should describe only <em>when</em> the skill applies,
+        in third person, starting with the words "Use when." It must not name the
+        steps the skill contains.
       </p>
 
       <p>
@@ -1009,27 +1009,28 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 
       <div class="callout warn">
         <p>
-          A description saying <em>"code review between tasks"</em> caused the
-          agent to do ONE review, even though the skill's flowchart clearly
-          showed TWO reviews (spec compliance, then code quality). When the
-          description was changed to just <em>"Use when executing implementation
-          plans with independent tasks"</em> - no workflow summary - the agent
-          correctly read the flowchart and followed the two-stage process.
+          "A description saying <em>'code review between tasks'</em> caused Claude
+          to do ONE review, even though the skill's flowchart clearly showed TWO
+          reviews (spec compliance then code quality). When the description was
+          changed to just <em>'Use when executing implementation plans with
+          independent tasks'</em> (no workflow summary), Claude correctly read the
+          flowchart and followed the two-stage review process."
         </p>
       </div>
 
       <p>
-        The mechanism is brutal in its simplicity. If the description tells the
-        agent what the skill does, the agent treats the description as the
-        instructions and skips reading the body. If the description tells the
-        agent only when to apply the skill, the agent has no choice but to open
-        the file to find out what to do.
+        The mechanism is simple. If the description tells the agent what the
+        skill does, the agent is liable to treat the description as the
+        instructions and skip reading the body. If the description tells it only
+        when to apply the skill, the agent has nothing to act on but the trigger,
+        so it opens the file to find the steps.
       </p>
 
       <p>
         The figure below makes the failure visible. Toggle between a
-        workflow-summary description and a trigger-only description for the
-        same hypothetical skill, and watch what reaches the agent's context.
+        workflow-summary description and a trigger-only description for the same
+        skill - the framework's real <code>executing-plans</code> example - and
+        watch what reaches the agent's context.
       </p>
 
       <!-- FIGURE 3: Description test -->
@@ -1056,8 +1057,8 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       </div>
 
       <p>
-        Three writing rules fall out of this principle and apply to almost any
-        skill framework:
+        The rule that falls out is concrete, and it applies to almost any skill
+        framework, not just Superpowers:
       </p>
 
       <div class="comparison-grid">
