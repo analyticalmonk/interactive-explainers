@@ -3,348 +3,413 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stagehand: Between Brittle and Black Box - AI Browser Automation</title>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Stagehand: Between Brittle and Black Box</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
 :root {
-  --text: rgba(0, 0, 0, 0.8);
-  --text-secondary: rgba(0, 0, 0, 0.54);
+  --bg: #fff;
+  --bg-warm: #F0FBFC;
+  --bg-code: #F1F5F6;
+  --text: rgba(0, 0, 0, 0.82);
+  --text-secondary: rgba(0, 0, 0, 0.56);
   --text-tertiary: rgba(0, 0, 0, 0.38);
-  --bg: #FAF8F4;
-  --link: #004276;
   --border: rgba(0, 0, 0, 0.08);
-  --content-width: 720px;
-  --sidebar-width: 220px;
+  --border-light: rgba(0, 0, 0, 0.05);
 
-  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-
+  /* Stagehand teal */
   --accent: #0891B2;
   --accent-light: #ECFEFF;
   --accent-border: #A5F3FC;
   --accent-dark: #0E7490;
+  --link: #0E7490;
 
-  /* Concept colors: the four verbs */
-  --act-primary: #D97706;     --act-light: #FEF3C7;     --act-border: #FDE68A;
-  --extract-primary: #059669; --extract-light: #ECFDF5; --extract-border: #A7F3D0;
-  --observe-primary: #7C3AED; --observe-light: #F5F0FF; --observe-border: #DDD6FE;
-  --agent-primary: #DB2777;   --agent-light: #FDF2F8;   --agent-border: #FBCFE8;
-}
+  /* The four verbs */
+  --act: #D97706;     --act-light: #FEF3C7;
+  --extract: #059669; --extract-light: #ECFDF5;
+  --observe: #7C3AED; --observe-light: #F5F0FF;
+  --agent: #DB2777;   --agent-light: #FDF2F8;
 
-html { font-size: 18px; -webkit-font-smoothing: antialiased; }
-body { font-family: var(--font-serif); background: var(--bg); color: var(--text); line-height: 1.75; }
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 
-.page-wrapper {
-  max-width: calc(var(--content-width) + var(--sidebar-width) + 80px);
-  margin: 0 auto; padding: 0 24px;
-  display: flex; gap: 40px;
-}
-
-.sidebar {
-  width: var(--sidebar-width); flex-shrink: 0;
-  padding-top: 2.5rem;
-  position: sticky; top: 24px;
-  height: fit-content;
-  max-height: calc(100vh - 48px);
-  overflow-y: auto;
-}
-#toc { display: flex; flex-direction: column; gap: 1px; }
-#toc a {
-  font-family: var(--font-sans); font-size: 0.72rem;
-  color: var(--text-secondary); text-decoration: none;
-  padding: 4px 12px;
-  border-left: 2px solid transparent;
-  transition: all 0.15s ease;
-  display: block;
-}
-#toc a.sub { padding-left: 24px; font-size: 0.68rem; color: var(--text-tertiary); }
-#toc a:hover { color: var(--text); }
-#toc a.active {
-  color: var(--accent-dark);
-  border-left-color: var(--accent);
-  font-weight: 600;
+  --content-width: 720px;
+  --sidebar-width: 220px;
 }
 
-.content {
-  flex: 1; min-width: 0;
-  max-width: var(--content-width);
-  padding-bottom: 6rem;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font-serif);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 18px;
 }
 
-.article-header {
-  padding: 3rem 0 2rem;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 2rem;
+/* ============================================
+   SITE HEADER
+   ============================================ */
+.site-header { border-bottom: 1px solid var(--border); padding: 16px 0; }
+.site-header-inner {
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
 }
-.overline {
+.site-title {
   font-family: var(--font-sans);
-  font-size: 0.7rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--accent);
-  margin-bottom: 0.75rem;
-  animation: slideInLeft 0.6s ease 0.1s both;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
 }
-@keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+.site-nav a { font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); text-decoration: none; }
+.site-nav a:hover { color: var(--text); }
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.page-wrapper {
+  display: flex;
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
 }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+.sidebar { width: var(--sidebar-width); flex-shrink: 0; padding-right: 2.5rem; }
+.sidebar-inner { position: sticky; top: 2rem; padding-top: 6rem; }
+.sidebar nav a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
 }
+.sidebar nav a:hover { color: var(--text-secondary); }
+.sidebar nav a.active { color: var(--text); border-left-color: var(--accent); font-weight: 600; }
+.sidebar nav a.sub { padding-left: 1.6rem; font-size: 0.67rem; }
+.content { flex: 1; max-width: var(--content-width); min-width: 0; padding-bottom: 6rem; }
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
 h1 {
-  font-size: 2.8rem; font-weight: 700;
-  line-height: 1.1; letter-spacing: -0.02em;
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   margin-bottom: 1rem;
-  animation: fadeInUp 0.7s ease 0.2s both;
+  color: var(--text);
 }
-.article-subtitle {
-  font-size: 1.2rem; font-weight: 400; font-style: italic;
-  color: var(--text-secondary); line-height: 1.55;
-  animation: fadeInUp 0.7s ease 0.3s both;
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 4.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
 }
-.article-meta-header {
-  font-family: var(--font-sans); font-size: 0.72rem;
+h3 { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 600; line-height: 1.35; margin-top: 2.5rem; margin-bottom: 0.75rem; }
+p { margin-bottom: 1.25rem; }
+.lead { font-size: 1.13rem; font-weight: 300; color: var(--text-secondary); line-height: 1.7; }
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
   color: var(--text-tertiary);
   margin-top: 1.5rem;
-  display: flex; gap: 16px; flex-wrap: wrap;
-  animation: fadeInUp 0.7s ease 0.4s both;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
 }
-
-section { margin-top: 2.5rem; }
-h2 {
-  font-size: 1.65rem; font-weight: 600;
-  line-height: 1.25; letter-spacing: -0.01em;
-  margin-bottom: 1rem; padding-top: 0.5rem;
-}
-h3 {
-  font-size: 1.25rem; font-weight: 600;
-  line-height: 1.3;
-  margin-top: 1.8rem; margin-bottom: 0.75rem;
-}
-p { margin-bottom: 1rem; }
-.lead { font-size: 1.15rem; color: var(--text-secondary); line-height: 1.7; font-weight: 400; }
-a { color: var(--link); }
-
-code {
-  font-family: var(--font-mono); font-size: 0.82em;
-  background: rgba(0, 0, 0, 0.04);
-  padding: 0.15em 0.4em; border-radius: 3px;
-}
+strong { font-weight: 600; }
+em { font-style: italic; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: var(--font-mono); font-size: 0.82em; background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 3px; }
 .code-block {
-  background: #2C2C2C; color: #E0E0E0;
-  font-family: var(--font-mono); font-size: 0.75rem;
-  line-height: 1.7;
-  padding: 1.2rem 1.5rem; border-radius: 6px;
-  overflow-x: auto; margin: 1.2rem 0;
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  padding: 1.1rem 1.4rem;
+  margin: 1.4rem 0;
+  background: #22303A;
+  color: #E8E4DC;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre;
 }
-.code-block .kw  { color: #C792EA; }
+.code-block .kw { color: #C792EA; }
+.code-block .fn { color: #82AAFF; }
 .code-block .str { color: #C3E88D; }
-.code-block .cm  { color: #6A7280; }
-.code-block .fn  { color: #82AAFF; }
-.code-block .ty  { color: #FFCB6B; }
-.code-block .num { color: #F78C6C; }
+.code-block .cm { color: #6B7A82; }
+.code-block .type { color: #FFCB6B; }
+.code-block .key { color: #FFCB6B; }
 
-.callout {
-  border-left: 3px solid var(--accent);
-  background: var(--accent-light);
-  padding: 1rem 1.25rem;
-  border-radius: 0 6px 6px 0;
-  margin: 1.5rem 0;
-  font-size: 0.95rem;
-}
-.callout strong { color: var(--accent-dark); }
-
-.epigraph {
-  border-left: 3px solid var(--accent-border);
-  padding: 1rem 1.5rem;
-  margin: 1.5rem 0;
-  font-style: italic; color: var(--text-secondary);
-  background: rgba(0, 0, 0, 0.015);
-  border-radius: 0 6px 6px 0;
-}
-.epigraph cite {
-  display: block; margin-top: 0.5rem;
-  font-style: normal;
+/* ============================================
+   HEADER
+   ============================================ */
+.article-header { padding-top: 5rem; margin-bottom: 3rem; }
+.article-header .overline {
   font-family: var(--font-sans);
-  font-size: 0.75rem; color: var(--text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 1rem;
 }
 
-.figure {
-  margin: 2.5rem 0;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  background: #fff;
-}
+/* ============================================
+   FIGURES
+   ============================================ */
+.figure { margin: 2.5rem 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
 .figure-label {
   font-family: var(--font-sans);
-  font-size: 0.65rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--text-tertiary);
-  padding: 0.75rem 1rem 0;
+  padding: 0.5rem 1rem 0;
 }
-.figure-canvas-wrap { width: 100%; }
-.figure-canvas-wrap canvas { display: block; width: 100%; }
+.figure-canvas-wrap { position: relative; width: 100%; background: #fff; }
+.figure-canvas-wrap canvas { display: block; width: 100%; height: auto; }
 .figure-controls {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background: rgba(0, 0, 0, 0.02);
-  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
   flex-wrap: wrap;
 }
-.ctrl-btn {
+.figure-caption {
   font-family: var(--font-sans);
-  font-size: 0.7rem; font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+}
+button.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
   padding: 0.4rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 4px;
   background: #fff;
-  color: var(--text-secondary);
+  color: var(--text);
   cursor: pointer;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
-.ctrl-btn:hover { border-color: rgba(0, 0, 0, 0.2); background: rgba(0, 0, 0, 0.02); }
-.ctrl-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
-.ctrl-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.ctrl-btn.primary:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
-.ctrl-label { font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary); }
-.ctrl-separator { width: 1px; height: 20px; background: var(--border); margin: 0 0.3rem; }
-.figure-caption {
+button.ctrl-btn:hover { background: var(--bg-warm); border-color: var(--text-tertiary); }
+button.ctrl-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+button.ctrl-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-label { font-family: var(--font-sans); font-size: 0.67rem; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.03em; }
+.ctrl-separator { width: 1px; height: 1.2rem; background: var(--border); margin: 0 0.3rem; }
+
+/* ============================================
+   CALLOUT
+   ============================================ */
+.callout {
+  margin: 2rem 0;
+  padding: 1.1rem 1.4rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.96rem;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout strong { color: var(--accent-dark); }
+
+/* ============================================
+   EPIGRAPH
+   ============================================ */
+.epigraph {
+  margin: 2rem 0;
+  padding: 0.5rem 0 0.5rem 1.4rem;
+  border-left: 3px solid var(--accent-border);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+}
+.epigraph cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-style: normal;
   font-family: var(--font-sans);
-  font-size: 0.72rem; color: var(--text-secondary);
-  padding: 0.6rem 1rem 0.75rem;
-  border-top: 1px solid var(--border);
-  line-height: 1.55;
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
 }
 
-.comparison-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 1rem; margin: 1.5rem 0;
-}
-.comparison-cell {
-  background: rgba(0, 0, 0, 0.02);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1rem 1.2rem;
-}
-.comparison-cell h4 {
-  font-family: var(--font-sans);
-  font-size: 0.72rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.04em;
-  margin-bottom: 0.5rem;
-}
-.comparison-cell ul { list-style: none; font-size: 0.9rem; }
-.comparison-cell ul li {
-  padding: 0.2rem 0; padding-left: 1rem; position: relative;
-}
-.comparison-cell ul li::before {
-  content: ''; position: absolute; left: 0; top: 0.65em;
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--text-tertiary);
-}
-
-.concept-cards {
-  display: grid; grid-template-columns: repeat(2, 1fr);
-  gap: 1rem; margin: 1.5rem 0;
-}
-.concept-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1.2rem;
-  background: #fff;
-  transition: border-color 0.15s ease;
-}
-.concept-card:hover { border-color: rgba(0, 0, 0, 0.15); }
+/* ============================================
+   VERB CARDS (bespoke)
+   ============================================ */
+.concept-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 2rem 0; }
+.concept-card { border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; background: #fff; }
 .concept-card-badge {
   display: inline-block;
   font-family: var(--font-sans);
-  font-size: 0.6rem; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.05em;
-  padding: 2px 8px; border-radius: 3px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 3px;
   margin-bottom: 0.6rem;
 }
-.concept-card-badge.act     { color: var(--act-primary); background: var(--act-light); }
-.concept-card-badge.extract { color: var(--extract-primary); background: var(--extract-light); }
-.concept-card-badge.observe { color: var(--observe-primary); background: var(--observe-light); }
-.concept-card-badge.agent   { color: var(--agent-primary); background: var(--agent-light); }
-.concept-card-name {
-  font-family: var(--font-mono);
-  font-size: 0.8rem; font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-.concept-card-desc {
+.concept-card-badge.act     { color: var(--act);     background: var(--act-light); }
+.concept-card-badge.extract { color: var(--extract); background: var(--extract-light); }
+.concept-card-badge.observe { color: var(--observe); background: var(--observe-light); }
+.concept-card-badge.agent   { color: var(--agent);   background: var(--agent-light); }
+.concept-card-name { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 500; margin-bottom: 0.5rem; }
+.concept-card-desc { font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; }
+
+/* ============================================
+   COMPARISON GRID (bespoke)
+   ============================================ */
+.comparison-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 2rem 0; }
+.comparison-cell { padding: 1.1rem 1.2rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-warm); font-family: var(--font-sans); }
+.comparison-cell h4 {
   font-family: var(--font-sans);
-  font-size: 0.75rem; color: var(--text-secondary);
-  line-height: 1.5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+}
+.comparison-cell ul { list-style: none; font-size: 0.82rem; line-height: 1.5; }
+.comparison-cell ul li { padding: 0.22rem 0; padding-left: 1rem; position: relative; color: var(--text-secondary); }
+.comparison-cell ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
 }
 
+/* ============================================
+   FOOTER
+   ============================================ */
 .article-footer {
-  max-width: calc(var(--content-width) + var(--sidebar-width) + 80px);
-  margin: 0 auto;
-  padding: 2rem 24px 4rem;
+  margin-top: 4rem;
+  padding-top: 2rem;
   border-top: 1px solid var(--border);
-}
-.article-footer p {
   font-family: var(--font-sans);
-  font-size: 0.75rem; color: var(--text-tertiary);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
   line-height: 1.7;
 }
-.article-footer a { color: var(--text-secondary); text-decoration: none; }
-.article-footer a:hover { text-decoration: underline; }
+.article-footer p { margin-bottom: 0.8rem; }
+.article-footer a { color: var(--link); }
 
+/* ============================================
+   RESPONSIVE
+   ============================================ */
 @media (max-width: 1060px) {
   .sidebar { display: none; }
-  .page-wrapper { display: block; }
-  .content { max-width: 100%; }
+  .page-wrapper { padding: 0 1.25rem; }
 }
 @media (max-width: 600px) {
-  html { font-size: 16px; }
+  body { font-size: 16px; }
   h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .article-header { padding-top: 3rem; }
   .concept-cards { grid-template-columns: 1fr; }
   .comparison-grid { grid-template-columns: 1fr; }
+  .figure-controls { gap: 0.4rem; }
   .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .figure-canvas-wrap canvas { min-width: 500px; }
 }
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+.article-header .overline { animation: slideInLeft 0.6s ease 0.1s both; }
+.article-header h1 { animation: fadeInUp 0.6s ease 0.2s both; }
+.article-header .lead { animation: fadeIn 0.8s ease 0.4s both; }
+.figure { animation: fadeInUp 0.5s ease both; }
 </style>
+<script data-goatcounter="https://analyticalmonk.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 </head>
 <body>
 
-<div class="page-wrapper">
-  <aside class="sidebar">
-    <nav id="toc">
-      <a href="#broke">The Night the Selector Broke</a>
-      <a href="#fig-redesign" class="sub">Fig 1: Ship a Redesign</a>
-      <a href="#verbs">Four Verbs for a Browser</a>
-      <a href="#fig-verbs" class="sub">Fig 2: The Verbs, Live</a>
-      <a href="#pipeline">From Instruction to Click</a>
-      <a href="#fig-pipeline" class="sub">Fig 3: Inside act()</a>
-      <a href="#cache">Write Once, Run Forever</a>
-      <a href="#fig-cache" class="sub">Fig 4: The Cache Flywheel</a>
-      <a href="#playwright">Graduating from Playwright</a>
-      <a href="#fig-cdp" class="sub">Fig 5: Cutting Out the Middleman</a>
-      <a href="#tradeoffs">The Honest Trade-offs</a>
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
     </nav>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <nav>
+        <a href="#intro">The Night the Selector Broke</a>
+        <a href="#fig-redesign" class="sub">Ship a Redesign</a>
+        <a href="#verbs">Four Verbs for a Browser</a>
+        <a href="#fig-verbs" class="sub">The Verbs, Live</a>
+        <a href="#pipeline">From Instruction to Click</a>
+        <a href="#fig-pipeline" class="sub">Inside act()</a>
+        <a href="#cache">Write Once, Run Forever</a>
+        <a href="#fig-cache" class="sub">The Cache Flywheel</a>
+        <a href="#playwright">Graduating from Playwright</a>
+        <a href="#fig-cdp" class="sub">Cutting Out the Middleman</a>
+        <a href="#tradeoffs">The Honest Trade-offs</a>
+      </nav>
+    </div>
   </aside>
 
+  <!-- MAIN CONTENT -->
   <main class="content">
-    <header class="article-header">
-      <div class="overline">Interactive Explainer &middot; AI Browser Automation</div>
-      <h1>Stagehand: Between Brittle and Black Box</h1>
-      <p class="article-subtitle">How Browserbase's browser automation framework mixes deterministic code with AI so your scripts survive the next redesign.</p>
-      <div class="article-meta-header">
-        <span>July 17, 2026</span>
-        <span>10 min read</span>
-        <span>5 interactive figures</span>
-      </div>
+
+    <header class="article-header" id="intro">
+      <div class="overline">Interactive Explainer</div>
+      <h1>Stagehand:<br>Between Brittle and Black Box</h1>
+      <p class="lead">
+        Hardcoded selectors break the moment a page changes; fully autonomous agents are
+        quick to write but hard to trust. Stagehand, the open-source browser-automation SDK
+        from Browserbase, takes a third path - you write plain-English instructions, an AI
+        resolves them to real elements at runtime, and deterministic code does the clicking.
+        Explore how its four verbs work, why it caches the AI's answers, and what it gave up
+        to leave Playwright behind.
+      </p>
+      <div class="meta">July 2026 &middot; 10 min read &middot; 5 figures</div>
     </header>
 
-    <section id="broke">
-      <h2>The Night the Selector Broke</h2>
-      <p class="lead">
+    <section>
+      <p>
+
         Your scraper ran flawlessly for eight months. Then, one Tuesday night, a frontend
         developer at the site you automate renamed a CSS class - <code>.btn--buy</code> became
         <code>.purchase-cta</code> - and your pipeline died without a sound. Nothing crashed
@@ -600,7 +665,7 @@ code {
         <code>"MISS"</code>:
       </p>
 
-      <div class="code-block"><span class="kw">const</span> stagehand = <span class="kw">new</span> <span class="ty">Stagehand</span>({ env: <span class="str">"BROWSERBASE"</span>, cacheDir: <span class="str">"act-cache"</span> });
+      <div class="code-block"><span class="kw">const</span> stagehand = <span class="kw">new</span> <span class="type">Stagehand</span>({ env: <span class="str">"BROWSERBASE"</span>, cacheDir: <span class="str">"act-cache"</span> });
 
 <span class="kw">const</span> result = <span class="kw">await</span> stagehand.<span class="fn">act</span>(<span class="str">"click the login button"</span>);
 console.<span class="fn">log</span>(result.cacheStatus); <span class="cm">// "HIT" | "MISS"</span></div>
@@ -737,7 +802,7 @@ console.<span class="fn">log</span>(result.cacheStatus); <span class="cm">// "HI
           </ul>
         </div>
         <div class="comparison-cell">
-          <h4 style="color: var(--agent-primary)">Browser Use</h4>
+          <h4 style="color: var(--agent)">Browser Use</h4>
           <ul>
             <li>Python-first, fits data-science stacks</li>
             <li>Fully autonomous, screenshot-based agent</li>
@@ -771,35 +836,38 @@ console.<span class="fn">log</span>(result.cacheStatus); <span class="cm">// "HI
       </p>
     </section>
 
+    <footer class="article-footer">
+      <p><strong>References:</strong>
+        <a href="https://github.com/browserbase/stagehand">browserbase/stagehand</a> on GitHub (MIT),
+        the <a href="https://docs.stagehand.dev/v3/first-steps/introduction">Stagehand v3 documentation</a>,
+        Browserbase's <a href="https://www.browserbase.com/blog/stagehand-v3">"Launching Stagehand v3"</a> and
+        <a href="https://www.browserbase.com/blog/stagehand-playwright-evolution-browser-automation">"Why we're graduating from Playwright"</a> (October 2025),
+        and Scrapfly's <a href="https://scrapfly.io/blog/posts/stagehand-vs-browser-use">Stagehand vs Browser Use comparison</a>.
+      </p>
+      <p>
+        Built by <a href="https://github.com/analyticalmonk">analyticalmonk</a>, inspired by
+        <a href="https://distill.pub">distill.pub</a>. Star counts and download figures reflect
+        the sources as of July 2026. All five figures are illustrative simulations, not recorded
+        benchmark data.
+      </p>
+    </footer>
+
   </main>
 </div>
 
-<footer class="article-footer">
-  <p>
-    Written as an interactive explainer of <a href="https://github.com/browserbase/stagehand">Stagehand</a> (MIT license) by
-    <a href="https://www.browserbase.com">Browserbase</a>, based on the
-    <a href="https://docs.stagehand.dev/v3/first-steps/introduction">Stagehand v3 documentation</a>,
-    the Browserbase engineering posts <a href="https://www.browserbase.com/blog/stagehand-v3">"Launching Stagehand v3"</a> and
-    <a href="https://www.browserbase.com/blog/stagehand-playwright-evolution-browser-automation">"Why we're graduating from Playwright"</a> (October 2025),
-    and Scrapfly's independent <a href="https://scrapfly.io/blog/posts/stagehand-vs-browser-use">Stagehand vs Browser Use comparison</a>.
-    Star counts and download figures as reported at time of writing, July 2026. All figures are
-    illustrative simulations, not recorded benchmark data.
-  </p>
-</footer>
-
 <script>
 // ========== Shared utility ==========
-const dpr = window.devicePixelRatio || 1;
-
 function initCanvas(id) {
   const canvas = document.getElementById(id);
-  const ctx = canvas.getContext('2d');
+  if (!canvas) return null;
+  const dpr = window.devicePixelRatio || 1;
   const cssW = canvas.width;
   const cssH = canvas.height;
   canvas.width = cssW * dpr;
   canvas.height = cssH * dpr;
-  canvas.style.width = cssW + 'px';
-  canvas.style.height = cssH + 'px';
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
   return { canvas, ctx, w: cssW, h: cssH };
 }
@@ -850,7 +918,9 @@ function drawCursor(ctx, x, y) {
 
 // ========== Figure 1: Ship a Redesign ==========
 (function() {
-  const { canvas, ctx, w, h } = initCanvas('canvas-redesign');
+  const init = initCanvas('canvas-redesign');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
   const P = 14;
   const panelW = (w - P * 3) / 2;
   const panelH = 300;
@@ -1087,7 +1157,9 @@ function drawCursor(ctx, x, y) {
 
 // ========== Figure 2: The Verbs, Live ==========
 (function() {
-  const { canvas, ctx, w, h } = initCanvas('canvas-verbs');
+  const init = initCanvas('canvas-verbs');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
   const VERBS = ['act', 'extract', 'observe', 'agent'];
   const COLORS = {
     act:     { main: '#D97706', light: '#FEF3C7' },
@@ -1388,7 +1460,9 @@ function drawCursor(ctx, x, y) {
 
 // ========== Figure 3: Inside act() ==========
 (function() {
-  const { canvas, ctx, w, h } = initCanvas('canvas-pipeline');
+  const init = initCanvas('canvas-pipeline');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
   const stages = [
     { name: 'Instruction', sub: 'your code' },
     { name: 'Snapshot', sub: 'a11y tree' },
@@ -1525,7 +1599,9 @@ function drawCursor(ctx, x, y) {
 
 // ========== Figure 4: The Cache Flywheel ==========
 (function() {
-  const { canvas, ctx, w, h } = initCanvas('canvas-cache');
+  const init = initCanvas('canvas-cache');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
 
   const script = { x: 80, y: 96 };
   const cache  = { x: 330, y: 96 };
@@ -1735,7 +1811,9 @@ function drawCursor(ctx, x, y) {
 
 // ========== Figure 5: Cutting Out the Middleman ==========
 (function() {
-  const { canvas, ctx, w, h } = initCanvas('canvas-cdp');
+  const init = initCanvas('canvas-cdp');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
 
   const laneA = { y: 96,  script: 100, mid: 360, browser: 620 };
   const laneB = { y: 268, script: 100, browser: 620 };
@@ -1875,26 +1953,21 @@ function drawCursor(ctx, x, y) {
   requestAnimationFrame(loop);
 })();
 
-// ========== Sidebar scroll tracking ==========
+// ========== Sidebar active highlighting on scroll ==========
 (function() {
-  const links = document.querySelectorAll('#toc a');
-  const sections = [];
-  links.forEach(link => {
-    const id = link.getAttribute('href').slice(1);
-    const el = document.getElementById(id);
-    if (el) sections.push({ id, el, link });
-  });
-
+  const links = document.querySelectorAll('.sidebar nav a');
+  const ids = Array.from(links).map(a => a.getAttribute('href').slice(1));
+  const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
   function update() {
-    const scrollY = window.scrollY + 80;
-    let current = sections[0];
+    let active = sections[0];
     for (const s of sections) {
-      if (s.el.offsetTop <= scrollY) current = s;
+      const rect = s.getBoundingClientRect();
+      if (rect.top < 200) active = s;
     }
-    links.forEach(l => l.classList.remove('active'));
-    if (current) current.link.classList.add('active');
+    if (!active) return;
+    links.forEach(l => l.classList.toggle('active',
+      l.getAttribute('href').slice(1) === active.id));
   }
-
   window.addEventListener('scroll', update, { passive: true });
   update();
 })();
