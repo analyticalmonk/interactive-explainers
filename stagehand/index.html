@@ -162,6 +162,31 @@ code { font-family: var(--font-mono); font-size: 0.82em; background: var(--bg-co
 .code-block .key { color: #FFCB6B; }
 
 /* ============================================
+   DEFINITION BOX
+   ============================================ */
+.defbox {
+  margin: 2rem 0;
+  padding: 1.1rem 1.4rem 1.3rem;
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.defbox-title {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-dark);
+  margin-bottom: 0.55rem;
+}
+.defbox p { margin: 0.55rem 0; }
+.defbox p:first-of-type { margin-top: 0; }
+.defbox p:last-child { margin-bottom: 0; }
+.defbox .code-block { margin: 0.9rem 0 0; font-size: 0.74rem; }
+
+/* ============================================
    HEADER
    ============================================ */
 .article-header { padding-top: 5rem; margin-bottom: 3rem; }
@@ -496,7 +521,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         <div class="concept-card">
           <span class="concept-card-badge extract">Pull data out</span>
           <div class="concept-card-name">extract()</div>
-          <div class="concept-card-desc">Pulls structured data from the page, validated against a Zod schema you define. Messy DOM in, typed object out.</div>
+          <div class="concept-card-desc">Pulls structured data from the page, validated against a schema you define. Messy DOM in, typed object out.</div>
         </div>
         <div class="concept-card">
           <span class="concept-card-badge observe">Scout first</span>
@@ -514,9 +539,9 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         The first three are the precision tools. <code>act()</code> executes exactly one step;
         the docs are emphatic about keeping instructions atomic - "click the login button", not
         "log in and go to settings". <code>extract()</code> turns scraping into a typed function
-        call: you hand it a Zod schema and get back an object that actually conforms to it.
-        <code>observe()</code> is reconnaissance - it tells you what's actionable on the page
-        before anything irreversible happens.
+        call: you hand it a Zod schema and get back an object that actually conforms to it (see
+        the box below if Zod is new to you). <code>observe()</code> is reconnaissance - it tells
+        you what's actionable on the page before anything irreversible happens.
       </p>
 
       <div class="code-block"><span class="cm">// The precision tools</span>
@@ -525,6 +550,29 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 <span class="kw">const</span> price = <span class="kw">await</span> stagehand.<span class="fn">extract</span>(<span class="str">"extract the price"</span>, z.<span class="fn">number</span>());
 
 <span class="kw">const</span> actions = <span class="kw">await</span> stagehand.<span class="fn">observe</span>(<span class="str">"find submit buttons"</span>);</div>
+
+      <div class="defbox">
+        <div class="defbox-title">New to Zod?</div>
+        <p>
+          Zod is a TypeScript library for describing the shape of data. You spell out each field
+          and its type once; Stagehand shows that description to the model as the thing to fill in,
+          then checks the model's answer against it before handing the object back. A page that
+          returns the wrong shape raises an error instead of a silently-wrong result.
+        </p>
+        <div class="code-block"><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">"zod"</span>;
+
+<span class="cm">// Describe the shape you expect</span>
+<span class="kw">const</span> Product = z.<span class="fn">object</span>({
+  name:  z.<span class="fn">string</span>(),
+  price: z.<span class="fn">number</span>(),
+});
+
+<span class="cm">// extract() returns an object guaranteed to match it</span>
+<span class="kw">const</span> product = <span class="kw">await</span> stagehand.<span class="fn">extract</span>(
+  <span class="str">"get the product name and price"</span>,
+  Product
+);</div>
+      </div>
 
       <p>
         The fourth verb changes who's driving. <code>agent()</code> takes a goal and loops -
@@ -578,9 +626,9 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
     <section id="pipeline">
       <h2>From Instruction to Click</h2>
       <p>
-        So what actually happens inside <code>act("click the buy button")</code>? The magic
-        evaporates pleasantly under inspection - it's a short pipeline, and every stage is
-        ordinary engineering.
+        So what actually happens inside <code>act("click the buy button")</code>? It can feel
+        like magic, but each stage turns out to be a piece of understandable
+        engineering - a short pipeline you can follow from end to end.
       </p>
       <p>
         First, Stagehand needs to show the model the page, and it does not send a screenshot
