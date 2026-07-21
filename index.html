@@ -241,6 +241,29 @@ body {
     <li class="article-entry">
       <div class="article-content">
         <h2 class="article-title">
+          <a href="stagehand/">Stagehand: Inside the AI-Driven Browser Automation Framework</a>
+        </h2>
+        <p class="article-excerpt">
+          Hardcoded selectors break on every redesign; autonomous agents are
+          unpredictable. Explore how Browserbase's Stagehand splits browser
+          automation into four AI-resolved verbs - and caches their answers so
+          you only pay for intelligence when the page changes.
+        </p>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>July 2026</span>
+          <span>10 min read</span>
+          <span>5 figures</span>
+        </div>
+      </div>
+      <div class="article-thumbnail">
+        <canvas id="thumb-stagehand" width="480" height="280"></canvas>
+      </div>
+    </li>
+
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
           <a href="superpowers/">Superpowers: The Anatomy of an Agent Skill</a>
         </h2>
         <p class="article-excerpt">
@@ -383,6 +406,127 @@ body {
 </footer>
 
 <script>
+// Thumbnail: Stagehand - a cursor that keeps finding the button, wherever it moves
+(function() {
+  const canvas = document.getElementById('thumb-stagehand');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  // Browser window
+  const win = { x: 70, y: 34, w: 340, h: 196 };
+  // Button positions the "redesigns" cycle through (relative to window content)
+  const spots = [
+    { x: win.x + 226, y: win.y + 138, w: 96, h: 30 },
+    { x: win.x + 24,  y: win.y + 150, w: 120, h: 30 },
+    { x: win.x + 120, y: win.y + 76,  w: 104, h: 30 },
+  ];
+  const CYCLE = 3.2; // seconds per redesign
+  let t = 0;
+
+  function easeInOut(k) { return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; }
+  function lerp(a, b, k) { return a + (b - a) * k; }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, '#ECFEFF');
+    bg.addColorStop(1, '#CFFAFE');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const phase = Math.floor(t / CYCLE);
+    const k = (t % CYCLE) / CYCLE;
+    const cur = spots[phase % spots.length];
+    const prev = spots[(phase + spots.length - 1) % spots.length];
+
+    // window chrome
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(14,116,144,0.25)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(win.x, win.y, win.w, win.h, 10); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#E0F7FA';
+    ctx.beginPath(); ctx.roundRect(win.x, win.y, win.w, 26, [10, 10, 0, 0]); ctx.fill();
+    ['#FC5753', '#FDBC40', '#33C748'].forEach((c, i) => {
+      ctx.fillStyle = c;
+      ctx.beginPath(); ctx.arc(win.x + 16 + i * 13, win.y + 13, 3.8, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // redesign flash right after a phase change
+    if (k < 0.12) {
+      ctx.fillStyle = 'rgba(8,145,178,' + (0.10 * (1 - k / 0.12)) + ')';
+      ctx.beginPath(); ctx.roundRect(win.x, win.y + 26, win.w, win.h - 26, [0, 0, 10, 10]); ctx.fill();
+    }
+
+    // ghost of where the button used to be
+    if (k < 0.5) {
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(14,116,144,' + (0.35 * (1 - k / 0.5)) + ')';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.roundRect(prev.x, prev.y, prev.w, prev.h, 6); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // placeholder page lines
+    ctx.fillStyle = 'rgba(14,116,144,0.10)';
+    ctx.beginPath(); ctx.roundRect(win.x + 24, win.y + 44, 180, 10, 5); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(win.x + 24, win.y + 62, 130, 8, 4); ctx.fill();
+
+    // the button
+    ctx.fillStyle = '#0891B2';
+    ctx.beginPath(); ctx.roundRect(cur.x, cur.y, cur.w, cur.h, 6); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Buy now', cur.x + cur.w / 2, cur.y + cur.h / 2);
+
+    // cursor: resolve pause, then glide from previous spot to current
+    const move = Math.min(1, Math.max(0, (k - 0.18) / 0.42));
+    const cx2 = lerp(prev.x + prev.w / 2, cur.x + cur.w / 2, easeInOut(move));
+    const cy2 = lerp(prev.y + prev.h / 2, cur.y + cur.h / 2, easeInOut(move)) + 6;
+
+    // click ripple on arrival
+    if (move >= 1) {
+      const rippleK = Math.min(1, (k - 0.6) / 0.25);
+      ctx.strokeStyle = 'rgba(8,145,178,' + (0.7 * (1 - rippleK)) + ')';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(cur.x + cur.w / 2, cur.y + cur.h / 2, 10 + rippleK * 18, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // cursor glyph
+    ctx.save();
+    ctx.translate(cx2, cy2);
+    ctx.fillStyle = '#155E75';
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(0, 0); ctx.lineTo(0, 16); ctx.lineTo(3.8, 12.4);
+    ctx.lineTo(6.6, 17.8); ctx.lineTo(9.2, 16.4); ctx.lineTo(6.4, 11.2);
+    ctx.lineTo(11.6, 10.8); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+
+    // caption
+    ctx.font = '600 12px "Courier New", monospace';
+    ctx.fillStyle = 'rgba(14,116,144,0.6)';
+    ctx.textAlign = 'center';
+    ctx.fillText('act("click the buy button")', w / 2, h - 20);
+
+    t += 0.016;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
 // Thumbnail: Superpowers — using-superpowers hub broadcasting to the skill ring
 (function() {
   const canvas = document.getElementById('thumb-superpowers');

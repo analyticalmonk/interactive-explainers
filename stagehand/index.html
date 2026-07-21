@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stagehand: Inside the AI-Driven Browser Automation Framework</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================
+   CSS CUSTOM PROPERTIES
+   ============================================ */
+:root {
+  --bg: #fff;
+  --bg-warm: #F0FBFC;
+  --bg-code: #F1F5F6;
+  --text: rgba(0, 0, 0, 0.82);
+  --text-secondary: rgba(0, 0, 0, 0.56);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.05);
+
+  /* Stagehand teal */
+  --accent: #0891B2;
+  --accent-light: #ECFEFF;
+  --accent-border: #A5F3FC;
+  --accent-dark: #0E7490;
+  --link: #0E7490;
+
+  /* The four verbs */
+  --act: #D97706;     --act-light: #FEF3C7;
+  --extract: #059669; --extract-light: #ECFDF5;
+  --observe: #7C3AED; --observe-light: #F5F0FF;
+  --agent: #DB2777;   --agent-light: #FDF2F8;
+
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --content-width: 720px;
+  --sidebar-width: 220px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font-serif);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 18px;
+}
+
+/* ============================================
+   SITE HEADER
+   ============================================ */
+.site-header { border-bottom: 1px solid var(--border); padding: 16px 0; }
+.site-header-inner {
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.site-nav a { font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); text-decoration: none; }
+.site-nav a:hover { color: var(--text); }
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+.page-wrapper {
+  display: flex;
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+.sidebar { width: var(--sidebar-width); flex-shrink: 0; padding-right: 2.5rem; }
+.sidebar-inner { position: sticky; top: 2rem; padding-top: 6rem; }
+.sidebar nav a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+.sidebar nav a:hover { color: var(--text-secondary); }
+.sidebar nav a.active { color: var(--text); border-left-color: var(--accent); font-weight: 600; }
+.sidebar nav a.sub { padding-left: 1.6rem; font-size: 0.67rem; }
+.content { flex: 1; max-width: var(--content-width); min-width: 0; padding-bottom: 6rem; }
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+h1 {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 4.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+h3 { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 600; line-height: 1.35; margin-top: 2.5rem; margin-bottom: 0.75rem; }
+p { margin-bottom: 1.25rem; }
+.lead { font-size: 1.13rem; font-weight: 300; color: var(--text-secondary); line-height: 1.7; }
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+strong { font-weight: 600; }
+em { font-style: italic; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: var(--font-mono); font-size: 0.82em; background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 3px; }
+.code-block {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  padding: 1.1rem 1.4rem;
+  margin: 1.4rem 0;
+  background: #22303A;
+  color: #E8E4DC;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.code-block .kw { color: #C792EA; }
+.code-block .fn { color: #82AAFF; }
+.code-block .str { color: #C3E88D; }
+.code-block .cm { color: #6B7A82; }
+.code-block .type { color: #FFCB6B; }
+.code-block .key { color: #FFCB6B; }
+
+/* ============================================
+   DEFINITION BOX
+   ============================================ */
+.defbox {
+  margin: 2rem 0;
+  padding: 1.1rem 1.4rem 1.3rem;
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.defbox-title {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-dark);
+  margin-bottom: 0.55rem;
+}
+.defbox p { margin: 0.55rem 0; }
+.defbox p:first-of-type { margin-top: 0; }
+.defbox p:last-child { margin-bottom: 0; }
+.defbox .code-block { margin: 0.9rem 0 0; font-size: 0.74rem; }
+
+/* ============================================
+   HEADER
+   ============================================ */
+.article-header { padding-top: 5rem; margin-bottom: 3rem; }
+.article-header .overline {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   FIGURES
+   ============================================ */
+.figure { margin: 2.5rem 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+.figure-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 0.5rem 1rem 0;
+}
+.figure-canvas-wrap { position: relative; width: 100%; background: #fff; }
+.figure-canvas-wrap canvas { display: block; width: 100%; height: auto; }
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+}
+button.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+button.ctrl-btn:hover { background: var(--bg-warm); border-color: var(--text-tertiary); }
+button.ctrl-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+button.ctrl-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-label { font-family: var(--font-sans); font-size: 0.67rem; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.03em; }
+.ctrl-separator { width: 1px; height: 1.2rem; background: var(--border); margin: 0 0.3rem; }
+
+/* ============================================
+   CALLOUT
+   ============================================ */
+.callout {
+  margin: 2rem 0;
+  padding: 1.1rem 1.4rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.96rem;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout strong { color: var(--accent-dark); }
+
+/* ============================================
+   EPIGRAPH
+   ============================================ */
+.epigraph {
+  margin: 2rem 0;
+  padding: 0.5rem 0 0.5rem 1.4rem;
+  border-left: 3px solid var(--accent-border);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+}
+.epigraph cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-style: normal;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+/* ============================================
+   VERB CARDS (bespoke)
+   ============================================ */
+.concept-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 2rem 0; }
+.concept-card { border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; background: #fff; }
+.concept-card-badge {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-bottom: 0.6rem;
+}
+.concept-card-badge.act     { color: var(--act);     background: var(--act-light); }
+.concept-card-badge.extract { color: var(--extract); background: var(--extract-light); }
+.concept-card-badge.observe { color: var(--observe); background: var(--observe-light); }
+.concept-card-badge.agent   { color: var(--agent);   background: var(--agent-light); }
+.concept-card-name { font-family: var(--font-mono); font-size: 0.82rem; font-weight: 500; margin-bottom: 0.5rem; }
+.concept-card-desc { font-family: var(--font-sans); font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; }
+
+/* ============================================
+   COMPARISON GRID (bespoke)
+   ============================================ */
+.comparison-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin: 2rem 0; }
+.comparison-cell { padding: 1.1rem 1.2rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-warm); font-family: var(--font-sans); }
+.comparison-cell h4 {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.6rem;
+}
+.comparison-cell ul { list-style: none; font-size: 0.82rem; line-height: 1.5; }
+.comparison-cell ul li { padding: 0.22rem 0; padding-left: 1rem; position: relative; color: var(--text-secondary); }
+.comparison-cell ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.article-footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+.article-footer p { margin-bottom: 0.8rem; }
+.article-footer a { color: var(--link); }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1060px) {
+  .sidebar { display: none; }
+  .page-wrapper { padding: 0 1.25rem; }
+}
+@media (max-width: 600px) {
+  body { font-size: 16px; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .article-header { padding-top: 3rem; }
+  .concept-cards { grid-template-columns: 1fr; }
+  .comparison-grid { grid-template-columns: 1fr; }
+  .figure-controls { gap: 0.4rem; }
+  .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .figure-canvas-wrap canvas { min-width: 500px; }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+.article-header .overline { animation: slideInLeft 0.6s ease 0.1s both; }
+.article-header h1 { animation: fadeInUp 0.6s ease 0.2s both; }
+.article-header .lead { animation: fadeIn 0.8s ease 0.4s both; }
+.figure { animation: fadeInUp 0.5s ease both; }
+</style>
+<script data-goatcounter="https://analyticalmonk.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <nav>
+        <a href="#intro">The Night the Selector Broke</a>
+        <a href="#fig-redesign" class="sub">Ship a Redesign</a>
+        <a href="#verbs">Four Verbs for a Browser</a>
+        <a href="#fig-verbs" class="sub">The Verbs, Live</a>
+        <a href="#pipeline">From Instruction to Click</a>
+        <a href="#fig-pipeline" class="sub">Inside act()</a>
+        <a href="#cache">Write Once, Run Forever</a>
+        <a href="#fig-cache" class="sub">The Cache Flywheel</a>
+        <a href="#playwright">Graduating from Playwright</a>
+        <a href="#fig-cdp" class="sub">Cutting Out the Middleman</a>
+        <a href="#tradeoffs">The Honest Trade-offs</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <header class="article-header" id="intro">
+      <div class="overline">Interactive Explainer</div>
+      <h1>Stagehand:<br>Inside the AI-Driven Browser Automation Framework</h1>
+      <p class="lead">
+        Hardcoded selectors break the moment a page changes; fully autonomous agents are
+        quick to write but hard to trust. Stagehand, the open-source browser-automation SDK
+        from Browserbase, takes a third path - you write plain-English instructions, an AI
+        resolves them to real elements at runtime, and deterministic code does the clicking.
+        Explore how its four verbs work, why it caches the AI's answers, and what it gave up
+        to leave Playwright behind.
+      </p>
+      <div class="meta">July 2026 &middot; 10 min read &middot; 5 figures</div>
+    </header>
+
+    <section>
+      <p>
+
+        Your scraper ran flawlessly for eight months. Then, one Tuesday night, a frontend
+        developer at the site you automate renamed a CSS class - <code>.btn--buy</code> became
+        <code>.purchase-cta</code> - and your pipeline died without a sound. Nothing crashed
+        loudly. The script looked for a button that no longer existed, timed out, retried,
+        timed out again. You found out Thursday, from a stakeholder asking where the data went.
+      </p>
+      <p>
+        This is the standing bargain of traditional browser automation. Tools like Playwright,
+        Selenium, and Puppeteer are exact: you tell them precisely which element to click, and
+        they click it fast, deterministically, for free. But that exactness is also the failure
+        mode. A hardcoded selector is a bet that the page will never change, and the page always
+        changes. Every automation you write is quietly accruing a maintenance debt that comes
+        due at the least convenient time.
+      </p>
+      <p>
+        At the other extreme sits the fully autonomous AI agent. You hand it a goal - "buy the
+        headphones" - and it looks at the page, reasons about it, and figures out the clicks on
+        its own. Redesigns don't faze it. But now you have a different problem: the agent might
+        take a different path every run, it's hard to debug when it wanders, and every step
+        burns model tokens. You've traded brittle for black box.
+      </p>
+      <p>
+        <a href="https://github.com/browserbase/stagehand">Stagehand</a> is an open-source
+        framework from <a href="https://www.browserbase.com/stagehand">Browserbase</a> (the
+        company that sells headless browser infrastructure) built on a wager: the right unit of
+        automation is neither the selector nor the goal, but the <em>instruction</em>. MIT-licensed,
+        with over 23,000 GitHub stars, it bills itself as "the SDK for browser agents." You write
+        <code>act("click the buy button")</code>, and an AI resolves that sentence at runtime to
+        whatever the buy button happens to be today - then ordinary, deterministic browser code
+        performs the click.
+      </p>
+      <div class="epigraph">
+        <p>Developers use Stagehand to reliably automate the web.</p>
+        <cite>Stagehand documentation</cite>
+      </div>
+      <p>
+        To feel the difference, try breaking something. The figure below shows the same tiny
+        storefront automated two ways: a hardcoded selector on the left, a Stagehand-style
+        instruction on the right. Run both, then ship a redesign and run them again - watch
+        which one survives.
+      </p>
+
+      <div class="figure" id="fig-redesign">
+        <div class="figure-label">Figure 1 - Ship a Redesign</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-redesign" width="720" height="430"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="redesign-run">Run both scripts</button>
+          <button class="ctrl-btn" id="redesign-toggle">Ship redesign</button>
+          <button class="ctrl-btn" id="redesign-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="redesign-info">Layout: v1</span>
+        </div>
+        <div class="figure-caption">
+          Two automations target the same store. After you ship the redesign, the
+          <strong>hardcoded selector</strong> on the left still aims at where the button
+          <em>used to be</em> and fails, while the <strong>natural-language instruction</strong>
+          on the right re-resolves against the new page and finds the renamed, relocated button.
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>The key insight:</strong> Stagehand splits every browser action into two halves.
+        An AI decides <em>what</em> to interact with; deterministic code performs the interaction.
+        The AI half absorbs page changes, and the code half keeps the behavior exact and replayable.
+      </div>
+    </section>
+
+    <section id="verbs">
+      <h2>Four Verbs for a Browser</h2>
+      <p>
+        A stagehand, in the theater, is the person in the wings who moves the props so the show
+        can go on. The framework earns its name with a deliberately small API: four verbs that
+        cover everything you'd ask of a browser.
+      </p>
+
+      <div class="concept-cards">
+        <div class="concept-card">
+          <span class="concept-card-badge act">Do one thing</span>
+          <div class="concept-card-name">act()</div>
+          <div class="concept-card-desc">Performs a single browser action from a plain-English instruction: click, fill, scroll, select. One instruction, one action.</div>
+        </div>
+        <div class="concept-card">
+          <span class="concept-card-badge extract">Pull data out</span>
+          <div class="concept-card-name">extract()</div>
+          <div class="concept-card-desc">Pulls structured data from the page, validated against a schema you define. Messy DOM in, typed object out.</div>
+        </div>
+        <div class="concept-card">
+          <span class="concept-card-badge observe">Scout first</span>
+          <div class="concept-card-name">observe()</div>
+          <div class="concept-card-desc">Surveys the page and returns candidate actions - with selectors and methods - before you commit to any of them.</div>
+        </div>
+        <div class="concept-card">
+          <span class="concept-card-badge agent">Hand over the wheel</span>
+          <div class="concept-card-name">agent()</div>
+          <div class="concept-card-desc">Runs an autonomous multi-step workflow toward a goal, including with computer-use models, when you'd rather describe the destination than the route.</div>
+        </div>
+      </div>
+
+      <p>
+        The first three are the precision tools. <code>act()</code> executes exactly one step;
+        the docs are emphatic about keeping instructions atomic - "click the login button", not
+        "log in and go to settings". <code>extract()</code> turns scraping into a typed function
+        call: you hand it a Zod schema and get back an object that actually conforms to it (see
+        the box below if Zod is new to you). <code>observe()</code> is reconnaissance - it tells
+        you what's actionable on the page before anything irreversible happens.
+      </p>
+
+      <div class="code-block"><span class="cm">// The precision tools</span>
+<span class="kw">await</span> stagehand.<span class="fn">act</span>(<span class="str">"click the login button"</span>);
+
+<span class="kw">const</span> price = <span class="kw">await</span> stagehand.<span class="fn">extract</span>(<span class="str">"extract the price"</span>, z.<span class="fn">number</span>());
+
+<span class="kw">const</span> actions = <span class="kw">await</span> stagehand.<span class="fn">observe</span>(<span class="str">"find submit buttons"</span>);</div>
+
+      <div class="defbox">
+        <div class="defbox-title">New to Zod?</div>
+        <p>
+          Zod is a TypeScript library for describing the shape of data. You spell out each field
+          and its type once; Stagehand shows that description to the model as the thing to fill in,
+          then checks the model's answer against it before handing the object back. A page that
+          returns the wrong shape raises an error instead of a silently-wrong result.
+        </p>
+        <div class="code-block"><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">"zod"</span>;
+
+<span class="cm">// Describe the shape you expect</span>
+<span class="kw">const</span> Product = z.<span class="fn">object</span>({
+  name:  z.<span class="fn">string</span>(),
+  price: z.<span class="fn">number</span>(),
+});
+
+<span class="cm">// extract() returns an object guaranteed to match it</span>
+<span class="kw">const</span> product = <span class="kw">await</span> stagehand.<span class="fn">extract</span>(
+  <span class="str">"get the product name and price"</span>,
+  Product
+);</div>
+      </div>
+
+      <p>
+        The fourth verb changes who's driving. <code>agent()</code> takes a goal and loops -
+        observing, deciding, acting - until the goal is met. You can back it with a regular LLM
+        or a dedicated computer-use model:
+      </p>
+
+      <div class="code-block"><span class="cm">// The autonomy tool</span>
+<span class="kw">const</span> agent = stagehand.<span class="fn">agent</span>({
+  mode: <span class="str">"cua"</span>,
+  model: <span class="str">"google/gemini-2.5-computer-use-preview-10-2025"</span>,
+});
+<span class="kw">await</span> agent.<span class="fn">execute</span>(<span class="str">"apply for this job"</span>);</div>
+
+      <p>
+        One more detail worth knowing early: instructions are sent to a model provider, so
+        Stagehand gives you placeholder variables for anything sensitive. You write
+        <code>act("type %password% into the password field", { variables: { password: ... } })</code>
+        and the secret is substituted locally - the LLM only ever sees the placeholder.
+      </p>
+      <p>
+        The tension between the two modes is the interesting part. The precision verbs are
+        predictable and debuggable but need you to write the route; the agent finds the route
+        but is only as predictable as its model. Stagehand's own docs describe how most teams
+        square it: use the agent for exploration, and pin the critical paths down with
+        individual primitives. The figure below puts all four verbs on the same page - literally. Switch tabs
+        and watch what each one does to the same little store.
+      </p>
+
+      <div class="figure" id="fig-verbs">
+        <div class="figure-label">Figure 2 - The Verbs, Live</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-verbs" width="720" height="430"></canvas>
+        </div>
+        <div class="figure-controls" id="verbs-tabs">
+          <button class="ctrl-btn">act()</button>
+          <button class="ctrl-btn">extract()</button>
+          <button class="ctrl-btn">observe()</button>
+          <button class="ctrl-btn">agent()</button>
+        </div>
+        <div class="figure-caption">
+          The same mock storefront under each verb. <strong>act</strong> performs one click;
+          <strong>extract</strong> lifts typed JSON out of the page; <strong>observe</strong>
+          tags every actionable element with a numbered badge before anything is clicked;
+          <strong>agent</strong> chains steps on its own toward a goal. Watch the right-hand
+          panel - it shows what your code actually receives back.
+        </div>
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <h2>From Instruction to Click</h2>
+      <p>
+        So what actually happens inside <code>act("click the buy button")</code>? It can feel
+        like magic, but each stage turns out to be a piece of understandable
+        engineering - a short pipeline you can follow from end to end.
+      </p>
+      <p>
+        First, Stagehand needs to show the model the page, and it does not send a screenshot
+        or a raw HTML dump by default. It reads the page's <strong>accessibility tree</strong> - the
+        semantic outline the browser already maintains for screen readers, where a
+        <code>&lt;div class="x7-btn"&gt;</code> becomes simply <em>button, "Buy now"</em>.
+        (You can see this directly: calling <code>extract()</code> with no arguments returns
+        the accessibility tree itself.) It's a beautifully economical choice - the tree is
+        orders of magnitude smaller than the DOM, and it describes the page the way a person
+        would: by role and label, not by markup.
+      </p>
+      <p>
+        The model receives your instruction plus that tree and picks a target and a method -
+        click, fill, type, press, scroll, or select. Crucially, the decision materializes as a
+        concrete, boring artifact: the <code>ActResult</code> that <code>act()</code> returns
+        records the XPath selectors that were used, alongside success status and a description
+        of what happened. The AI's judgment gets compiled down to something you can log,
+        inspect, and - as the next section shows - cache. Then deterministic code dispatches
+        the actual event, traversing iframes and shadow DOM on its own when the target lives
+        inside one.
+      </p>
+      <p>
+        This is also why instruction phrasing matters more than it might seem. The docs push
+        you toward specificity - "the red Delete button next to user John Smith" beats "click
+        the button" - because the model is choosing among candidates, and ambiguity in, wrong
+        element out. For anything high-stakes, there's a preview idiom: <code>observe()</code>
+        returns the resolved action <em>without executing it</em>, and you pass it to
+        <code>act()</code> only if you like what you see.
+      </p>
+
+      <div class="code-block"><span class="cm">// Look before you leap: preview the resolved action, then run it</span>
+<span class="kw">const</span> [action] = <span class="kw">await</span> stagehand.<span class="fn">observe</span>(<span class="str">"click the login button"</span>);
+<span class="kw">if</span> (action) <span class="kw">await</span> stagehand.<span class="fn">act</span>(action);</div>
+
+      <p>
+        Step through the pipeline yourself below. Each press of the button advances the
+        instruction one stage further toward a real click.
+      </p>
+
+      <div class="figure" id="fig-pipeline">
+        <div class="figure-label">Figure 3 - Inside act()</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-pipeline" width="720" height="400"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="pipeline-step">Step</button>
+          <button class="ctrl-btn" id="pipeline-play">Play</button>
+          <button class="ctrl-btn" id="pipeline-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="pipeline-info">Stage 0 of 5</span>
+        </div>
+        <div class="figure-caption">
+          The five stages of an <code>act()</code> call. Watch the <strong>payload panel</strong>
+          below the pipeline: the fuzzy natural-language instruction becomes a filtered
+          accessibility tree, then a model decision, then a concrete XPath - and only then
+          does anything touch the browser.
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>Notice that:</strong> the LLM never clicks anything. It only ever answers the
+        question "which element, which method?" - and its answer is written down as an XPath
+        before execution. That artifact is what makes the whole system cacheable, auditable,
+        and replayable.
+      </div>
+    </section>
+
+    <section id="cache">
+      <h2>Write Once, Run Forever</h2>
+      <p>
+        There's an obvious objection to everything above: an LLM call per action is slow and
+        costs money. If your automation runs every fifteen minutes, you do not want to pay a
+        model to re-discover the same buy button 96 times a day.
+      </p>
+      <p>
+        Stagehand's answer is aggressive caching, and it's where the framework's "write once,
+        run forever" pitch comes from. The first time an instruction resolves, the result -
+        that concrete XPath from the previous section - is stored. Every subsequent run replays
+        the stored action directly, skipping inference entirely. Locally, you opt in by pointing
+        the constructor at a cache directory; on Browserbase's cloud, a server-side cache is on
+        by default, and every result tells you whether it was a <code>"HIT"</code> or a
+        <code>"MISS"</code>:
+      </p>
+
+      <div class="code-block"><span class="kw">const</span> stagehand = <span class="kw">new</span> <span class="type">Stagehand</span>({ env: <span class="str">"BROWSERBASE"</span>, cacheDir: <span class="str">"act-cache"</span> });
+
+<span class="kw">const</span> result = <span class="kw">await</span> stagehand.<span class="fn">act</span>(<span class="str">"click the login button"</span>);
+console.<span class="fn">log</span>(result.cacheStatus); <span class="cm">// "HIT" | "MISS"</span></div>
+
+      <p>
+        The clever part is what happens when the cache goes stale. That redesign from the
+        opening scene lands, the stored XPath stops matching, and a classic script would be
+        dead. Stagehand instead detects that the page has changed, re-runs inference against
+        the new page, and repairs its own cache - the behavior Browserbase calls
+        <strong>self-healing</strong>. The redesign that used to be a Thursday-morning incident
+        becomes one cache miss and one extra model call.
+      </p>
+      <p>
+        Run the simulation below a few times and watch the economics play out. The first run
+        is slow and costs tokens. The next runs are fast and free. Then ship a redesign and
+        see the system take the hit once - and only once.
+      </p>
+
+      <div class="figure" id="fig-cache">
+        <div class="figure-label">Figure 4 - The Cache Flywheel</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-cache" width="720" height="430"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="cache-run">Run automation</button>
+          <button class="ctrl-btn" id="cache-redesign">Ship redesign</button>
+          <button class="ctrl-btn" id="cache-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="cache-info">Runs: 0 &middot; LLM calls: 0 &middot; Tokens: 0</span>
+        </div>
+        <div class="figure-caption">
+          Each run flows from the script through the cache. On a <strong>miss</strong> (amber)
+          the request detours through the LLM - slow, and the token meter climbs. On a
+          <strong>hit</strong> (teal) it goes straight to the browser. After a redesign, the
+          stale entry fails once, self-heals through the LLM, and the flywheel resumes. The
+          bar chart tracks each run's latency; timings are illustrative.
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>The economics in one line:</strong> you pay tokens the first time, and again
+        after every redesign; every run in between is a deterministic replay at zero model
+        cost. Your automation quietly compiles itself into a plain script with an insurance policy.
+      </div>
+    </section>
+
+    <section id="playwright">
+      <h2>Graduating from Playwright</h2>
+      <p>
+        Stagehand didn't start as its own automation engine. When Browserbase open-sourced it
+        in 2024, it was a layer on top of Playwright - which was exactly why it caught on. You
+        could drop <code>act()</code> and <code>extract()</code> into an existing Playwright
+        script in minutes, keeping everything else you'd built. By version 2 the package was
+        seeing over 500,000 weekly downloads.
+      </p>
+      <p>
+        But scale surfaced a mismatch in DNA. Playwright is a <em>testing</em> tool. Before it
+        clicks anything, it runs actionability checks - waiting for the element to be, in
+        Playwright's terms, "visible, stable, enabled, and receiving events." For a CI suite,
+        that caution is the whole point. For a high-throughput automation clicking a button it
+        resolved and cached weeks ago, it's latency tax on every single action. The Browserbase
+        team also kept hitting lower-level friction: Playwright doesn't expose stable frame
+        identities, which made it awkward to route Chrome DevTools Protocol commands at
+        specific iframes; its CDP sessions are scoped to pages and contexts rather than frames;
+        and users reported memory creep in long-lived sessions.
+      </p>
+      <p>
+        So in October 2025, Stagehand v3 removed the middleman. The engine was rewritten to
+        speak <strong>Chrome DevTools Protocol</strong> directly - the same raw websocket
+        protocol the browser's own DevTools use - streaming accessibility trees, DOM snapshots,
+        and network events straight from the browser with no translation layer in between.
+        On Browserbase's benchmark of deeply nested iframes and shadow DOMs, v3 measured
+        44.11% faster on average than the Playwright-based architecture. And in a nice twist,
+        shedding the dependency made Stagehand <em>more</em> compatible, not less: the v3 API
+        is driver-agnostic, working alongside Playwright and Puppeteer rather than living
+        inside one of them, with SDKs beyond TypeScript and a REST API.
+      </p>
+      <p>
+        The figure below shows the architectural difference as message traffic. Both lanes
+        perform the same repeated action; count the hops.
+      </p>
+
+      <div class="figure" id="fig-cdp">
+        <div class="figure-label">Figure 5 - Cutting Out the Middleman</div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-cdp" width="720" height="380"></canvas>
+        </div>
+        <div class="figure-controls">
+          <button class="ctrl-btn" id="cdp-play">Pause</button>
+          <button class="ctrl-btn" id="cdp-reset">Reset counters</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="cdp-info">v2: 0 actions &middot; v3: 0 actions</span>
+        </div>
+        <div class="figure-caption">
+          Every action in the v2 architecture (top) round-trips through the
+          <strong>Playwright layer</strong>, which also pauses for actionability checks; v3
+          (bottom) speaks CDP directly to the browser. Hop counts and timings here are
+          stylized to show the shape of the difference - Browserbase's own iframe and
+          shadow-DOM benchmark put v3 at 44.11% faster on average.
+        </div>
+      </div>
+    </section>
+
+    <section id="tradeoffs">
+      <h2>The Honest Trade-offs</h2>
+      <p>
+        None of this is free, and Stagehand is refreshingly legible about where the costs
+        moved. Every cache miss is a metered LLM call, so a fleet of automations against
+        frequently-changing pages runs up a real inference bill. The project doesn't recommend
+        local models, so in practice you're wiring in a cloud model API. And the engine is
+        Chromium-only - Chrome, Edge, Arc, Brave - so cross-browser testing stays with the
+        traditional tools.
+      </p>
+      <p>
+        The sharpest comparison is with <a href="https://scrapfly.io/blog/posts/stagehand-vs-browser-use">Browser
+        Use</a>, the Python framework that owns the other end of the spectrum from figure 1.
+        Browser Use hands the whole task to an agent that works from screenshots - the AI sees
+        what a person sees and decides each next move. It has the larger community (roughly
+        80,000 GitHub stars to Stagehand's 23,000) and it supports local inference through
+        Ollama, which makes it effectively free to run. The price is variance: an autonomous
+        agent may take a different route each run, and multi-step autonomy burns more tokens
+        per task than atomic, cacheable operations.
+      </p>
+
+      <div class="comparison-grid">
+        <div class="comparison-cell">
+          <h4 style="color: var(--accent-dark)">Stagehand</h4>
+          <ul>
+            <li>TypeScript-first; SDKs in more languages since v3</li>
+            <li>Step-by-step control, cacheable and replayable</li>
+            <li>Accessibility-tree context; direct CDP engine</li>
+            <li>Strong on nested iframes and shadow DOM</li>
+            <li>Cloud LLM APIs; local models not recommended</li>
+          </ul>
+        </div>
+        <div class="comparison-cell">
+          <h4 style="color: var(--agent)">Browser Use</h4>
+          <ul>
+            <li>Python-first, fits data-science stacks</li>
+            <li>Fully autonomous, screenshot-based agent</li>
+            <li>Playwright underneath</li>
+            <li>Local inference via Ollama - zero API cost</li>
+            <li>More tokens per task, more run-to-run variance</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        Scrapfly's independent review lands on a clean split: reach for Browser Use when you
+        want autonomy, Python, or free local inference; reach for Stagehand when you need
+        predictable, debuggable, production-grade runs - especially anywhere iframes and shadow
+        DOM lurk. That matches <a href="https://www.stagehand.dev/">Stagehand's own advice</a>:
+        "agent for exploration, individual primitives for critical paths."
+      </p>
+
+      <div class="callout">
+        <strong>The real bet:</strong> Stagehand doesn't eliminate the reliability problem - it
+        relocates it. Instead of trusting selectors to stay valid forever, you trust a model to
+        re-derive them when they break, and you let the cache decide how often you pay for that
+        trust.
+      </div>
+
+      <p>
+        Which brings us back to that Tuesday night. With a hardcoded selector, the renamed
+        button was a silent outage and a Thursday post-mortem. With an instruction, it's a
+        cache miss: one extra model call, a healed cache, a log line you read later with your
+        coffee. The stagehand moves the props between scenes, and the show goes on.
+      </p>
+    </section>
+
+    <footer class="article-footer">
+      <p><strong>References:</strong>
+        <a href="https://github.com/browserbase/stagehand">browserbase/stagehand</a> on GitHub (MIT),
+        the <a href="https://docs.stagehand.dev/v3/first-steps/introduction">Stagehand v3 documentation</a>,
+        Browserbase's <a href="https://www.browserbase.com/blog/stagehand-v3">"Launching Stagehand v3"</a> and
+        <a href="https://www.browserbase.com/blog/stagehand-playwright-evolution-browser-automation">"Why we're graduating from Playwright"</a> (October 2025),
+        and Scrapfly's <a href="https://scrapfly.io/blog/posts/stagehand-vs-browser-use">Stagehand vs Browser Use comparison</a>.
+      </p>
+      <p>
+        Built by <a href="https://github.com/analyticalmonk">analyticalmonk</a>, inspired by
+        <a href="https://distill.pub">distill.pub</a>. Star counts and download figures reflect
+        the sources as of July 2026. All five figures are illustrative simulations, not recorded
+        benchmark data.
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+// ========== Shared utility ==========
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.width;
+  const cssH = canvas.height;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: cssW, h: cssH };
+}
+
+function easeInOut(k) { return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; }
+function lerp(a, b, k) { return a + (b - a) * k; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+// Draws a mac-style browser chrome; returns the content area rect.
+function drawChrome(ctx, x, y, w, h, url) {
+  ctx.fillStyle = '#fff';
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#F1F3F5';
+  ctx.beginPath(); ctx.roundRect(x, y, w, 24, [8, 8, 0, 0]); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+  ctx.beginPath(); ctx.moveTo(x, y + 24); ctx.lineTo(x + w, y + 24); ctx.stroke();
+  const dots = ['#FC5753', '#FDBC40', '#33C748'];
+  dots.forEach((c, i) => {
+    ctx.fillStyle = c;
+    ctx.beginPath(); ctx.arc(x + 14 + i * 12, y + 12, 3.5, 0, Math.PI * 2); ctx.fill();
+  });
+  if (url) {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.roundRect(x + 54, y + 5, w - 68, 14, 7); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.font = '8px "JetBrains Mono", monospace';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(url, x + 62, y + 12.5);
+  }
+  return { cx: x, cy: y + 24, cw: w, ch: h - 24 };
+}
+
+function drawCursor(ctx, x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = '#1F2937';
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(0, 15); ctx.lineTo(3.6, 11.6);
+  ctx.lineTo(6.2, 16.8); ctx.lineTo(8.6, 15.6); ctx.lineTo(6, 10.6);
+  ctx.lineTo(11, 10.2); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+// ========== Figure 1: Ship a Redesign ==========
+(function() {
+  const init = initCanvas('canvas-redesign');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+  const P = 14;
+  const panelW = (w - P * 3) / 2;
+  const panelH = 300;
+
+  let state = {
+    layout: 1,        // 1 = original, 2 = redesigned
+    running: false,
+    runT: 0,          // seconds since run started
+    ranOnLayout: 0,   // which layout the last run executed against
+  };
+
+  // Button geometry inside a panel's content area (relative coords)
+  function buyButtonRect(layout, cx, cy, cw) {
+    if (layout === 1) {
+      // v1: green-ish button bottom-right of the product card
+      return { x: cx + cw - 128, y: cy + 176, w: 104, h: 30, label: 'Buy now', cls: '.btn--buy', color: '#0D9488' };
+    }
+    // v2: full-width purple CTA in a bottom bar
+    return { x: cx + 18, y: cy + 222, w: cw - 36, h: 34, label: 'Purchase', cls: '.purchase-cta', color: '#7C3AED' };
+  }
+
+  function drawStore(x, y, layout) {
+    const { cx, cy, cw, ch } = drawChrome(ctx, x, y, panelW, panelH, 'shopco.example');
+    // header
+    ctx.fillStyle = layout === 1 ? '#111827' : '#4C1D95';
+    ctx.fillRect(cx, cy, cw, 30);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('SHOPCO', cx + 14, cy + 15);
+    ctx.font = '9px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(layout === 1 ? 'Cart (0)' : 'Bag (0)', cx + cw - 14, cy + 15);
+    ctx.textAlign = 'left';
+
+    if (layout === 1) {
+      // v1: card with image on top
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.beginPath(); ctx.roundRect(cx + 24, cy + 46, cw - 48, 170, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#E0F2FE';
+      ctx.beginPath(); ctx.roundRect(cx + 36, cy + 58, cw - 72, 70, 4); ctx.fill();
+      ctx.fillStyle = '#7DD3FC';
+      ctx.beginPath(); ctx.arc(cx + cw / 2, cy + 93, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.fillText('Aria Headphones', cx + 36, cy + 146);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillText('$89.00', cx + 36, cy + 164);
+    } else {
+      // v2: wide horizontal card, price pill top-right, CTA bar at bottom
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.beginPath(); ctx.roundRect(cx + 18, cy + 44, cw - 36, 118, 10); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#EDE9FE';
+      ctx.beginPath(); ctx.roundRect(cx + 30, cy + 56, 92, 94, 8); ctx.fill();
+      ctx.fillStyle = '#C4B5FD';
+      ctx.beginPath(); ctx.arc(cx + 76, cy + 103, 26, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      ctx.fillText('Aria Headphones', cx + 136, cy + 78);
+      ctx.fillStyle = '#6D28D9';
+      ctx.font = 'bold 12px -apple-system, sans-serif';
+      ctx.fillText('$89.00', cx + 136, cy + 100);
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillText('Free shipping - in stock', cx + 136, cy + 120);
+      // bottom bar
+      ctx.fillStyle = '#F5F3FF';
+      ctx.fillRect(cx, cy + ch - 62, cw, 62);
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.beginPath(); ctx.moveTo(cx, cy + ch - 62); ctx.lineTo(cx + cw, cy + ch - 62); ctx.stroke();
+    }
+
+    // buy button
+    const b = buyButtonRect(layout, cx, cy, cw);
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 6); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b.label, b.x + b.w / 2, b.y + b.h / 2);
+    // class label
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.font = '8px "JetBrains Mono", monospace';
+    ctx.fillText(b.cls, b.x + b.w / 2, b.y + b.h + 9);
+    ctx.textAlign = 'left';
+    return { content: { cx, cy, cw, ch }, btn: b };
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    const leftX = P, rightX = P * 2 + panelW, topY = 34;
+
+    // panel titles
+    ctx.font = 'bold 10px -apple-system, sans-serif';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.textAlign = 'left';
+    ctx.fillText('HARDCODED SELECTOR', leftX + 2, 22);
+    ctx.fillStyle = '#0E7490';
+    ctx.fillText('STAGEHAND INSTRUCTION', rightX + 2, 22);
+
+    const left = drawStore(leftX, topY, state.layout);
+    const right = drawStore(rightX, topY, state.layout);
+
+    // code lines under panels
+    ctx.font = '10.5px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillText("page.click('.btn--buy')", leftX + 2, topY + panelH + 20);
+    ctx.fillText('act("click the buy button")', rightX + 2, topY + panelH + 20);
+
+    // status lines (filled during run)
+    const statusY = topY + panelH + 42;
+    ctx.font = '10px -apple-system, sans-serif';
+
+    if (state.running || state.runT > 0) {
+      const t = state.runT;
+      // LEFT: cursor heads to the v1 button position regardless of layout
+      const lTarget = buyButtonRect(1, left.content.cx, left.content.cy, left.content.cw);
+      const lStart = { x: left.content.cx + 30, y: left.content.cy + left.content.ch - 20 };
+      const lMove = clamp(t / 1.2, 0, 1);
+      const lx = lerp(lStart.x, lTarget.x + lTarget.w / 2, easeInOut(lMove));
+      const ly = lerp(lStart.y, lTarget.y + lTarget.h / 2, easeInOut(lMove));
+
+      if (lMove >= 1) {
+        if (state.ranOnLayout === 1) {
+          // success ring
+          ctx.strokeStyle = '#059669';
+          ctx.lineWidth = 2.5;
+          const ringT = clamp((t - 1.2) / 0.4, 0, 1);
+          ctx.globalAlpha = 1 - ringT * 0.5;
+          ctx.beginPath();
+          ctx.arc(lTarget.x + lTarget.w / 2, lTarget.y + lTarget.h / 2, 10 + ringT * 14, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#059669';
+          ctx.fillText('✓ clicked .btn--buy', leftX + 2, statusY);
+        } else {
+          // failure: X at the empty spot where the v1 button used to be
+          ctx.strokeStyle = '#DC2626';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(lx - 8, ly - 8); ctx.lineTo(lx + 8, ly + 8);
+          ctx.moveTo(lx + 8, ly - 8); ctx.lineTo(lx - 8, ly + 8);
+          ctx.stroke();
+          ctx.fillStyle = '#DC2626';
+          if (t > 1.7) {
+            ctx.fillText('✕ TimeoutError: no element matches .btn--buy', leftX + 2, statusY);
+          }
+        }
+      }
+      if (lMove < 1) drawCursor(ctx, lx, ly);
+
+      // RIGHT: resolve phase (0-0.8s), then move to the *current* button
+      const rTarget = right.btn;
+      const rStart = { x: right.content.cx + 30, y: right.content.cy + right.content.ch - 20 };
+      if (t < 0.8) {
+        // scanning shimmer
+        const scanY = right.content.cy + (t / 0.8) * right.content.ch;
+        const grad = ctx.createLinearGradient(0, scanY - 14, 0, scanY + 14);
+        grad.addColorStop(0, 'rgba(8,145,178,0)');
+        grad.addColorStop(0.5, 'rgba(8,145,178,0.18)');
+        grad.addColorStop(1, 'rgba(8,145,178,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(right.content.cx, scanY - 14, right.content.cw, 28);
+        ctx.fillStyle = '#0E7490';
+        ctx.fillText('resolving instruction against page…', rightX + 2, statusY);
+      } else {
+        const rMove = clamp((t - 0.8) / 1.0, 0, 1);
+        const rx = lerp(rStart.x, rTarget.x + rTarget.w / 2, easeInOut(rMove));
+        const ry = lerp(rStart.y, rTarget.y + rTarget.h / 2, easeInOut(rMove));
+        if (rMove >= 1) {
+          ctx.strokeStyle = '#059669';
+          ctx.lineWidth = 2.5;
+          const ringT = clamp((t - 1.8) / 0.4, 0, 1);
+          ctx.globalAlpha = 1 - ringT * 0.5;
+          ctx.beginPath();
+          ctx.arc(rTarget.x + rTarget.w / 2, rTarget.y + rTarget.h / 2, 10 + ringT * 14, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#059669';
+          const cls = state.ranOnLayout === 1 ? '.btn--buy' : '.purchase-cta';
+          ctx.fillText('✓ resolved → clicked ' + cls, rightX + 2, statusY);
+        } else {
+          drawCursor(ctx, rx, ry);
+          ctx.fillStyle = '#0E7490';
+          ctx.fillText('resolved → moving to target…', rightX + 2, statusY);
+        }
+      }
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillText('idle - press "Run both scripts"', leftX + 2, statusY);
+      ctx.fillText('idle', rightX + 2, statusY);
+    }
+
+    document.getElementById('redesign-info').textContent = 'Layout: v' + state.layout;
+  }
+
+  let last = null;
+  function loop(ts) {
+    if (last === null) last = ts;
+    const dt = (ts - last) / 1000;
+    last = ts;
+    if (state.running) {
+      state.runT += dt;
+      if (state.runT > 2.6) state.running = false;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('redesign-run').addEventListener('click', () => {
+    state.running = true;
+    state.runT = 0.0001;
+    state.ranOnLayout = state.layout;
+  });
+  document.getElementById('redesign-toggle').addEventListener('click', (e) => {
+    state.layout = state.layout === 1 ? 2 : 1;
+    e.target.textContent = state.layout === 1 ? 'Ship redesign' : 'Revert redesign';
+    state.running = false; state.runT = 0;
+  });
+  document.getElementById('redesign-reset').addEventListener('click', () => {
+    state = { layout: 1, running: false, runT: 0, ranOnLayout: 0 };
+    document.getElementById('redesign-toggle').textContent = 'Ship redesign';
+  });
+
+  requestAnimationFrame(loop);
+})();
+
+// ========== Figure 2: The Verbs, Live ==========
+(function() {
+  const init = initCanvas('canvas-verbs');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+  const VERBS = ['act', 'extract', 'observe', 'agent'];
+  const COLORS = {
+    act:     { main: '#D97706', light: '#FEF3C7' },
+    extract: { main: '#059669', light: '#ECFDF5' },
+    observe: { main: '#7C3AED', light: '#F5F0FF' },
+    agent:   { main: '#DB2777', light: '#FDF2F8' },
+  };
+  const DUR = { act: 5, extract: 6, observe: 6.5, agent: 8.5 };
+  const CODE = {
+    act: ['await stagehand.act(', '  "add the Aria headphones to cart")'],
+    extract: ['await stagehand.extract("product info",', '  z.object({ name, price, inStock }))'],
+    observe: ['const actions = await stagehand', '  .observe("find actionable elements")'],
+    agent: ['await stagehand.agent()', '  .execute("add the cheapest item to cart")'],
+  };
+  let current = 0;
+  let t = 0;
+
+  const pageX = 14, pageY = 14, pageW = 420, pageH = 340;
+  const sideX = 450, sideW = w - sideX - 14;
+
+  // element geometry (computed against content area)
+  function els(c) {
+    return {
+      search: { x: c.cx + 16, y: c.cy + 42, w: 190, h: 24 },
+      cartLink: { x: c.cx + c.cw - 84, y: c.cy + 42, w: 68, h: 24 },
+      card1: { x: c.cx + 16, y: c.cy + 84, w: 186, h: 190, name: 'Aria Headphones', price: '$89.00', img: '#7DD3FC', imgbg: '#E0F2FE' },
+      card2: { x: c.cx + 218, y: c.cy + 84, w: 186, h: 190, name: 'Volt Earbuds', price: '$59.00', img: '#FCA5A5', imgbg: '#FEE2E2' },
+    };
+  }
+  function addBtn(card) { return { x: card.x + 12, y: card.y + 148, w: card.w - 24, h: 28 }; }
+
+  function drawPage(cartCount, searchText) {
+    const c = drawChrome(ctx, pageX, pageY, pageW, pageH, 'shopco.example/catalog');
+    const e = els(c);
+    // top bar
+    ctx.fillStyle = '#111827';
+    ctx.fillRect(c.cx, c.cy, c.cw, 28);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('SHOPCO', c.cx + 14, c.cy + 14);
+    // search box
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath(); ctx.roundRect(e.search.x, e.search.y, e.search.w, e.search.h, 5); ctx.fill(); ctx.stroke();
+    ctx.font = '10px -apple-system, sans-serif';
+    if (searchText) {
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.fillText(searchText, e.search.x + 8, e.search.y + 12);
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.fillText('Search products…', e.search.x + 8, e.search.y + 12);
+    }
+    // cart link
+    ctx.fillStyle = '#F3F4F6';
+    ctx.beginPath(); ctx.roundRect(e.cartLink.x, e.cartLink.y, e.cartLink.w, e.cartLink.h, 5); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillText('Cart (' + cartCount + ')', e.cartLink.x + 10, e.cartLink.y + 12);
+    // cards
+    [e.card1, e.card2].forEach(card => {
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.beginPath(); ctx.roundRect(card.x, card.y, card.w, card.h, 6); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = card.imgbg;
+      ctx.beginPath(); ctx.roundRect(card.x + 12, card.y + 12, card.w - 24, 72, 4); ctx.fill();
+      ctx.fillStyle = card.img;
+      ctx.beginPath(); ctx.arc(card.x + card.w / 2, card.y + 48, 20, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.78)';
+      ctx.font = 'bold 11px -apple-system, sans-serif';
+      ctx.fillText(card.name, card.x + 12, card.y + 100);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillText(card.price, card.x + 12, card.y + 120);
+      const b = addBtn(card);
+      ctx.fillStyle = '#0D9488';
+      ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 5); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Add to cart', b.x + b.w / 2, b.y + b.h / 2);
+      ctx.textAlign = 'left';
+    });
+    return { c, e };
+  }
+
+  function drawSidePanel(verb) {
+    const col = COLORS[verb];
+    // code header
+    ctx.fillStyle = '#2C2C2C';
+    ctx.beginPath(); ctx.roundRect(sideX, pageY, sideW, 64, 6); ctx.fill();
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = col.main;
+    ctx.fillText(CODE[verb][0], sideX + 12, pageY + 24);
+    ctx.fillStyle = '#C3E88D';
+    ctx.fillText(CODE[verb][1], sideX + 12, pageY + 42);
+    // output area
+    ctx.fillStyle = col.light;
+    ctx.strokeStyle = col.main + '40';
+    ctx.beginPath(); ctx.roundRect(sideX, pageY + 76, sideW, pageH - 76, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = col.main;
+    ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.fillText('RETURNED TO YOUR CODE', sideX + 12, pageY + 92);
+    return { ox: sideX + 12, oy: pageY + 108 };
+  }
+
+  function typeLines(lines, startT, x, y, color, lineH) {
+    ctx.font = '9px "JetBrains Mono", monospace';
+    ctx.fillStyle = color;
+    let shown = Math.max(0, (t - startT) * 60); // chars
+    for (let i = 0; i < lines.length; i++) {
+      if (shown <= 0) break;
+      const line = lines[i];
+      ctx.fillText(line.slice(0, Math.floor(shown)), x, y + i * lineH);
+      shown -= line.length;
+    }
+  }
+
+  function rippleAt(x, y, startT, color) {
+    if (t < startT || t > startT + 0.6) return;
+    const k = (t - startT) / 0.6;
+    ctx.strokeStyle = color;
+    ctx.globalAlpha = 1 - k;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(x, y, 8 + k * 20, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function cursorTo(from, to, startT, dur) {
+    const k = clamp((t - startT) / dur, 0, 1);
+    const x = lerp(from.x, to.x, easeInOut(k));
+    const y = lerp(from.y, to.y, easeInOut(k));
+    if (t >= startT && k < 1.15) drawCursor(ctx, x, y);
+    return k;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+    const verb = VERBS[current];
+    const col = COLORS[verb];
+
+    if (verb === 'act') {
+      const cart = t > 2.6 ? 1 : 0;
+      const { e } = drawPage(cart, '');
+      const out = drawSidePanel(verb);
+      const b = addBtn(e.card1);
+      const target = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      cursorTo({ x: pageX + 60, y: pageY + pageH - 30 }, target, 0.6, 1.6);
+      rippleAt(target.x, target.y, 2.3, col.main);
+      typeLines([
+        '{',
+        '  success: true,',
+        '  action: "click",',
+        '  xpath: "/html/../button[1]"',
+        '}',
+      ], 2.8, out.ox, out.oy + 8, '#92400E', 14);
+    }
+
+    if (verb === 'extract') {
+      const { e } = drawPage(0, '');
+      const out = drawSidePanel(verb);
+      // sequential dashed highlights on card1 fields
+      const fields = [
+        { x: e.card1.x + 8, y: e.card1.y + 90, w: e.card1.w - 16, h: 18, at: 0.6 },
+        { x: e.card1.x + 8, y: e.card1.y + 110, w: 70, h: 16, at: 1.4 },
+        { x: e.card1.x + 8, y: e.card1.y + 8, w: e.card1.w - 16, h: 80, at: 2.2 },
+      ];
+      ctx.setLineDash([4, 3]);
+      fields.forEach(f => {
+        if (t > f.at) {
+          ctx.strokeStyle = col.main;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(f.x, f.y, f.w, f.h);
+        }
+      });
+      ctx.setLineDash([]);
+      typeLines([
+        '{',
+        '  name: "Aria Headphones",',
+        '  price: 89,',
+        '  inStock: true',
+        '}  // validated by Zod',
+      ], 2.8, out.ox, out.oy + 8, '#065F46', 14);
+    }
+
+    if (verb === 'observe') {
+      const { e } = drawPage(0, '');
+      const out = drawSidePanel(verb);
+      const b1 = addBtn(e.card1), b2 = addBtn(e.card2);
+      const badges = [
+        { x: e.search.x + e.search.w - 10, y: e.search.y + 2, at: 0.6 },
+        { x: e.cartLink.x + e.cartLink.w - 10, y: e.cartLink.y + 2, at: 1.1 },
+        { x: b1.x + b1.w - 10, y: b1.y + 2, at: 1.6 },
+        { x: b2.x + b2.w - 10, y: b2.y + 2, at: 2.1 },
+      ];
+      badges.forEach((bd, i) => {
+        if (t > bd.at) {
+          const pop = clamp((t - bd.at) / 0.25, 0, 1);
+          const r = 9 * (0.5 + 0.5 * pop);
+          ctx.fillStyle = col.main;
+          ctx.beginPath(); ctx.arc(bd.x, bd.y, r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px -apple-system, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(String(i + 1), bd.x, bd.y + 0.5);
+          ctx.textAlign = 'left';
+        }
+      });
+      typeLines([
+        '[',
+        ' {1: input "Search products"},',
+        ' {2: link "Cart"},',
+        ' {3: button "Add to cart (Aria)"},',
+        ' {4: button "Add to cart (Volt)"}',
+        ']  // nothing clicked yet',
+      ], 2.6, out.ox, out.oy + 8, '#5B21B6', 14);
+    }
+
+    if (verb === 'agent') {
+      // steps: 1) scan prices 2) pick cheapest 3) click add (card2) 4) done
+      const searchText = '';
+      const cart = t > 5.4 ? 1 : 0;
+      const { e } = drawPage(cart, searchText);
+      const out = drawSidePanel(verb);
+      // step 1: price badges
+      if (t > 0.8 && t < 3.2) {
+        ctx.setLineDash([4, 3]);
+        ctx.strokeStyle = col.main;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(e.card1.x + 8, e.card1.y + 110, 70, 16);
+        ctx.strokeRect(e.card2.x + 8, e.card2.y + 110, 70, 16);
+        ctx.setLineDash([]);
+      }
+      // step 2: winner ring on card2 price
+      if (t > 2.4) {
+        ctx.strokeStyle = col.main;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(e.card2.x + 4, e.card2.y + 4, e.card2.w - 8, e.card2.h - 8);
+      }
+      // step 3: cursor to card2 add button
+      const b2 = addBtn(e.card2);
+      const target = { x: b2.x + b2.w / 2, y: b2.y + b2.h / 2 };
+      cursorTo({ x: pageX + 60, y: pageY + pageH - 30 }, target, 3.4, 1.6);
+      rippleAt(target.x, target.y, 5.1, col.main);
+      // step readout
+      const steps = [
+        { at: 0.8, txt: 'step 1: observe - list product prices' },
+        { at: 2.4, txt: 'step 2: reason - Volt $59 < Aria $89' },
+        { at: 3.4, txt: 'step 3: act - click "Add to cart"' },
+        { at: 5.6, txt: 'step 4: verify - cart badge = 1  ✓' },
+      ];
+      ctx.font = '9px "JetBrains Mono", monospace';
+      steps.forEach((s, i) => {
+        if (t > s.at) {
+          ctx.fillStyle = i === steps.length - 1 && t > 5.6 ? '#059669' : '#9D174D';
+          ctx.fillText(s.txt, out.ox, out.oy + 10 + i * 18);
+        }
+      });
+      if (t > 6.4) {
+        ctx.fillStyle = '#9D174D';
+        ctx.fillText('goal reached in 4 steps', out.ox, out.oy + 10 + 4 * 18 + 6);
+      }
+    }
+
+    // progress bar along bottom
+    const dur = DUR[VERBS[current]];
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    ctx.fillRect(pageX, h - 16, w - pageX * 2, 3);
+    ctx.fillStyle = col.main;
+    ctx.fillRect(pageX, h - 16, (w - pageX * 2) * ((t % dur) / dur), 3);
+  }
+
+  let last = null;
+  function loop(ts) {
+    if (last === null) last = ts;
+    const dt = (ts - last) / 1000;
+    last = ts;
+    t += dt;
+    if (t > DUR[VERBS[current]]) t = 0;
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  const tabs = document.querySelectorAll('#verbs-tabs .ctrl-btn');
+  tabs.forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      current = i;
+      t = 0;
+      tabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  tabs[0].classList.add('active');
+  requestAnimationFrame(loop);
+})();
+
+// ========== Figure 3: Inside act() ==========
+(function() {
+  const init = initCanvas('canvas-pipeline');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+  const stages = [
+    { name: 'Instruction', sub: 'your code' },
+    { name: 'Snapshot', sub: 'a11y tree' },
+    { name: 'Inference', sub: 'LLM' },
+    { name: 'Resolution', sub: 'XPath' },
+    { name: 'Action', sub: 'browser' },
+  ];
+  const payloads = [
+    ['act("click the buy button")', '', 'A sentence. No selector, no coordinates -', 'just intent, written for a model to read.'],
+    ['Accessibility tree snapshot: 246 nodes', 'filtered to interactive candidates:', '  button "Buy now"   link "Cart (0)"', '  input "Search products"  link "Support"'],
+    ['Model receives: instruction + candidates', 'Model returns:', '  target: button "Buy now"', '  method: click'],
+    ['ActResult (logged, inspectable, cacheable):', '  success: true', '  xpath: /html/body/main/div[2]/button[1]', '  description: "clicked the buy button"'],
+    ['Deterministic dispatch over CDP.', 'The click that lands is ordinary browser', 'automation - the AI chose the target,', 'code performed the action.  ✓'],
+  ];
+  const boxW = 120, boxH = 58, gap = (w - 40 - boxW * 5) / 4;
+  const boxY = 46;
+
+  let state = { stage: 0, anim: 0, playing: false, playTimer: null };
+
+  function boxX(i) { return 20 + i * (boxW + gap); }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('ONE act() CALL, FIVE STAGES', 20, 26);
+
+    // connectors
+    for (let i = 0; i < 4; i++) {
+      const x1 = boxX(i) + boxW, x2 = boxX(i + 1);
+      const y = boxY + boxH / 2;
+      const done = state.stage > i + 1 || (state.stage === i + 1 && state.anim >= 1);
+      ctx.strokeStyle = done ? '#0891B2' : 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = done ? 2 : 1.5;
+      ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2 - 6, y); ctx.stroke();
+      // arrowhead
+      ctx.fillStyle = done ? '#0891B2' : 'rgba(0,0,0,0.15)';
+      ctx.beginPath();
+      ctx.moveTo(x2 - 6, y - 4); ctx.lineTo(x2, y); ctx.lineTo(x2 - 6, y + 4);
+      ctx.closePath(); ctx.fill();
+      // traveling dot during transition into stage i+1
+      if (state.stage === i + 1 && state.anim < 1) {
+        const dx = lerp(x1, x2 - 6, easeInOut(state.anim));
+        ctx.fillStyle = '#0891B2';
+        ctx.beginPath(); ctx.arc(dx, y, 5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // boxes
+    stages.forEach((s, i) => {
+      const x = boxX(i);
+      const active = state.stage === i && (i === 0 ? true : state.anim >= 1) || (state.stage === i && i === 0);
+      const reached = state.stage > i || (state.stage === i && (i === 0 || state.anim >= 1));
+      ctx.fillStyle = reached ? '#ECFEFF' : '#FAFAFA';
+      ctx.strokeStyle = reached ? '#0891B2' : 'rgba(0,0,0,0.14)';
+      ctx.lineWidth = state.stage === i ? 2 : 1.2;
+      ctx.beginPath(); ctx.roundRect(x, boxY, boxW, boxH, 8); ctx.fill(); ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = reached ? '#0E7490' : 'rgba(0,0,0,0.45)';
+      ctx.font = 'bold 11px -apple-system, sans-serif';
+      ctx.fillText(s.name, x + boxW / 2, boxY + 25);
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillStyle = reached ? 'rgba(14,116,144,0.7)' : 'rgba(0,0,0,0.3)';
+      ctx.fillText(s.sub, x + boxW / 2, boxY + 42);
+      ctx.textAlign = 'left';
+    });
+
+    // payload panel
+    const py = 140;
+    ctx.fillStyle = '#2C2C2C';
+    ctx.beginPath(); ctx.roundRect(20, py, w - 40, h - py - 20, 8); ctx.fill();
+    ctx.font = 'bold 8px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText('PAYLOAD AT THIS STAGE', 36, py + 22);
+    const visible = (state.stage === 0 || state.anim >= 1) ? state.stage : state.stage - 1;
+    const lines = payloads[clamp(visible, 0, 4)];
+    ctx.font = '11px "JetBrains Mono", monospace';
+    lines.forEach((line, i) => {
+      ctx.fillStyle = i === 0 ? '#82AAFF' : '#E0E0E0';
+      ctx.fillText(line, 36, py + 48 + i * 20);
+    });
+
+    document.getElementById('pipeline-info').textContent =
+      'Stage ' + Math.min(visible + 1, 5) + ' of 5';
+  }
+
+  let animTimer = null;
+  function step() {
+    if (state.stage >= 4) {
+      if (state.playing) togglePlay();
+      return;
+    }
+    state.stage += 1;
+    state.anim = 0;
+    if (animTimer) clearInterval(animTimer);
+    animTimer = setInterval(() => {
+      state.anim += 0.08;
+      if (state.anim >= 1) { state.anim = 1; clearInterval(animTimer); animTimer = null; }
+      draw();
+    }, 16);
+  }
+
+  function reset() {
+    if (animTimer) { clearInterval(animTimer); animTimer = null; }
+    if (state.playing) togglePlay();
+    state = { stage: 0, anim: 1, playing: false, playTimer: null };
+    draw();
+  }
+
+  function togglePlay() {
+    const btn = document.getElementById('pipeline-play');
+    if (state.playing) {
+      clearInterval(state.playTimer);
+      state.playing = false;
+      btn.textContent = 'Play';
+    } else {
+      if (state.stage >= 4) { state.stage = 0; state.anim = 1; draw(); }
+      state.playTimer = setInterval(step, 1100);
+      state.playing = true;
+      btn.textContent = 'Pause';
+    }
+  }
+
+  document.getElementById('pipeline-step').addEventListener('click', step);
+  document.getElementById('pipeline-play').addEventListener('click', togglePlay);
+  document.getElementById('pipeline-reset').addEventListener('click', reset);
+  state.anim = 1;
+  draw();
+})();
+
+// ========== Figure 4: The Cache Flywheel ==========
+(function() {
+  const init = initCanvas('canvas-cache');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  const script = { x: 80, y: 96 };
+  const cache  = { x: 330, y: 96 };
+  const llm    = { x: 560, y: 46 };
+  const browser= { x: 560, y: 168 };
+
+  let state = {
+    runs: 0, llmCalls: 0, tokens: 0,
+    cached: false, stale: false,
+    bars: [],           // { latency, type: 'miss'|'hit'|'heal' }
+    anim: null,         // { kind, t } while a run animates
+    displayTokens: 0,
+    lastStatus: '-',
+  };
+
+  function node(x, y, label, sub, color, light) {
+    ctx.fillStyle = light;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(x - 52, y - 26, 104, 52, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, y - 7);
+    ctx.font = '8px "JetBrains Mono", monospace';
+    ctx.fillText(sub, x, y + 10);
+    ctx.textAlign = 'left';
+  }
+
+  function edge(a, b, dash) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1.2;
+    if (dash) ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function dotOn(a, b, k, color) {
+    const x = lerp(a.x, b.x, k), y = lerp(a.y, b.y, k);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Timeline segments for each run type: [from, to, dur, color]
+  function segments(kind) {
+    const A = '#D97706', T = '#0891B2';
+    if (kind === 'miss') return [
+      [script, cache, 0.45, A, 'cache lookup… MISS'],
+      [cache, llm, 0.7, A, 'LLM resolves instruction (tokens +1,240)'],
+      [llm, cache, 0.5, A, 'writing XPath to cache'],
+      [cache, browser, 0.45, A, 'executing action'],
+    ];
+    if (kind === 'hit') return [
+      [script, cache, 0.35, T, 'cache lookup… HIT'],
+      [cache, browser, 0.3, T, 'replaying cached action - no LLM'],
+    ];
+    // heal: stale entry fails once, then re-resolves
+    return [
+      [script, cache, 0.35, A, 'cache lookup… HIT (stale)'],
+      [cache, browser, 0.3, A, 'replaying cached action…'],
+      [browser, browser, 0.55, '#DC2626', '✕ element not found - page changed'],
+      [browser, llm, 0.7, A, 'self-heal: LLM re-resolves (tokens +1,310)'],
+      [llm, cache, 0.5, A, 'cache repaired'],
+      [cache, browser, 0.45, A, 'executing action'],
+    ];
+  }
+
+  function runLatency(kind) {
+    return kind === 'hit' ? 0.4 : kind === 'miss' ? 2.3 : 2.9;
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('RUN THE SAME act() OVER AND OVER', 20, 26);
+
+    edge(script, cache);
+    edge(cache, llm, true);
+    edge(cache, browser);
+    edge(llm, browser, true);
+
+    node(script.x, script.y, 'Your script', 'act("click…")', '#334155', '#F1F5F9');
+    node(cache.x, cache.y, 'Cache', state.cached ? (state.stale ? 'xpath (stale)' : 'xpath stored') : 'empty', state.stale ? '#D97706' : '#0891B2', state.stale ? '#FEF3C7' : '#ECFEFF');
+    node(llm.x, llm.y, 'LLM', 'inference', '#7C3AED', '#F5F0FF');
+    node(browser.x, browser.y, 'Browser', 'CDP', '#059669', '#ECFDF5');
+
+    // last status text
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillText('last run: ' + state.lastStatus, 20, 232);
+
+    // animation
+    if (state.anim) {
+      const segs = segments(state.anim.kind);
+      let acc = 0, active = null, k = 0;
+      for (const s of segs) {
+        if (state.anim.t < acc + s[2]) { active = s; k = (state.anim.t - acc) / s[2]; break; }
+        acc += s[2];
+      }
+      if (active) {
+        const [a, b, , color, label] = active;
+        if (a === b) {
+          // failure flash at browser
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(b.x - 10, b.y - 10); ctx.lineTo(b.x + 10, b.y + 10);
+          ctx.moveTo(b.x + 10, b.y - 10); ctx.lineTo(b.x - 10, b.y + 10);
+          ctx.stroke();
+        } else {
+          dotOn(a, b, easeInOut(clamp(k, 0, 1)), color);
+        }
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.fillText(label, 20, 252);
+      }
+    }
+
+    // token meter
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillText('TOKENS SPENT', 20, 288);
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    ctx.beginPath(); ctx.roundRect(110, 279, 250, 10, 5); ctx.fill();
+    const tokenK = clamp(state.displayTokens / 8000, 0, 1);
+    if (tokenK > 0) {
+      ctx.fillStyle = '#7C3AED';
+      ctx.beginPath(); ctx.roundRect(110, 279, Math.max(6, 250 * tokenK), 10, 5); ctx.fill();
+    }
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillText(Math.round(state.displayTokens).toLocaleString(), 372, 288);
+
+    // latency bars
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillText('LATENCY PER RUN (s)', 20, 322);
+    const baseY = h - 24, maxH = 62;
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.beginPath(); ctx.moveTo(20, baseY + 0.5); ctx.lineTo(w - 20, baseY + 0.5); ctx.stroke();
+    state.bars.forEach((bar, i) => {
+      const bx = 26 + i * 26;
+      if (bx > w - 40) return;
+      const bh = (bar.latency / 3) * maxH;
+      ctx.fillStyle = bar.type === 'hit' ? '#0891B2' : bar.type === 'miss' ? '#D97706' : '#DC2626';
+      ctx.beginPath(); ctx.roundRect(bx, baseY - bh, 16, bh, 2); ctx.fill();
+      ctx.font = '8px "JetBrains Mono", monospace';
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.textAlign = 'center';
+      ctx.fillText(bar.latency.toFixed(1), bx + 8, baseY - bh - 5);
+      ctx.textAlign = 'left';
+    });
+
+    document.getElementById('cache-info').textContent =
+      'Runs: ' + state.runs + ' · LLM calls: ' + state.llmCalls + ' · Tokens: ' + Math.round(state.displayTokens).toLocaleString();
+  }
+
+  let last = null;
+  function loop(ts) {
+    if (last === null) last = ts;
+    const dt = (ts - last) / 1000;
+    last = ts;
+    // ease token meter toward target
+    state.displayTokens += (state.tokens - state.displayTokens) * Math.min(1, dt * 4);
+    if (state.anim) {
+      state.anim.t += dt;
+      const total = segments(state.anim.kind).reduce((s, seg) => s + seg[2], 0);
+      if (state.anim.t >= total) {
+        const kind = state.anim.kind;
+        state.anim = null;
+        state.bars.push({ latency: runLatency(kind), type: kind });
+        state.lastStatus = kind === 'hit' ? 'cacheStatus: "HIT" · 0.4s · 0 tokens'
+          : kind === 'miss' ? 'cacheStatus: "MISS" · 2.3s · 1,240 tokens'
+          : 'stale → self-healed · 2.9s · 1,310 tokens';
+      }
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('cache-run').addEventListener('click', () => {
+    if (state.anim) return;
+    state.runs += 1;
+    let kind;
+    if (!state.cached) { kind = 'miss'; state.cached = true; state.llmCalls += 1; state.tokens += 1240; }
+    else if (state.stale) { kind = 'heal'; state.stale = false; state.llmCalls += 1; state.tokens += 1310; }
+    else kind = 'hit';
+    state.anim = { kind, t: 0 };
+  });
+  document.getElementById('cache-redesign').addEventListener('click', () => {
+    if (state.cached) state.stale = true;
+  });
+  document.getElementById('cache-reset').addEventListener('click', () => {
+    state = { runs: 0, llmCalls: 0, tokens: 0, cached: false, stale: false, bars: [], anim: null, displayTokens: 0, lastStatus: '-' };
+  });
+
+  requestAnimationFrame(loop);
+})();
+
+// ========== Figure 5: Cutting Out the Middleman ==========
+(function() {
+  const init = initCanvas('canvas-cdp');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  const laneA = { y: 96,  script: 100, mid: 360, browser: 620 };
+  const laneB = { y: 268, script: 100, browser: 620 };
+
+  // v2 cycle: script->pw (0.35) + checks pause (0.5) + pw->browser (0.35) + browser->pw (0.35) + pw->script (0.35) = 1.9
+  const A_SEGS = [
+    { from: 'script', to: 'mid', dur: 0.35 },
+    { from: 'pause', to: 'pause', dur: 0.5 },
+    { from: 'mid', to: 'browser', dur: 0.35 },
+    { from: 'browser', to: 'mid', dur: 0.35 },
+    { from: 'mid', to: 'script', dur: 0.35 },
+  ];
+  const A_TOTAL = A_SEGS.reduce((s, x) => s + x.dur, 0);
+  // v3 cycle: script->browser (0.5) + browser->script (0.45) = 0.95
+  const B_TOTAL = 0.95;
+
+  let state = { t: 0, playing: true, aCount: 0, bCount: 0 };
+
+  function box(x, y, label, sub, color, light) {
+    ctx.fillStyle = light;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.roundRect(x - 55, y - 24, 110, 48, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold 10.5px -apple-system, sans-serif';
+    ctx.fillText(label, x, y - 5);
+    ctx.font = '8px "JetBrains Mono", monospace';
+    ctx.fillText(sub, x, y + 11);
+    ctx.textAlign = 'left';
+  }
+
+  function wire(x1, x2, y) {
+    ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(x1 + 55, y); ctx.lineTo(x2 - 55, y); ctx.stroke();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = 'bold 9px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillText('STAGEHAND v1-v2 · THROUGH PLAYWRIGHT', 45, 40);
+    ctx.fillText('STAGEHAND v3 · DIRECT CDP', 45, 212);
+
+    // lane A
+    wire(laneA.script, laneA.mid, laneA.y);
+    wire(laneA.mid, laneA.browser, laneA.y);
+    box(laneA.script, laneA.y, 'Your script', 'act()', '#334155', '#F1F5F9');
+    box(laneA.mid, laneA.y, 'Playwright', 'server + checks', '#D97706', '#FEF3C7');
+    box(laneA.browser, laneA.y, 'Browser', '', '#059669', '#ECFDF5');
+
+    // lane B
+    wire(laneB.script, laneB.browser, laneB.y);
+    box(laneB.script, laneB.y, 'Your script', 'act()', '#334155', '#F1F5F9');
+    box(laneB.browser, laneB.y, 'Browser', 'CDP websocket', '#059669', '#ECFDF5');
+
+    // lane A message dot
+    const ta = state.t % A_TOTAL;
+    let acc = 0;
+    for (const seg of A_SEGS) {
+      if (ta < acc + seg.dur) {
+        const k = (ta - acc) / seg.dur;
+        if (seg.from === 'pause') {
+          // spinner at playwright box
+          const cx2 = laneA.mid, cy2 = laneA.y - 34;
+          ctx.strokeStyle = '#D97706';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(cx2, cy2, 7, k * Math.PI * 4, k * Math.PI * 4 + Math.PI * 1.2);
+          ctx.stroke();
+          ctx.font = '8px "JetBrains Mono", monospace';
+          ctx.fillStyle = '#B45309';
+          ctx.textAlign = 'center';
+          ctx.fillText('actionability checks…', cx2, cy2 - 13);
+          ctx.textAlign = 'left';
+        } else {
+          const xa = { script: laneA.script, mid: laneA.mid, browser: laneA.browser };
+          const x = lerp(xa[seg.from], xa[seg.to], k);
+          ctx.fillStyle = '#D97706';
+          ctx.beginPath(); ctx.arc(x, laneA.y, 5.5, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+        break;
+      }
+      acc += seg.dur;
+    }
+
+    // lane B message dot
+    const tb = state.t % B_TOTAL;
+    let x;
+    if (tb < 0.5) x = lerp(laneB.script, laneB.browser, tb / 0.5);
+    else x = lerp(laneB.browser, laneB.script, (tb - 0.5) / 0.45);
+    ctx.fillStyle = '#0891B2';
+    ctx.beginPath(); ctx.arc(x, laneB.y, 5.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // counters beside lanes
+    ctx.font = 'bold 13px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#B45309';
+    ctx.fillText(state.aCount + ' actions', laneA.browser - 40, laneA.y + 52);
+    ctx.fillStyle = '#0E7490';
+    ctx.fillText(state.bCount + ' actions', laneB.browser - 40, laneB.y + 52);
+
+    document.getElementById('cdp-info').textContent =
+      'v2: ' + state.aCount + ' actions · v3: ' + state.bCount + ' actions';
+  }
+
+  let last = null;
+  function loop(ts) {
+    if (last === null) last = ts;
+    const dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+    if (state.playing) {
+      const prevA = Math.floor(state.t / A_TOTAL);
+      const prevB = Math.floor(state.t / B_TOTAL);
+      state.t += dt;
+      state.aCount += Math.floor(state.t / A_TOTAL) - prevA;
+      state.bCount += Math.floor(state.t / B_TOTAL) - prevB;
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  document.getElementById('cdp-play').addEventListener('click', (e) => {
+    state.playing = !state.playing;
+    e.target.textContent = state.playing ? 'Pause' : 'Play';
+  });
+  document.getElementById('cdp-reset').addEventListener('click', () => {
+    state.t = 0; state.aCount = 0; state.bCount = 0;
+  });
+
+  requestAnimationFrame(loop);
+})();
+
+// ========== Sidebar active highlighting on scroll ==========
+(function() {
+  const links = document.querySelectorAll('.sidebar nav a');
+  const ids = Array.from(links).map(a => a.getAttribute('href').slice(1));
+  const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
+  function update() {
+    let active = sections[0];
+    for (const s of sections) {
+      const rect = s.getBoundingClientRect();
+      if (rect.top < 200) active = s;
+    }
+    if (!active) return;
+    links.forEach(l => l.classList.toggle('active',
+      l.getAttribute('href').slice(1) === active.id));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+</script>
+
+</body>
+</html>
