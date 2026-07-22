@@ -326,7 +326,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
     <div class="sidebar-inner">
       <nav>
         <a href="#intro">Embedding Codex</a>
-        <a href="#ways-in">The ways in</a>
+        <a href="#ways-in">Ways to run and build on Codex</a>
         <a href="#fig-ways-in" class="sub">The ways into Codex</a>
         <a href="#turn">The agent loop</a>
         <a href="#fig-loop" class="sub">One turn, many actions</a>
@@ -361,7 +361,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 
     <!-- ================= SECTION 1: THE WAYS IN ================= -->
     <section id="ways-in">
-      <h2>The ways in</h2>
+      <h2>Ways to run and build on Codex</h2>
       <p>Ask how to run Codex and the honest answer is: it depends who is asking. A developer living in the terminal reaches for the CLI. Someone on a design team opens the VS Code extension instead. An engineering lead points at the desktop app, or at the cloud dashboard where a dozen tasks run unattended overnight. A platform engineer wiring up CI mutters something about <code>codex exec</code>. And if you are folding Codex into your own product, you will hear two more names entirely: the SDK, and something called the app-server. None of these people are wrong. Codex is not one tool with one front door. It is a single agent runtime, exposed through multiple entry points, each shaped for a different kind of user.</p>
 
       <p>Some of those entry points are for people who just want the work done, no protocol required:</p>
@@ -376,10 +376,10 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <p>The others are for people who want to build on Codex, not just click through it:</p>
 
       <ul>
-        <li><code>codex exec</code> turns the CLI into a single scriptable command for CI pipelines and automation, streaming its progress as a line-delimited JSON feed. (The Codex GitHub Action is that same command wearing a CI hat, not a separate interface: it drops into a workflow and runs <code>codex exec</code> headlessly to review a pull request.)</li>
+        <li><strong>codex exec</strong> turns the CLI into a single scriptable command for CI pipelines and automation, streaming its progress as a line-delimited JSON feed. (The Codex GitHub Action is that same command wearing a CI hat, not a separate interface: it drops into a workflow and runs <strong>codex exec</strong> headlessly to review a pull request.)</li>
         <li>The <strong>Codex SDK</strong>, shipped for both Python and TypeScript, runs Codex as a local subprocess - the same <code>codex</code> binary on your own machine, launched and supervised by the SDK - and lets your code start and resume conversations with it, so you can wire Codex into a CI/CD system or build a custom agent host.</li>
-        <li><code>codex app-server</code> sits underneath both the IDE extension and the more capable of the two SDKs. It is the JSON-RPC interface, a lightweight convention for exchanging named method calls and their results as JSON messages, that actually defines what talking to Codex means, and the path to reach for when you need a custom UI, your own approval logic, or a host that is not Node or Python.</li>
-        <li>A separate, explicitly experimental mode, <code>codex mcp-server</code>, exposes Codex as an MCP tool so other agents can call it like any other tool.</li>
+        <li><strong>codex app-server</strong> sits underneath both the IDE extension and the Python SDK. It is the JSON-RPC interface, a lightweight convention for exchanging named method calls and their results as JSON messages, that actually defines what talking to Codex means, and the path to reach for when you need a custom UI, your own approval logic, or a host that is not Node or Python.</li>
+        <li>A separate, explicitly experimental mode, <strong>codex mcp-server</strong>, exposes Codex as an MCP tool so other agents can call it like any other tool.</li>
       </ul>
 
       <p>This article follows two of them all the way down: the app-server and the SDK. The rest each earn their place - <code>codex exec</code> for a one-shot CI run, the GitHub Action for pull-request review, the cloud for work you dispatch and leave, the MCP server for handing Codex to another agent - but the app-server and the SDK are the two you reach for to embed a live, interactive agent, and the two most often mistaken for each other.</p>
@@ -487,21 +487,22 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <p>Run <code>codex app-server</code> and nothing prints. It is waiting for you to talk to it. This is the interface Codex uses to power its rich clients, the VS Code and JetBrains IDE extensions among them: a long-lived process you drive over JSON-RPC, and a first-class embedding path in its own right. Where <code>codex exec</code> hands you exhaust, the app-server hands you a seat inside the loop.</p>
 
       <h3>Opening a connection</h3>
-      <p>By default the app-server speaks over stdio, reading requests on stdin and writing responses and notifications on stdout as newline-delimited JSON. (Other transports exist behind <code>--listen</code>, including an experimental WebSocket, but stdio is the path the official clients use.) The protocol is JSON-RPC 2.0, close enough to the Model Context Protocol that an MCP client's shape will feel familiar, with the <code>"jsonrpc": "2.0"</code> envelope left off the wire.</p>
-      <p>Every connection opens with a handshake. Your host sends one <code>initialize</code> request carrying its <code>clientInfo</code> (name, title, version); the server replies with its user-agent and details like <code>codexHome</code> and the platform. You then send an <code>initialized</code> notification, and only now will the server accept anything else. Too early a call gets <code>Not initialized</code>; a repeated <code>initialize</code> gets <code>Already initialized</code>. This happens once per connection, not once per request. The whole message schema is self-describing, too: <code>codex app-server generate-ts</code> or <code>generate-json-schema</code> dumps the exact types for the build you are on.</p>
+      <p>By default the app-server speaks over stdio, reading requests on stdin and writing responses and notifications on stdout as newline-delimited JSON. (Other transports exist behind <code>--listen</code>, including an experimental WebSocket, but stdio is the path the official clients use.) The protocol is JSON-RPC 2.0 in shape, close enough to the Model Context Protocol that it will feel familiar if you have written an MCP client. One quirk to know going in: Codex leaves the <code>"jsonrpc": "2.0"</code> version field off each message, so the stream is JSON-RPC in structure rather than to the letter, and a strict off-the-shelf parser may need loosening. You do not have to reverse-engineer the message shapes, either: <code>codex app-server generate-ts</code> emits TypeScript types for every message and <code>generate-json-schema</code> emits the JSON Schema, both pinned to the exact build you have installed, so your host can track the protocol as it changes rather than chase a separate spec.</p>
+      <p>Every connection opens with a handshake. Your host sends one <code>initialize</code> request carrying its <code>clientInfo</code> (name, title, version); the server replies with its user-agent and details like <code>codexHome</code> and the platform. You then send an <code>initialized</code> notification, and only now will the server accept anything else. Too early a call gets <code>Not initialized</code>; a repeated <code>initialize</code> gets <code>Already initialized</code>. This happens once per connection, not once per request.</p>
 
       <h3>Threads, turns, and items</h3>
       <p>Three primitives carry everything after the handshake. A <strong>thread</strong> is a conversation. A <strong>turn</strong> is one round within it, triggered by a user input. An <strong>item</strong> is a single thing the agent produces inside a turn: a reasoning step, a shell command, a file edit, a message. You open a thread with <code>thread/start</code> (or <code>thread/resume</code> to reopen, <code>thread/fork</code> to branch), and the server confirms with <code>thread/started</code>. Threads persist, so a host can disconnect and pick the same conversation back up later by id.</p>
       <p>To make the agent work, send <code>turn/start</code> against a thread id with the user's input. The response returns immediately with <code>status: "inProgress"</code>: accepted, not finished. From here your host stops sending requests and starts reading notifications. The server emits <code>turn/started</code>, then a stream of item events: <code>item/started</code>, item-specific deltas like <code>item/agentMessage/delta</code> as text streams in token by token, and <code>item/completed</code>. Every item follows that same shape, so a host can render progress live instead of waiting for the whole turn. The turn ends with <code>turn/completed</code> and its token usage.</p>
 
       <h3>The approval round-trip</h3>
-      <p>The most important moment in that stream is the one where the server asks <em>you</em> a question. When the agent wants to run a command the approval policy will not wave through, the app-server does not just proceed. It sends your host a request, <code>item/commandExecution/requestApproval</code> (or <code>item/fileChange/requestApproval</code> for an edit), carrying the command, its working directory, and a reason. The turn blocks here: nothing happens until your host replies with a decision, a single payload like <code>{ "decision": "accept" }</code>, or <code>decline</code>, or <code>acceptForSession</code>. Once you answer, the server sends <code>serverRequest/resolved</code> and the item runs to <code>item/completed</code>. This is the whole reason the protocol exists, and the thing <code>codex exec</code> cannot give you: a live seat at the point of decision. The figure below steps through one full turn, approval and all.</p>
+      <p>The most important moment in that stream is the one where the server asks <em>you</em> a question. When the agent wants to run a command the approval policy will not wave through, the app-server does not just proceed. It sends your host a request, <code>item/commandExecution/requestApproval</code> (or <code>item/fileChange/requestApproval</code> for an edit), carrying the command, its working directory, and a reason. The turn blocks here: nothing happens until your host replies with a decision, a single payload like <code>{ "decision": "accept" }</code>, or <code>decline</code>, or <code>acceptForSession</code>. Once you answer, the server sends <code>serverRequest/resolved</code> and the item runs to <code>item/completed</code>. Of everything the app-server gives you that <code>codex exec</code> cannot, live item streaming, resumable threads, a UI you render yourself, this is the sharpest: a live seat at the point of decision. The figure below steps through one full turn, approval and all. Its <em>Host</em> toggle switches who is speaking the protocol: <strong>Custom host</strong> is your own code, sending each request and answering the approval itself, while <strong>Python SDK as host</strong> is that SDK speaking the very same protocol on your behalf, folding the whole exchange into a single call and answering the approval from a fixed policy instead of asking you.</p>
 
       <div class="figure" id="fig-flow">
         <div class="figure-label">Figure 4 - One Turn, Over the Wire</div>
         <div class="figure-controls">
           <button class="ctrl-btn" id="flow-prev">&larr; Back</button>
           <button class="ctrl-btn primary" id="flow-next">Next step &rarr;</button>
+          <button class="ctrl-btn" id="flow-reset">Reset</button>
           <span class="ctrl-label" id="flow-counter">Step 1 / 15</span>
           <span class="ctrl-separator"></span>
           <span class="ctrl-label">Host:</span>
@@ -519,6 +520,12 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
     <section id="sdks">
       <h2>The two SDKs</h2>
       <p>Most of the time you do not want to write a JSON-RPC host by hand. You want to call a function, pass a prompt, and get an answer back. That is what the Codex SDK is: a pre-built host so your code does not have to speak the protocol itself. It ships for both TypeScript and Python, and the two share a surface, start a thread, run a prompt, resume by id, but they are not the same thing underneath, and the difference decides what you can build.</p>
+
+      <div class="defbox">
+        <div class="defbox-title">Which door to pick</div>
+        <p>Reach for an <strong>SDK</strong> when you want a programmatic caller and are content to let a policy handle approvals: a CI job, a batch script, an internal tool that starts a task and reads the result. Prefer the <strong>Python SDK</strong> if you want typed sandboxing and the raw event stream; the <strong>TypeScript SDK</strong> if you are already in Node and want the lightest wrapper.</p>
+        <p>Reach past both to the <strong>app-server</strong> directly the moment you need any of three things: to render the agent's work live, item by item, in your own interface; to put a human in front of each approval decision; or to run on a host that is not Node or Python. Those three needs are exactly what the SDKs fold away, and the rest of this section shows where each one draws the line.</p>
+      </div>
 
       <h3>TypeScript: a wrapper over codex exec</h3>
       <div class="code-block"><span class="kw">import</span> { <span class="type">Codex</span> } <span class="kw">from</span> <span class="str">"@openai/codex-sdk"</span>;
@@ -556,9 +563,6 @@ console.<span class="fn">log</span>(turn.items);</div>
         <div class="figure-caption">The same six questions, asked of each SDK. The TypeScript SDK spawns <code>codex exec</code> and inherits its limits; the Python SDK speaks the app-server protocol directly and exposes far more of it. The last row is the one they share: neither public API lets your code answer an individual approval. A greyed cell is a capability that surface does not give you.</div>
       </div>
 
-      <div class="callout">
-        <p><strong>Which door to pick.</strong> Reach for an <strong>SDK</strong> when you want a programmatic caller and are content to let a policy handle approvals: a CI job, a batch script, an internal tool that starts a task and reads the result. Prefer the <strong>Python SDK</strong> if you want typed sandboxing and the raw event stream; the TypeScript SDK if you are already in Node and want the lightest wrapper. Reach past both to the <strong>app-server</strong> the moment you need any of three things: to render the agent's work live, item by item, in your own interface; to put a human in front of each approval decision; or to run on a host that is not Node or Python. Those three needs are exactly what the SDKs fold away.</p>
-      </div>
     </section>
 
     <!-- ================= SECTION 6: TRAJECTORY ================= -->
@@ -1582,6 +1586,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   document.getElementById('flow-prev').addEventListener('click', () => setStep(state.step - 1));
   document.getElementById('flow-next').addEventListener('click', () => setStep(state.step + 1));
+  document.getElementById('flow-reset').addEventListener('click', () => setStep(0));
 
   // Exposed so the SDK-mode toggle can drive this figure programmatically too.
   window.__messageFlowSetMode = function(mode) {
