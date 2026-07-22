@@ -328,7 +328,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         <a href="#intro">Embedding Codex</a>
         <a href="#ways-in">The ways in</a>
         <a href="#fig-ways-in" class="sub">The ways into Codex</a>
-        <a href="#turn">What a turn really is</a>
+        <a href="#turn">The agent loop</a>
         <a href="#fig-loop" class="sub">One turn, many actions</a>
         <a href="#controls">Two controls</a>
         <a href="#fig-controls" class="sub">Sandbox &times; approval</a>
@@ -409,10 +409,10 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 
     <!-- ================= SECTION 2: WHAT A TURN REALLY IS ================= -->
     <section id="turn">
-      <h2>What a turn really is</h2>
-      <p>Before you can embed Codex, you have to know what you are embedding. Every surface in that map, from the CLI to the cloud, wraps the same thing: an agent loop. Understanding it is what makes the protocol below read as obvious rather than arbitrary.</p>
+      <h2>The agent loop</h2>
+      <p>Before you can embed Codex, you have to know what you are embedding. Every surface in that map, from the CLI to the cloud, wraps the same thing: an agent loop. Once you can picture that loop, the app-server protocol later on stops looking like an arbitrary set of methods: each one maps onto a step of that loop.</p>
 
-      <h3>The agent loop</h3>
+      <h3>What a turn really is</h3>
       <p>A turn is not a single model call. You send one message, and the agent runs an iterative loop: the model reads your request, proposes an action, the runtime carries it out, the result feeds back, and the model decides what to do next. It keeps cycling until it has nothing left to do and emits a final message that ends the turn. A single request like <em>diagnose the failing test and fix it</em> can fan out into many inference calls, shell commands, and file edits along the way. Behind the scenes the loop leans on prefix caching to keep repeated context cheap and compacts history once it grows past a threshold, but the shape is what matters: propose, execute, observe, repeat.</p>
 
       <p>Run the loop below. It plays a single turn as three trips around the cycle. On each lap the model proposes an action, the runtime carries it out, and the result comes back before the next lap starts. After the third lap the model has what it needs, and ends the turn with a final message.</p>
@@ -435,13 +435,13 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <h3>Two thin surfaces over the loop</h3>
       <p>The plain CLI is that loop with a human at the keyboard. Run <code>codex</code> in a terminal and it reads your request, works, and pauses to show you what it is about to do. Drop the interactive part and you get <code>codex exec "&lt;prompt&gt;"</code>: the same loop, headless. No TTY, no prompts, just a run that streams progress to stdout and exits. Add <code>--json</code> and the stream becomes line-delimited events, <code>thread.started</code>, <code>turn.started</code>, <code>item.completed</code>, <code>turn.completed</code>, so a CI job can react to each item as it lands.</p>
 
-      <p>But <code>codex exec</code> gives you a subprocess, not a conversation. You get stdout and an exit code. You cannot answer an approval request mid-run, because the policy is fixed the moment the process launches. You cannot start a thread, keep it open, and steer it as new information arrives. You are outside the loop, reading its exhaust. Becoming a participant in the loop, rather than a reader of its output, is exactly what the app-server is for. But first, the two settings that govern what the loop is even allowed to do.</p>
+      <p>But <code>codex exec</code> gives you a subprocess, not a conversation. You get stdout and an exit code. You cannot answer an approval request mid-run, because the policy is fixed the moment the process launches. You cannot start a thread, keep it open, and steer it as new information arrives. You are outside the loop, reading its exhaust. Becoming a participant in the loop, rather than a reader of its output, is what the app-server, and the SDKs built on top of it, are for. But first, the two settings that govern what the loop is even allowed to do.</p>
     </section>
 
     <!-- ================= SECTION 3: TWO CONTROLS ================= -->
     <section id="controls">
       <h2>Two controls: sandbox and approval</h2>
-      <p>Every surface exposes the same two knobs around the loop, and they are the heart of what embedding Codex means. They are orthogonal: one draws a fence, the other decides when the agent has to knock before crossing it. Confusing them is the most common way to give an agent either too much freedom or too little.</p>
+      <p>Every surface exposes the same two knobs around the loop, and they are the heart of what embedding Codex means. The two are independent. One is a fence around what the agent can touch; the other decides when it has to stop and ask before acting. Mix them up and you give the agent too much freedom or too little.</p>
 
       <div class="epigraph">
         <p>The sandbox defines technical boundaries. The approval policy decides when the agent must stop and ask before crossing them.</p>
@@ -453,6 +453,10 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 
       <h3>The approval policy: when to stop and ask</h3>
       <p>The approval policy is the other axis: given the fence, when must the agent stop and ask you before it crosses? <code>untrusted</code> asks before anything outside a small trusted set of commands. <code>on-request</code> works inside the sandbox freely and asks only to go beyond it, the pragmatic middle. <code>never</code> asks for nothing, so anything the sandbox already forbids simply does not happen. The policy is a dial on how often the loop pauses to hand you a decision, and it means nothing without knowing where the fence is.</p>
+
+      <div class="callout">
+        <p><strong>What the CLI picks for you.</strong> Run <code>codex</code> with no flags in a version-controlled folder and you get its <em>Auto</em> preset: <code>workspace-write</code> paired with <code>on-request</code> approvals. The agent reads, edits, and runs commands inside the workspace on its own, and stops to ask only to touch files outside it or reach the network. Start in a folder that is not under version control and Codex drops the sandbox to <code>read-only</code> instead.</p>
+      </div>
 
       <h3>How they compose</h3>
       <p>Because they are independent, the same action lands differently depending on the pair you pick. Reading a file is always fine. Editing one is free under <code>workspace-write</code> but needs a crossing under <code>read-only</code>. Reaching the network is beyond the fence unless you are at <code>danger-full-access</code>. And whether a crossing prompts you, proceeds, or is quietly refused depends entirely on the approval policy sitting next to it. The grid below lets you set both dials and watch a handful of concrete actions sort themselves into <em>runs</em>, <em>asks first</em>, or <em>blocked</em>.</p>

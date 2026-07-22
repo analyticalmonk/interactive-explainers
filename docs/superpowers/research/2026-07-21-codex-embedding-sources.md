@@ -306,6 +306,14 @@ each such case is flagged inline below.
   `sandbox_workspace_write.writable_roots` config keys are also documented.
   Source: https://learn.chatgpt.com/docs/agent-approvals-security
   and https://learn.chatgpt.com/docs/sandboxing
+- CLI defaults: running `codex` with no flags uses the `Auto` preset, i.e.
+  `--sandbox workspace-write --ask-for-approval on-request` (the agent reads/edits/
+  runs commands inside the workspace on its own, and asks only to edit files outside
+  the workspace or reach the network). On launch Codex detects version control and
+  recommends `Auto` (workspace-write + on-request) for version-controlled folders and
+  `read-only` for non-version-controlled folders. So the default approval policy for
+  the interactive CLI is `on-request` and the default sandbox is `workspace-write`.
+  Source: https://learn.chatgpt.com/docs/agent-approvals-security
 - Sandboxing and approval are explicitly two different, orthogonal controls: "the
   sandbox defines technical boundaries. The approval policy decides when the agent
   must stop and ask before crossing them."
