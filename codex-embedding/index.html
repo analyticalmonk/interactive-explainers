@@ -360,12 +360,12 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
 
       <p>Four of those entry points are for people who just want the work done, no protocol required. The <strong>Codex CLI</strong> is a terminal interface for inspecting code, making changes, and running commands without leaving your shell, with sandbox and approval settings you tune per session. The <strong>IDE extension</strong>, for VS Code and JetBrains, pulls your open files and selections straight into the prompt, lets you review edits in place, and can hand a longer task off to the cloud without breaking your flow. The <strong>desktop app</strong>, folded into the ChatGPT desktop app as of July 9, works like a command center for running several projects or agents at once. <strong>Codex cloud</strong> skips your machine entirely, running tasks in isolated cloud environments you dispatch from the web, GitHub, Linear, or Slack, and check on whenever the result is ready.</p>
 
-      <p>The others exist for people who want to build on Codex, not just click through it. <code>codex exec</code> turns the CLI into a single scriptable command for CI pipelines and automation, streaming its progress as a line-delimited JSON feed. (The Codex GitHub Action is that same command wearing a CI hat, not a separate interface: it drops into a workflow and runs <code>codex exec</code> headlessly to review a pull request.) The <strong>Codex SDK</strong>, shipped for both Python and TypeScript, lets your own code start and resume conversations with a local Codex agent, so you can wire it into a CI/CD system or build a custom agent host. <code>codex app-server</code> sits underneath both the IDE extension and the more capable of the two SDKs. It is the JSON-RPC interface that actually defines what talking to Codex means, the path to reach for when you need a custom UI, your own approval logic, or a host that is not Node or Python. A separate, explicitly experimental mode, <code>codex mcp-server</code>, exposes Codex as an MCP tool so other agents can call it like any other tool.</p>
+      <p>The others exist for people who want to build on Codex, not just click through it. <code>codex exec</code> turns the CLI into a single scriptable command for CI pipelines and automation, streaming its progress as a line-delimited JSON feed. (The Codex GitHub Action is that same command wearing a CI hat, not a separate interface: it drops into a workflow and runs <code>codex exec</code> headlessly to review a pull request.) The <strong>Codex SDK</strong>, shipped for both Python and TypeScript, lets your own code start and resume conversations with a local Codex agent, so you can wire it into a CI/CD system or build a custom agent host. <code>codex app-server</code> sits underneath both the IDE extension and the more capable of the two SDKs. It is the JSON-RPC interface, a lightweight convention for exchanging named method calls and their results as JSON messages, that actually defines what talking to Codex means, and the path to reach for when you need a custom UI, your own approval logic, or a host that is not Node or Python. A separate, explicitly experimental mode, <code>codex mcp-server</code>, exposes Codex as an MCP tool so other agents can call it like any other tool.</p>
 
-      <p>Two of those last four are worth building directly on top of: the app-server and the SDK, and this article is about both. It works from the inside out. First the loop the agent runs on every surface, then the two controls that fence it in, then the app-server protocol that exposes all of it, and finally the SDKs that wrap the protocol, along with why the two are not interchangeable. The map below lays out all nine doors side by side. Pick a use case and watch which entry points actually fit it.</p>
+      <p>This article follows two of them all the way down: the app-server and the SDK. The rest each earn their place - <code>codex exec</code> for a one-shot CI run, the GitHub Action for pull-request review, the cloud for work you dispatch and leave, the MCP server for handing Codex to another agent - but the app-server and the SDK are the two you embed a live, interactive agent with, and the two most often mistaken for each other. It works from the inside out. First the loop the agent runs on every surface, then the two controls that fence it in, then the app-server protocol that exposes all of it, and finally the SDKs that wrap the protocol, along with why the two are not interchangeable. The map below lays out all nine doors side by side. Pick a use case and watch which entry points actually fit it.</p>
 
       <div class="figure" id="fig-ways-in">
-        <div class="figure-label">Figure 1 &mdash; The Ways Into Codex</div>
+        <div class="figure-label">Figure 1 - The Ways Into Codex</div>
         <div class="figure-controls">
           <span class="ctrl-label">Use case:</span>
           <button class="ctrl-btn usecase-btn active" data-usecase="daily-coding">Daily coding</button>
@@ -393,10 +393,10 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <h3>The agent loop</h3>
       <p>A turn is not a single model call. You send one message, and the agent runs an iterative loop: the model reads your request, proposes an action, the runtime carries it out, the result feeds back, and the model decides what to do next. It keeps cycling until it has nothing left to do and emits a final message that ends the turn. A single request like <em>diagnose the failing test and fix it</em> can fan out into many inference calls, shell commands, and file edits along the way. Behind the scenes the loop leans on prefix caching to keep repeated context cheap and compacts history once it grows past a threshold, but the shape is what matters: propose, execute, observe, repeat.</p>
 
-      <p>Run the loop below. It steps through one real-looking turn, three laps around the cycle, watch the model propose an action, the runtime run it, and the result come back before the next lap begins.</p>
+      <p>Run the loop below. It plays a single turn as three trips around the cycle. On each lap the model proposes an action, the runtime carries it out, and the result comes back before the next lap starts. After the third lap the model has what it needs, and ends the turn with a final message.</p>
 
       <div class="figure" id="fig-loop">
-        <div class="figure-label">Figure 2 &mdash; One Turn, Many Actions</div>
+        <div class="figure-label">Figure 2 - One Turn, Many Actions</div>
         <div class="figure-controls">
           <button class="ctrl-btn primary" id="loop-play">Play</button>
           <button class="ctrl-btn" id="loop-step">Step</button>
@@ -436,7 +436,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <p>Because they are independent, the same action lands differently depending on the pair you pick. Reading a file is always fine. Editing one is free under <code>workspace-write</code> but needs a crossing under <code>read-only</code>. Reaching the network is beyond the fence unless you are at <code>danger-full-access</code>. And whether a crossing prompts you, proceeds, or is quietly refused depends entirely on the approval policy sitting next to it. The grid below lets you set both dials and watch a handful of concrete actions sort themselves into <em>runs</em>, <em>asks first</em>, or <em>blocked</em>.</p>
 
       <div class="figure" id="fig-controls">
-        <div class="figure-label">Figure 3 &mdash; Sandbox &times; Approval</div>
+        <div class="figure-label">Figure 3 - Sandbox &times; Approval</div>
         <div class="figure-controls">
           <span class="ctrl-label">Sandbox:</span>
           <button class="ctrl-btn sandbox-btn" data-sandbox="read-only">read-only</button>
@@ -472,7 +472,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <p>The most important moment in that stream is the one where the server asks <em>you</em> a question. When the agent wants to run a command the approval policy will not wave through, the app-server does not just proceed. It sends your host a request, <code>item/commandExecution/requestApproval</code> (or <code>item/fileChange/requestApproval</code> for an edit), carrying the command, its working directory, and a reason. The turn blocks here: nothing happens until your host replies with a decision, a single payload like <code>{ "decision": "accept" }</code>, or <code>decline</code>, or <code>acceptForSession</code>. Once you answer, the server sends <code>serverRequest/resolved</code> and the item runs to <code>item/completed</code>. This is the whole reason the protocol exists, and the thing <code>codex exec</code> cannot give you: a live seat at the point of decision. The figure below steps through one full turn, approval and all.</p>
 
       <div class="figure" id="fig-flow">
-        <div class="figure-label">Figure 4 &mdash; One Turn, Over the Wire</div>
+        <div class="figure-label">Figure 4 - One Turn, Over the Wire</div>
         <div class="figure-controls">
           <button class="ctrl-btn" id="flow-prev">&larr; Back</button>
           <button class="ctrl-btn primary" id="flow-next">Next step &rarr;</button>
@@ -485,7 +485,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         <div class="figure-canvas-wrap">
           <canvas id="canvas-message-flow" width="720" height="440"></canvas>
         </div>
-        <div class="figure-caption">One full app-server turn between <strong>your host</strong>, the <strong>app-server</strong>, and the <strong>agent core</strong>. Step through it: requests the host sends are solid, the server's notifications are dotted, and the amber <strong>approval round-trip</strong> is where the turn blocks until your host answers. Switch the host to the Python SDK and watch how much of the exchange it swallows into a single call. The names are the app-server's own JSON-RPC methods.</div>
+        <div class="figure-caption">One full app-server turn between <strong>your host</strong>, the <strong>app-server</strong>, and the <strong>agent core</strong>. Step through it: requests the host sends are solid, the server's notifications are dotted, and the amber <strong>approval round-trip</strong> is where the turn blocks until your host answers. Switch the host to the Python SDK and the same turn collapses into one <code>thread.run()</code> call: every message greys out, and the amber approval is answered by policy instead of by you. That greyed-out approval is the whole difference between holding the protocol and letting an SDK hold it. The names are the app-server's own JSON-RPC methods.</div>
       </div>
     </section>
 
@@ -514,11 +514,11 @@ console.<span class="fn">log</span>(turn.items);</div>
     <span class="fn">print</span>(result.final_response)</div>
       <p>The Python SDK is a different animal. Its <code>CodexClient</code> describes itself as a JSON-RPC client for <code>codex app-server</code> over stdio, and its <code>start()</code> spawns exactly that. This is the real protocol, wrapped. It gives you a first-class <code>Sandbox</code> enum (<code>read_only</code>, <code>workspace_write</code>, <code>full_access</code>), an <code>ApprovalMode</code>, and, through <code>thread.turn(...)</code> and its <code>.stream()</code>, the raw protocol notifications rather than the coarser <code>codex exec</code> events. When the figure above is in Python-SDK mode, this is the SDK it means: the one whose <code>thread.run()</code> collapses the entire exchange, the handshake, the turn, the streaming items, into one blocking call that returns a <code>TurnResult</code>.</p>
 
-      <h3>What both give up</h3>
-      <p>That collapse is the tradeoff. Both SDKs absorb the connection lifecycle, the message correlation, and the version pinning you would otherwise own. What they absorb includes the one message you might most want to hold: neither SDK's public API lets your code answer an individual approval request. The Python SDK auto-answers from a fixed <code>ApprovalMode</code> policy; the TypeScript SDK never sees an approval event at all. Toggle the figure below between the two and watch what each one hides. That greying-out is the SDK doing its job. But if your product needs to sit in the middle of that stream, render each item live, or put a real human in front of the approval decision, that hidden row is exactly what you are giving up, and the app-server, direct, is the door back to it.</p>
+      <h3>When an SDK is enough, and when it is not</h3>
+      <p>That collapse is the tradeoff, and it is worth being precise about, because it is what tells you which door to pick. Both SDKs absorb the connection lifecycle, the message correlation, and the version pinning you would otherwise own. What they also absorb is the one message you might most want to hold: neither SDK's public API lets your code answer an individual approval request. The Python SDK auto-answers from a fixed <code>ApprovalMode</code> policy; the TypeScript SDK never sees an approval event at all. Toggle the figure below between the two and watch the approval row: with the app-server it is yours to answer, and under the SDK it greys out, decided without you.</p>
 
       <div class="figure" id="fig-sdks">
-        <div class="figure-label">Figure 5 &mdash; Same Surface, Different Depths</div>
+        <div class="figure-label">Figure 5 - Same Surface, Different Depths</div>
         <div class="figure-controls">
           <span class="ctrl-label">SDK:</span>
           <button class="ctrl-btn sdk-btn active" data-sdk="ts">TypeScript</button>
@@ -531,7 +531,7 @@ console.<span class="fn">log</span>(turn.items);</div>
       </div>
 
       <div class="callout">
-        <p><strong>The rule of thumb:</strong> if you need a quick programmatic caller, take an SDK, the Python one if you want typed sandboxing and real streaming. The moment you need to render the stream yourself or put a human in front of an approval, you have outgrown both SDKs and want the app-server directly.</p>
+        <p><strong>Which door to pick.</strong> Reach for an <strong>SDK</strong> when you want a programmatic caller and are content to let a policy handle approvals: a CI job, a batch script, an internal tool that starts a task and reads the result. Prefer the <strong>Python SDK</strong> if you want typed sandboxing and the raw event stream; the TypeScript SDK if you are already in Node and want the lightest wrapper. Reach past both to the <strong>app-server</strong> the moment you need any of three things: to render the agent's work live, item by item, in your own interface; to put a human in front of each approval decision; or to run on a host that is not Node or Python. Those three needs are exactly what the SDKs fold away.</p>
       </div>
     </section>
 
@@ -1051,17 +1051,24 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       ctx.fillStyle = isActive ? 'rgba(15,118,110,0.75)' : 'rgba(0,0,0,0.34)';
       let sub = n.sub;
       if (key === 'action' && !finalShown()) sub = LAPS[lapIdx].action.replace(/\s+/g, ' ');
-      if (key === 'runtime') sub = 'workspace-write';
+      if (key === 'runtime') sub = 'sandbox';
       ctx.fillText(sub, n.cx, b.y + 40);
     });
 
-    // traveling pulse
-    if (state.t < 1) {
+    // traveling pulse (loop edges only; the final step is an output, not a lap)
+    if (state.t < 1 && cur.edge !== 'final') {
       const p = pointOnPath(EDGES[cur.edge], easeInOut(state.t));
       ctx.fillStyle = '#0D9488';
       ctx.beginPath(); ctx.arc(p[0], p[1], 5.5, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(13,148,136,0.25)'; ctx.lineWidth = 6;
       ctx.beginPath(); ctx.arc(p[0], p[1], 5.5, 0, Math.PI * 2); ctx.stroke();
+    }
+    // final step: the model emits its result - a ripple from the Model box, not a lap
+    if (cur.edge === 'final' && state.t < 1) {
+      const c = NODES.model.cx, cyc = boxTop + boxH / 2;
+      ctx.strokeStyle = 'rgba(5,150,105,' + (0.45 * (1 - state.t)).toFixed(3) + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(c, cyc, lerp(28, 66, easeInOut(state.t)), 0, Math.PI * 2); ctx.stroke();
     }
 
     // transcript panel
@@ -1088,10 +1095,17 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
       ly += 24;
     }
     if (finalShown()) {
-      ctx.fillStyle = '#0D9488';
-      ctx.fillText('✓ final message', 58, ly);
+      const by = ly - 6;
+      ctx.fillStyle = 'rgba(13,148,136,0.16)';
+      ctx.beginPath(); ctx.roundRect(50, by, w - 100, 34, 6); ctx.fill();
+      ctx.strokeStyle = 'rgba(94,234,212,0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(50, by, w - 100, 34, 6); ctx.stroke();
+      ctx.fillStyle = '#5EEAD4';
+      ctx.font = 'bold 8px ' + "-apple-system, sans-serif";
+      ctx.fillText('◆ FINAL MESSAGE  ·  ENDS THE TURN', 60, by + 13);
       ctx.fillStyle = '#E8E4DC';
-      ctx.fillText(FINAL, 200, ly);
+      ctx.font = '11.5px "JetBrains Mono", monospace';
+      ctx.fillText(FINAL, 60, by + 26);
     }
 
     const info = document.getElementById('loop-info');
@@ -1112,7 +1126,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
   function step() {
     if (state.step >= STEPS.length - 1 && state.t >= 1) { if (state.playing) togglePlay(); return; }
-    if (state.t < 1) return; // let current animation finish
+    // a click mid-animation snaps the current lap done, then advances
+    if (state.animTimer) { clearInterval(state.animTimer); state.animTimer = null; state.t = 1; }
     state.step += 1;
     animateStep();
   }
@@ -1447,7 +1462,8 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
       // The labelled host <-> app-server arrow
       let alpha, color;
-      if (absorbed) { color = 'rgba(160,160,168,'; alpha = isCur ? '0.9)' : '0.5)'; }
+      if (absorbed && s.sdkNote) { color = 'rgba(180,83,9,'; alpha = isCur ? '0.95)' : '0.6)'; }
+      else if (absorbed) { color = 'rgba(160,160,168,'; alpha = isCur ? '0.9)' : '0.5)'; }
       else { color = null; alpha = isCur ? 1 : 0.4; }
       ctx.strokeStyle = absorbed ? color + alpha : k.color;
       ctx.fillStyle = absorbed ? color + alpha : k.color;
@@ -1509,19 +1525,26 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     // Note area below the diagram
     const noteY = rowY(STEPS.length - 1) + 30;
     ctx.fillStyle = 'rgba(0,0,0,0.04)';
-    roundRect(20, noteY - 6, w - 40, 66, 8);
+    roundRect(20, noteY - 6, w - 40, 80, 8);
     ctx.fill();
-    ctx.font = '600 10px "JetBrains Mono", monospace';
-    ctx.fillStyle = cur.kind === 'approval' ? '#B45309' : '#0F766E';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('Step ' + (state.step + 1) + '  -  ' + cur.label, 34, noteY + 2);
-    ctx.font = '400 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    // persistent contrast: driving the protocol yourself vs letting the SDK do it
+    ctx.font = '600 9.5px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = sdk ? 'rgba(37,99,235,0.9)' : '#0F766E';
+    const banner = sdk
+      ? 'PYTHON SDK: thread.run() runs all of this as one call. You see none of it, and answer no approval.'
+      : 'APP-SERVER DIRECT: your host sends and receives every message below, and answers the approval itself.';
+    ctx.fillText(banner, 34, noteY + 2);
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = cur.kind === 'approval' ? '#B45309' : '#0F766E';
+    ctx.fillText('Step ' + (state.step + 1) + '  -  ' + cur.label, 34, noteY + 20);
+    ctx.font = '400 10.5px -apple-system, BlinkMacSystemFont, sans-serif';
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     let noteText = cur.note;
     if (sdk && cur.sdkNote) noteText = cur.sdkNote;
     const noteLines = wrap(noteText, w - 60);
-    noteLines.slice(0, 3).forEach((line, i) => ctx.fillText(line, 34, noteY + 20 + i * 14));
+    noteLines.slice(0, 2).forEach((line, i) => ctx.fillText(line, 34, noteY + 36 + i * 14));
   }
 
   function setStep(i) {
@@ -1637,7 +1660,7 @@ function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     ctx.font = '11px ' + "-apple-system, sans-serif";
     ctx.fillStyle = 'rgba(120,53,15,0.95)';
-    ctx.fillText('Answer one specific approval request from your code?  Neither public API can — that seat belongs to the app-server.', 56, by + 15);
+    ctx.fillText('Answer one specific approval request from your code?  Neither public API can - that seat belongs to the app-server.', 56, by + 15);
   }
 
   function setSdk(sdk) {
