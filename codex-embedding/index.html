@@ -336,7 +336,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         <a href="#fig-flow" class="sub">One turn, over the wire</a>
         <a href="#sdks">The two SDKs</a>
         <a href="#fig-sdks" class="sub">Same surface, different depths</a>
-        <a href="#trajectory">Where the runtime is heading</a>
+        <a href="#conclusion">One runtime, one protocol</a>
       </nav>
     </div>
   </aside>
@@ -356,13 +356,15 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         talking to Codex means, and why the TypeScript and Python SDKs are not
         the same thing underneath.
       </p>
-      <div class="meta">July 2026 &middot; 14 min read &middot; 5 figures</div>
+      <div class="meta">July 2026 &middot; 17 min read &middot; 5 interactive figures</div>
     </header>
 
     <!-- ================= SECTION 1: THE WAYS IN ================= -->
     <section id="ways-in">
       <h2>Ways to run and build on Codex</h2>
-      <p>Ask how to run Codex and the honest answer is: it depends who is asking. A developer living in the terminal reaches for the CLI. Someone on a design team opens the VS Code extension instead. An engineering lead points at the desktop app, or at the cloud dashboard where a dozen tasks run unattended overnight. A platform engineer wiring up CI mutters something about <code>codex exec</code>. And if you are folding Codex into your own product, you will hear two more names entirely: the SDK, and something called the app-server. None of these people are wrong. Codex is not one tool with one front door. It is a single agent runtime, exposed through multiple entry points, each shaped for a different kind of user.</p>
+      <p>Ask how to run Codex and the honest answer is: it depends who is asking. A developer living in the terminal reaches for the CLI. Someone on a design team opens the VS Code extension instead. An engineering lead points at the desktop app, or at the cloud dashboard where a dozen tasks run unattended overnight. A platform engineer wiring up CI mutters something about <code>codex exec</code>. And if you are folding Codex into your own product, you will hear two more names entirely: the SDK, and something called the app-server.</p>
+
+      <p>None of these people are wrong. Codex is not one tool with one front door. It is a single agent runtime, exposed through multiple entry points, each shaped for a different kind of user.</p>
 
       <p>Some of those entry points are for people who just want the work done, no protocol required:</p>
 
@@ -413,7 +415,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <p>Before you can embed Codex, you have to know what you are embedding. Every surface in that map, from the CLI to the cloud, wraps the same thing: an agent loop. Once you can picture that loop, the app-server protocol later on stops looking like an arbitrary set of methods: each one maps onto a step of that loop.</p>
 
       <h3>What a turn really is</h3>
-      <p>A turn is not a single model call. You send one message, and the agent runs an iterative loop: the model reads your request, proposes an action, the runtime carries it out, the result feeds back, and the model decides what to do next. It keeps cycling until it has nothing left to do and emits a final message that ends the turn. A single request like <em>diagnose the failing test and fix it</em> can fan out into many inference calls, shell commands, and file edits along the way. Behind the scenes the loop leans on prefix caching to keep repeated context cheap and compacts history once it grows past a threshold, but the shape is what matters: propose, execute, observe, repeat.</p>
+      <p>A turn is not a single model call. You send one message, and the agent runs an iterative loop: the model reads your request, proposes an action, the runtime carries it out, the result feeds back, and the model decides what to do next. It keeps cycling until it has nothing left to do and emits a final message that ends the turn. A single request like <em>diagnose the failing test and fix it</em> can fan out into many inference calls, shell commands, and file edits along the way. Behind the scenes the loop leans on prefix caching to keep repeated context cheap and compacts history once it grows past a threshold, but the pattern is what matters: propose, execute, observe, repeat.</p>
 
       <p>Run the loop below. It plays a single turn as three trips around the cycle. On each lap the model proposes an action, the runtime carries it out, and the result comes back before the next lap starts. After the third lap the model has what it needs, and ends the turn with a final message.</p>
 
@@ -487,12 +489,13 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <p>Run <code>codex app-server</code> and nothing prints. It is waiting for you to talk to it. This is the interface Codex uses to power its rich clients, the VS Code and JetBrains IDE extensions among them: a long-lived process you drive over JSON-RPC, and a first-class embedding path in its own right. Where <code>codex exec</code> hands you exhaust, the app-server hands you a seat inside the loop.</p>
 
       <h3>Opening a connection</h3>
-      <p>By default the app-server speaks over stdio, reading requests on stdin and writing responses and notifications on stdout as newline-delimited JSON. (Other transports exist behind <code>--listen</code>, including an experimental WebSocket, but stdio is the path the official clients use.) The protocol is JSON-RPC 2.0 in shape, close enough to the Model Context Protocol that it will feel familiar if you have written an MCP client. One quirk to know going in: Codex leaves the <code>"jsonrpc": "2.0"</code> version field off each message, so the stream is JSON-RPC in structure rather than to the letter, and a strict off-the-shelf parser may need loosening. You do not have to reverse-engineer the message shapes, either: <code>codex app-server generate-ts</code> emits TypeScript types for every message and <code>generate-json-schema</code> emits the JSON Schema, both pinned to the exact build you have installed, so your host can track the protocol as it changes rather than chase a separate spec.</p>
+      <p>By default the app-server speaks over stdio, reading requests on stdin and writing responses and notifications on stdout as newline-delimited JSON. (Other transports exist behind <code>--listen</code>, including an experimental WebSocket, but stdio is the path the official clients use.) The protocol is JSON-RPC 2.0 in shape, close enough to the Model Context Protocol that it will feel familiar if you have written an MCP client.</p>
+      <p>One quirk to know going in: Codex leaves the <code>"jsonrpc": "2.0"</code> version field off each message, so the stream is JSON-RPC in structure rather than to the letter, and a strict off-the-shelf parser may need loosening. You do not have to reverse-engineer the message shapes, either: <code>codex app-server generate-ts</code> emits TypeScript types for every message and <code>generate-json-schema</code> emits the JSON Schema, both pinned to the exact build you have installed, so your host can track the protocol as it changes rather than chase a separate spec.</p>
       <p>Every connection opens with a handshake. Your host sends one <code>initialize</code> request carrying its <code>clientInfo</code> (name, title, version); the server replies with its user-agent and details like <code>codexHome</code> and the platform. You then send an <code>initialized</code> notification, and only now will the server accept anything else. Too early a call gets <code>Not initialized</code>; a repeated <code>initialize</code> gets <code>Already initialized</code>. This happens once per connection, not once per request.</p>
 
       <h3>Threads, turns, and items</h3>
       <p>Three primitives carry everything after the handshake. A <strong>thread</strong> is a conversation. A <strong>turn</strong> is one round within it, triggered by a user input. An <strong>item</strong> is a single thing the agent produces inside a turn: a reasoning step, a shell command, a file edit, a message. You open a thread with <code>thread/start</code> (or <code>thread/resume</code> to reopen, <code>thread/fork</code> to branch), and the server confirms with <code>thread/started</code>. Threads persist, so a host can disconnect and pick the same conversation back up later by id.</p>
-      <p>To make the agent work, send <code>turn/start</code> against a thread id with the user's input. The response returns immediately with <code>status: "inProgress"</code>: accepted, not finished. From here your host stops sending requests and starts reading notifications. The server emits <code>turn/started</code>, then a stream of item events: <code>item/started</code>, item-specific deltas like <code>item/agentMessage/delta</code> as text streams in token by token, and <code>item/completed</code>. Every item follows that same shape, so a host can render progress live instead of waiting for the whole turn. The turn ends with <code>turn/completed</code> and its token usage.</p>
+      <p>To make the agent work, send <code>turn/start</code> against a thread id with the user's input. The response returns immediately with <code>status: "inProgress"</code>: accepted, not finished. From here your host stops sending requests and starts reading notifications. The server emits <code>turn/started</code>, then a stream of item events: <code>item/started</code>, item-specific deltas like <code>item/agentMessage/delta</code> as text streams in token by token, and <code>item/completed</code>. Every item follows that same sequence, so a host can render progress live instead of waiting for the whole turn. The turn ends with <code>turn/completed</code> and its token usage.</p>
 
       <h3>The approval round-trip</h3>
       <p>The most important moment in that stream is the one where the server asks <em>you</em> a question. When the agent wants to run a command the approval policy will not wave through, the app-server does not just proceed. It sends your host a request, <code>item/commandExecution/requestApproval</code> (or <code>item/fileChange/requestApproval</code> for an edit), carrying the command, its working directory, and a reason. The turn blocks here: nothing happens until your host replies with a decision, a single payload like <code>{ "decision": "accept" }</code>, or <code>decline</code>, or <code>acceptForSession</code>. Once you answer, the server sends <code>serverRequest/resolved</code> and the item runs to <code>item/completed</code>. Of everything the app-server gives you that <code>codex exec</code> cannot, live item streaming, resumable threads, a UI you render yourself, this is the sharpest: a live seat at the point of decision. The figure below steps through one full turn, approval and all. Its <em>Host</em> toggle switches who is speaking the protocol: <strong>Custom host</strong> is your own code, sending each request and answering the approval itself, while <strong>Python SDK as host</strong> is that SDK speaking the very same protocol on your behalf, folding the whole exchange into a single call and answering the approval from a fixed policy instead of asking you.</p>
@@ -512,7 +515,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         <div class="figure-canvas-wrap">
           <canvas id="canvas-message-flow" width="720" height="440"></canvas>
         </div>
-        <div class="figure-caption">One full app-server turn between <strong>your host</strong>, the <strong>app-server</strong>, and the <strong>agent core</strong>. Step through it: requests the host sends are solid, the server's notifications are dotted, and the amber <strong>approval round-trip</strong> is where the turn blocks until your host answers. Switch the host to the Python SDK and the same turn collapses into one <code>thread.run()</code> call: every message greys out, and the amber approval is answered by policy instead of by you. That greyed-out approval is the whole difference between holding the protocol and letting an SDK hold it. The names are the app-server's own JSON-RPC methods.</div>
+        <div class="figure-caption">One full app-server turn between <strong>your host</strong>, the <strong>app-server</strong>, and the <strong>agent core</strong>. Step through it: the amber <strong>approval round-trip</strong> is where the turn blocks until your host answers - and flipping the host to the Python SDK is what decides who answers. The names are the app-server's own JSON-RPC methods.</div>
       </div>
     </section>
 
@@ -548,7 +551,7 @@ console.<span class="fn">log</span>(turn.items);</div>
       <p>The Python SDK is a different animal. Its <code>CodexClient</code> describes itself as a JSON-RPC client for <code>codex app-server</code> over stdio, and its <code>start()</code> spawns exactly that. This is the real protocol, wrapped. It gives you a first-class <code>Sandbox</code> enum (<code>read_only</code>, <code>workspace_write</code>, <code>full_access</code>), an <code>ApprovalMode</code>, and, through <code>thread.turn(...)</code> and its <code>.stream()</code>, the raw protocol notifications rather than the coarser <code>codex exec</code> events. When the figure above is in Python-SDK mode, this is the SDK it means: the one whose <code>thread.run()</code> collapses the entire exchange, the handshake, the turn, the streaming items, into one blocking call that returns a <code>TurnResult</code>.</p>
 
       <h3>When an SDK is enough, and when it is not</h3>
-      <p>That collapse is the tradeoff, and it is worth being precise about, because it is what tells you which door to pick. Both SDKs absorb the connection lifecycle, the message correlation, and the version pinning you would otherwise own. What they also absorb is the one message you might most want to hold: neither SDK's public API lets your code answer an individual approval request. The Python SDK auto-answers from a fixed <code>ApprovalMode</code> policy; the TypeScript SDK never sees an approval event at all. Toggle the figure below between the two and watch the approval row: with the app-server it is yours to answer, and under the SDK it greys out, decided without you.</p>
+      <p>That collapse is the tradeoff, and it is worth being precise about, because it is what tells you which door to pick. Both SDKs absorb the connection lifecycle, the message correlation, and the version pinning you would otherwise own. What they also absorb is the one message you might most want to hold: neither SDK's public API lets your code answer an individual approval request. The Python SDK auto-answers from a fixed <code>ApprovalMode</code> policy; the TypeScript SDK never sees an approval event at all.</p>
 
       <div class="figure" id="fig-sdks">
         <div class="figure-label">Figure 5 - Same Surface, Different Depths</div>
@@ -560,19 +563,21 @@ console.<span class="fn">log</span>(turn.items);</div>
         <div class="figure-canvas-wrap">
           <canvas id="canvas-sdk" width="720" height="430"></canvas>
         </div>
-        <div class="figure-caption">The same six questions, asked of each SDK. The TypeScript SDK spawns <code>codex exec</code> and inherits its limits; the Python SDK speaks the app-server protocol directly and exposes far more of it. The last row is the one they share: neither public API lets your code answer an individual approval. A greyed cell is a capability that surface does not give you.</div>
+        <div class="figure-caption">The same six questions, asked of each SDK. The TypeScript SDK spawns <code>codex exec</code> and inherits its limits; the Python SDK speaks the app-server protocol directly and exposes far more of it. The last row, approval, is the limit they share. A greyed cell is a capability that surface does not give you.</div>
       </div>
 
     </section>
 
-    <!-- ================= SECTION 6: TRAJECTORY ================= -->
-    <section id="trajectory">
-      <h2>Where the runtime is heading</h2>
-      <p>Everything so far assumes the agent runs where your host runs: the app-server is a local process, the SDK spawns a local binary, the sandbox is your filesystem. Codex cloud is the counterpart to that assumption. It runs coding tasks in isolated, parallel cloud environments you dispatch from the web, GitHub, Linear, or Slack, then check on when the result is ready, instead of tying up a machine you have to keep open. Same agent, different address.</p>
+    <!-- ================= SECTION 6: CONCLUSION ================= -->
+    <section id="conclusion">
+      <h2>One runtime, one protocol</h2>
+      <p>Step back from the protocol details and the idea is simple. Codex is not one tool with one front door; it is a single agent runtime behind many of them - CLI, IDE, desktop, cloud, and the two you build on. This whole article has been about those two. The SDK is the convenience: a pre-built client that resolves the approval for you. The app-server is the thing itself: the raw protocol where that decision stays yours.</p>
 
-      <p>In June 2026 OpenAI moved to make that address a first-class place to build. It announced it would acquire Ona, formerly Gitpod, for its secure cloud execution technology. In OpenAI's own words, the goal is to help Codex &ldquo;take on longer-running work, even when laptops are closed, and help more organizations deploy agents securely in production.&rdquo; Ona describes what it brings as customer-controlled cloud environments with reproducible setups, scoped credentials, audit trails, agent orchestration, and automatic checkpointing, roughly every ten minutes, so a long task survives a dropped connection or a closed laptop.</p>
+      <div class="callout">
+        <p><strong>Where the runtime is heading.</strong> In June 2026 OpenAI moved to make the cloud a first-class place to build, announcing it would acquire Ona (formerly Gitpod) for its secure cloud execution technology: persistent, checkpointed environments that let Codex &ldquo;take on longer-running work, even when laptops are closed.&rdquo; What moves is <em>where</em> the agent executes, not how your code talks to it.</p>
+      </div>
 
-      <p>For anyone embedding Codex, the reassuring part is what does not change. The thread and turn model, the item stream, the approval round-trip, the app-server and SDK surfaces you have just seen, these are the interface. What the runtime work moves is <em>where</em> the agent executes, from a process tied to one open laptop toward customer-controlled, persistent, checkpointed environments that keep working while you are gone. The protocol is the stable thing. Learn it once, at the app-server, and the same mental model carries whether the agent is running in your terminal, behind your SDK call, or in a cloud environment you never had to keep awake.</p>
+      <p>The interface, though, is the constant. The thread and turn model, the item stream, the approval round-trip stay put whether the agent runs on your laptop or in a datacenter you never see. Learn the protocol once, at the app-server, and that same mental model carries whether the agent is running in your terminal, behind your SDK call, or in a cloud environment you never had to keep awake.</p>
     </section>
 
     <footer class="article-footer">
