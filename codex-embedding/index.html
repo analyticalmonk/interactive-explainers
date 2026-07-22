@@ -77,6 +77,10 @@ h3 {
   margin-bottom: 0.75rem;
 }
 p { margin-bottom: 1.25rem; }
+ul { margin: 0 0 1.25rem 0; padding-left: 0.5rem; list-style: none; }
+ul li { position: relative; margin-bottom: 0.55rem; padding-left: 1.1rem; line-height: 1.6; }
+ul li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+ul li:last-child { margin-bottom: 0; }
 .lead { font-size: 1.13rem; font-weight: 300; color: var(--text-secondary); line-height: 1.7; }
 .meta {
   font-family: var(--font-sans);
@@ -138,7 +142,8 @@ code { font-family: var(--font-mono); font-size: 0.82em; background: var(--bg-co
 .sidebar nav a.sub { padding-left: 1.6rem; font-size: 0.67rem; }
 .content { flex: 1; max-width: var(--content-width); min-width: 0; padding-bottom: 6rem; }
 
-.article-header { padding-top: 5rem; margin-bottom: 3rem; }
+.article-header { padding-top: 5rem; margin-bottom: 2rem; }
+.article-header + section > h2 { margin-top: 2rem; }
 .article-header .overline {
   font-family: var(--font-sans);
   font-size: 0.72rem;
@@ -344,8 +349,9 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
       <p class="lead">
         Codex is not one tool with one front door. Under the CLI, the IDE
         extensions, and the cloud sits a single agent you can drive yourself,
-        over a JSON-RPC app-server or through an SDK built on top of it. This is
-        a tour of the two programmatic doors: the loop the agent actually runs,
+        and there are two ways to do it: the <strong>app-server</strong>, a
+        JSON-RPC protocol you speak directly, and the <strong>SDK</strong> built
+        on top of it. This is a tour of both: the loop the agent actually runs,
         the two controls that keep it in bounds, the protocol that defines what
         talking to Codex means, and why the TypeScript and Python SDKs are not
         the same thing underneath.
@@ -356,13 +362,29 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
     <!-- ================= SECTION 1: THE WAYS IN ================= -->
     <section id="ways-in">
       <h2>The ways in</h2>
-      <p>Ask how to run Codex and the honest answer is: it depends who is asking. A developer living in the terminal reaches for the CLI. Someone on a design team opens the VS Code extension instead. An engineering lead might point at the desktop app, or at the cloud dashboard where a dozen tasks run unattended overnight. A platform engineer wiring up CI mutters something about <code>codex exec</code>. And if you are trying to fold Codex into your own product, you will hear two more names entirely: the SDK, and something called the app-server. None of these people are wrong. Codex is not one tool with one front door. It is a single agent runtime, exposed through nine different entry points, each shaped for a different kind of user.</p>
+      <p>Ask how to run Codex and the honest answer is: it depends who is asking. A developer living in the terminal reaches for the CLI. Someone on a design team opens the VS Code extension instead. An engineering lead points at the desktop app, or at the cloud dashboard where a dozen tasks run unattended overnight. A platform engineer wiring up CI mutters something about <code>codex exec</code>. And if you are folding Codex into your own product, you will hear two more names entirely: the SDK, and something called the app-server. None of these people are wrong. Codex is not one tool with one front door. It is a single agent runtime, exposed through multiple entry points, each shaped for a different kind of user.</p>
 
-      <p>Four of those entry points are for people who just want the work done, no protocol required. The <strong>Codex CLI</strong> is a terminal interface for inspecting code, making changes, and running commands without leaving your shell, with sandbox and approval settings you tune per session. The <strong>IDE extension</strong>, for VS Code and JetBrains, pulls your open files and selections straight into the prompt, lets you review edits in place, and can hand a longer task off to the cloud without breaking your flow. The <strong>desktop app</strong>, folded into the ChatGPT desktop app as of July 9, works like a command center for running several projects or agents at once. <strong>Codex cloud</strong> skips your machine entirely, running tasks in isolated cloud environments you dispatch from the web, GitHub, Linear, or Slack, and check on whenever the result is ready.</p>
+      <p>Some of those entry points are for people who just want the work done, no protocol required:</p>
 
-      <p>The others exist for people who want to build on Codex, not just click through it. <code>codex exec</code> turns the CLI into a single scriptable command for CI pipelines and automation, streaming its progress as a line-delimited JSON feed. (The Codex GitHub Action is that same command wearing a CI hat, not a separate interface: it drops into a workflow and runs <code>codex exec</code> headlessly to review a pull request.) The <strong>Codex SDK</strong>, shipped for both Python and TypeScript, lets your own code start and resume conversations with a local Codex agent, so you can wire it into a CI/CD system or build a custom agent host. <code>codex app-server</code> sits underneath both the IDE extension and the more capable of the two SDKs. It is the JSON-RPC interface, a lightweight convention for exchanging named method calls and their results as JSON messages, that actually defines what talking to Codex means, and the path to reach for when you need a custom UI, your own approval logic, or a host that is not Node or Python. A separate, explicitly experimental mode, <code>codex mcp-server</code>, exposes Codex as an MCP tool so other agents can call it like any other tool.</p>
+      <ul>
+        <li>The <strong>Codex CLI</strong> is a terminal interface for inspecting code, making changes, and running commands without leaving your shell, with sandbox and approval settings you tune per session.</li>
+        <li>The <strong>IDE extension</strong>, for VS Code and JetBrains, pulls your open files and selections straight into the prompt, lets you review edits in place, and can hand a longer task off to the cloud without breaking your flow.</li>
+        <li>The <strong>desktop app</strong>, folded into the ChatGPT desktop app as of July 9, works like a command center for running several projects or agents at once.</li>
+        <li><strong>Codex cloud</strong> skips your machine entirely, running tasks in isolated cloud environments you dispatch from the web, GitHub, Linear, or Slack, and check on whenever the result is ready.</li>
+      </ul>
 
-      <p>This article follows two of them all the way down: the app-server and the SDK. The rest each earn their place - <code>codex exec</code> for a one-shot CI run, the GitHub Action for pull-request review, the cloud for work you dispatch and leave, the MCP server for handing Codex to another agent - but the app-server and the SDK are the two you embed a live, interactive agent with, and the two most often mistaken for each other. It works from the inside out. First the loop the agent runs on every surface, then the two controls that fence it in, then the app-server protocol that exposes all of it, and finally the SDKs that wrap the protocol, along with why the two are not interchangeable. The map below lays out all nine doors side by side. Pick a use case and watch which entry points actually fit it.</p>
+      <p>The others are for people who want to build on Codex, not just click through it:</p>
+
+      <ul>
+        <li><code>codex exec</code> turns the CLI into a single scriptable command for CI pipelines and automation, streaming its progress as a line-delimited JSON feed. (The Codex GitHub Action is that same command wearing a CI hat, not a separate interface: it drops into a workflow and runs <code>codex exec</code> headlessly to review a pull request.)</li>
+        <li>The <strong>Codex SDK</strong>, shipped for both Python and TypeScript, runs Codex as a local subprocess - the same <code>codex</code> binary on your own machine, launched and supervised by the SDK - and lets your code start and resume conversations with it, so you can wire Codex into a CI/CD system or build a custom agent host.</li>
+        <li><code>codex app-server</code> sits underneath both the IDE extension and the more capable of the two SDKs. It is the JSON-RPC interface, a lightweight convention for exchanging named method calls and their results as JSON messages, that actually defines what talking to Codex means, and the path to reach for when you need a custom UI, your own approval logic, or a host that is not Node or Python.</li>
+        <li>A separate, explicitly experimental mode, <code>codex mcp-server</code>, exposes Codex as an MCP tool so other agents can call it like any other tool.</li>
+      </ul>
+
+      <p>This article follows two of them all the way down: the app-server and the SDK. The rest each earn their place - <code>codex exec</code> for a one-shot CI run, the GitHub Action for pull-request review, the cloud for work you dispatch and leave, the MCP server for handing Codex to another agent - but the app-server and the SDK are the two you reach for to embed a live, interactive agent, and the two most often mistaken for each other.</p>
+
+      <p>From here the article builds up from the inside: first the loop the agent runs, then the two controls that keep it in bounds, then the app-server protocol, and finally the SDKs that wrap it. The map below lays out every entry point side by side; pick a use case and the doors that fit it light up.</p>
 
       <div class="figure" id="fig-ways-in">
         <div class="figure-label">Figure 1 - The Ways Into Codex</div>
@@ -377,7 +399,7 @@ button.ctrl-btn.primary:hover { opacity: 0.9; }
         <div class="figure-canvas-wrap">
           <canvas id="canvas-decision-map" width="720" height="440"></canvas>
         </div>
-        <div class="figure-caption">Nine entry points in three bands: <strong>interactive</strong> surfaces you drive by hand, <strong>programmatic</strong> ones you build on, and <strong>automation</strong> you fire and forget. Pick a use case and the matching doors highlight. Most use cases fit more than one; the map is about tradeoffs, not a single right answer. Hover any door for what it is.</div>
+        <div class="figure-caption">The entry points in three bands: <strong>interactive</strong> surfaces you drive by hand, <strong>programmatic</strong> ones you build on, and <strong>automation</strong> you fire and forget. Pick a use case and the matching doors highlight. Most use cases fit more than one; the map is about tradeoffs, not a single right answer. Hover any door for what it is.</div>
       </div>
 
       <div class="callout">
