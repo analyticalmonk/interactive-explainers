@@ -6,6 +6,7 @@ Pure HTML/CSS/vanilla JS - no dependencies, no build step, no bundler.
 
 ## Articles
 
+- **[Embedding OpenAI Codex: The App Server and SDKs](codex-embedding/)** - How to embed OpenAI's Codex agent in your own software: the agent loop, the two controls that fence it in, the app-server JSON-RPC protocol, and why the TypeScript and Python SDKs are not the same thing underneath. 5 interactive figures.
 - **[Stagehand: Inside the AI-Driven Browser Automation Framework](stagehand/)** - How Browserbase's Stagehand framework mixes deterministic code with AI-resolved instructions so browser automations survive redesigns. 5 interactive figures.
 - **[Superpowers: The Anatomy of an Agent Skill](superpowers/)** - How the 200k-star Superpowers framework bootstraps itself into every session and what makes one agent skill stick where another gets ignored. 4 interactive figures.
 - **[Artemis II: Why Going Back to the Moon Is a Big Deal](artemis-ii/)** - The first crewed lunar mission in 50+ years. What Artemis II actually did, how Orion works, and why this reshapes the next decade of human spaceflight. 5 interactive figures.

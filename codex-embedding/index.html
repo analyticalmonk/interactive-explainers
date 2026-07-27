@@ -1,0 +1,1725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embedding OpenAI Codex: The App Server and SDKs</title>
+<meta name="description" content="How to embed OpenAI's Codex agent in your own software: the app-server JSON-RPC protocol, the two orthogonal controls, and why the TypeScript and Python SDKs are not the same thing underneath.">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fff;
+  --bg-warm: #F0FDFA;
+  --bg-code: #F0F5F4;
+  --text: rgba(0, 0, 0, 0.82);
+  --text-secondary: rgba(0, 0, 0, 0.56);
+  --text-tertiary: rgba(0, 0, 0, 0.38);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.05);
+
+  /* Codex teal */
+  --accent: #0D9488;
+  --accent-light: #F0FDFA;
+  --accent-border: #99F6E4;
+  --accent-dark: #0F766E;
+  --link: #0F766E;
+
+  /* Wire-message categories, reused by the figures */
+  --req: #0D9488;    --req-light: #F0FDFA;
+  --evt: #6B7280;    --evt-light: #F3F4F6;
+  --ask: #D97706;    --ask-light: #FEF3C7;
+  --block: #B91C1C;  --block-light: #FEF2F2;
+
+  --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  --content-width: 720px;
+  --sidebar-width: 220px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font-serif);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  font-size: 18px;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-size: 2.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+h2 {
+  font-family: var(--font-serif);
+  font-size: 1.65rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 4.5rem;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+h3 {
+  font-family: var(--font-serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+p { margin-bottom: 1.25rem; }
+ul { margin: 0 0 1.25rem 0; padding-left: 0.5rem; list-style: none; }
+ul li { position: relative; margin-bottom: 0.55rem; padding-left: 1.1rem; line-height: 1.6; }
+ul li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+ul li:last-child { margin-bottom: 0; }
+.lead { font-size: 1.13rem; font-weight: 300; color: var(--text-secondary); line-height: 1.7; }
+.meta {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+strong { font-weight: 600; }
+em { font-style: italic; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code { font-family: var(--font-mono); font-size: 0.82em; background: var(--bg-code); padding: 0.15em 0.4em; border-radius: 3px; }
+
+.site-header { border-bottom: 1px solid var(--border); padding: 16px 0; }
+.site-header-inner {
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+}
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+.site-nav a { font-family: var(--font-sans); font-size: 0.85rem; color: var(--text-secondary); text-decoration: none; }
+.site-nav a:hover { color: var(--text); }
+
+.page-wrapper {
+  display: flex;
+  max-width: calc(var(--sidebar-width) + var(--content-width) + 6rem);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+.sidebar { width: var(--sidebar-width); flex-shrink: 0; padding-right: 2.5rem; }
+.sidebar-inner { position: sticky; top: 2rem; padding-top: 6rem; }
+.sidebar nav a {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  padding: 0.35rem 0;
+  padding-left: 0.85rem;
+  border-left: 2px solid transparent;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+.sidebar nav a:hover { color: var(--text-secondary); }
+.sidebar nav a.active { color: var(--text); border-left-color: var(--accent); font-weight: 600; }
+.sidebar nav a.sub { padding-left: 1.6rem; font-size: 0.67rem; }
+.content { flex: 1; max-width: var(--content-width); min-width: 0; padding-bottom: 6rem; }
+
+.article-header { padding-top: 5rem; margin-bottom: 2rem; }
+.article-header + section > h2 { margin-top: 2rem; }
+.article-header .overline {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.figure { margin: 2.5rem 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #fff; }
+.figure-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  padding: 0.5rem 1rem 0;
+}
+.figure-canvas-wrap { position: relative; width: 100%; background: #fff; }
+.figure-canvas-wrap canvas { display: block; width: 100%; height: auto; }
+.figure-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-warm);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+.figure-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-light);
+  line-height: 1.55;
+}
+button.ctrl-btn {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+button.ctrl-btn:hover { background: var(--bg-warm); border-color: var(--text-tertiary); }
+button.ctrl-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+button.ctrl-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.ctrl-btn.primary:hover { opacity: 0.9; }
+.ctrl-label { font-family: var(--font-sans); font-size: 0.67rem; font-weight: 500; color: var(--text-tertiary); letter-spacing: 0.03em; }
+.ctrl-separator { width: 1px; height: 1.2rem; background: var(--border); margin: 0 0.3rem; }
+
+.code-block {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  padding: 1.1rem 1.4rem;
+  margin: 1.4rem 0;
+  background: #22303A;
+  color: #E8E4DC;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre;
+}
+.code-block .kw { color: #C792EA; }
+.code-block .fn { color: #82AAFF; }
+.code-block .str { color: #C3E88D; }
+.code-block .cm { color: #6B7A82; }
+.code-block .type { color: #FFCB6B; }
+.code-block .key { color: #FFCB6B; }
+
+.epigraph {
+  margin: 2rem 0;
+  padding: 0.5rem 0 0.5rem 1.4rem;
+  border-left: 3px solid var(--accent-border);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+}
+.epigraph cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-style: normal;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.03em;
+}
+
+.callout {
+  margin: 2rem 0;
+  padding: 1.1rem 1.4rem;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.96rem;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout strong { color: var(--accent-dark); }
+
+.defbox {
+  margin: 2rem 0;
+  padding: 1.1rem 1.4rem 1.3rem;
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.defbox-title {
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent-dark);
+  margin-bottom: 0.55rem;
+}
+.defbox p { margin: 0.55rem 0; }
+.defbox p:first-of-type { margin-top: 0; }
+.defbox p:last-child { margin-bottom: 0; }
+
+.article-footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+.article-footer p { margin-bottom: 0.8rem; }
+.article-footer a { color: var(--link); }
+
+@media (max-width: 1060px) {
+  .sidebar { display: none; }
+  .page-wrapper { padding: 0 1.25rem; }
+}
+@media (max-width: 600px) {
+  body { font-size: 16px; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.4rem; }
+  .article-header { padding-top: 3rem; }
+  .figure-controls { gap: 0.4rem; }
+  .figure-canvas-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .figure-canvas-wrap canvas { min-width: 500px; }
+}
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInLeft { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+.article-header .overline { animation: slideInLeft 0.6s ease 0.1s both; }
+.article-header h1 { animation: fadeInUp 0.6s ease 0.2s both; }
+.article-header .lead { animation: fadeIn 0.8s ease 0.4s both; }
+.figure { animation: fadeInUp 0.5s ease both; }
+</style>
+<script data-goatcounter="https://analyticalmonk.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="../" class="site-title">Interactive Explainers</a>
+    <nav class="site-nav">
+      <a href="https://github.com/analyticalmonk/interactive-explainers">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="page-wrapper">
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+      <nav>
+        <a href="#intro">Embedding Codex</a>
+        <a href="#ways-in">Ways to run and build on Codex</a>
+        <a href="#fig-ways-in" class="sub">The ways into Codex</a>
+        <a href="#turn">The agent loop</a>
+        <a href="#fig-loop" class="sub">One turn, many actions</a>
+        <a href="#controls">Two controls</a>
+        <a href="#fig-controls" class="sub">Sandbox &times; approval</a>
+        <a href="#app-server">The app-server protocol</a>
+        <a href="#fig-flow" class="sub">One turn, over the wire</a>
+        <a href="#sdks">The two SDKs</a>
+        <a href="#fig-sdks" class="sub">Same surface, different depths</a>
+        <a href="#conclusion">One runtime, one protocol</a>
+      </nav>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <header class="article-header" id="intro">
+      <div class="overline">Interactive Explainer</div>
+      <h1>Embedding OpenAI Codex:<br>The App Server and SDKs</h1>
+      <p class="lead">
+        OpenAI Codex is not one tool with one front door. Under the CLI, the IDE
+        extensions, and the cloud sits a single agent you can drive yourself,
+        and there are two ways to do it: the <strong>app-server</strong>, a
+        JSON-RPC protocol you speak directly, and the <strong>SDK</strong> built
+        on top of it. This is a tour of both: the loop the agent actually runs,
+        the two controls that keep it in bounds, the protocol that defines what
+        talking to Codex means, and why the TypeScript and Python SDKs are not
+        the same thing underneath.
+      </p>
+      <div class="meta">July 2026 &middot; 17 min read &middot; 5 interactive figures</div>
+    </header>
+
+    <!-- ================= SECTION 1: THE WAYS IN ================= -->
+    <section id="ways-in">
+      <h2>Ways to run and build on Codex</h2>
+      <p>Ask how to run Codex and the honest answer is: it depends who is asking. A developer living in the terminal reaches for the CLI. Someone on a design team opens the VS Code extension instead. An engineering lead points at the desktop app, or at the cloud dashboard where a dozen tasks run unattended overnight. A platform engineer wiring up CI mutters something about <code>codex exec</code>. And if you are folding Codex into your own product, you will hear two more names entirely: the SDK, and something called the app-server.</p>
+
+      <p>None of these people are wrong. Codex is not one tool with one front door. It is a single agent runtime, exposed through multiple entry points, each shaped for a different kind of user.</p>
+
+      <p>Some of those entry points are for people who just want the work done, no protocol required:</p>
+
+      <ul>
+        <li>The <strong>Codex CLI</strong> is a terminal interface for inspecting code, making changes, and running commands without leaving your shell, with sandbox and approval settings you tune per session.</li>
+        <li>The <strong>IDE extension</strong>, for VS Code and JetBrains, pulls your open files and selections straight into the prompt, lets you review edits in place, and can hand a longer task off to the cloud without breaking your flow.</li>
+        <li>The <strong>desktop app</strong>, folded into the ChatGPT desktop app as of July 9, works like a command center for running several projects or agents at once.</li>
+        <li><strong>Codex cloud</strong> skips your machine entirely, running tasks in isolated cloud environments you dispatch from the web, GitHub, Linear, or Slack, and check on whenever the result is ready.</li>
+      </ul>
+
+      <p>The others are for people who want to build on Codex, not just click through it:</p>
+
+      <ul>
+        <li><strong>codex exec</strong> turns the CLI into a single scriptable command for CI pipelines and automation, streaming its progress as a line-delimited JSON feed. (The Codex GitHub Action is that same command wearing a CI hat, not a separate interface: it drops into a workflow and runs <strong>codex exec</strong> headlessly to review a pull request.)</li>
+        <li>The <strong>Codex SDK</strong>, shipped for both Python and TypeScript, runs Codex as a local subprocess - the same <code>codex</code> binary on your own machine, launched and supervised by the SDK - and lets your code start and resume conversations with it, so you can wire Codex into a CI/CD system or build a custom agent host.</li>
+        <li><strong>codex app-server</strong> sits underneath both the IDE extension and the Python SDK. It is the JSON-RPC interface, a lightweight convention for exchanging named method calls and their results as JSON messages, that actually defines what talking to Codex means, and the path to reach for when you need a custom UI, your own approval logic, or a host that is not Node or Python.</li>
+        <li>A separate, explicitly experimental mode, <strong>codex mcp-server</strong>, exposes Codex as an MCP tool so other agents can call it like any other tool.</li>
+      </ul>
+
+      <p>This article follows two of them all the way down: the app-server and the SDK. The rest each earn their place - <code>codex exec</code> for a one-shot CI run, the GitHub Action for pull-request review, the cloud for work you dispatch and leave, the MCP server for handing Codex to another agent - but the app-server and the SDK are the two you reach for to embed a live, interactive agent, and the two most often mistaken for each other.</p>
+
+      <p>From here the article builds up from the inside: first the loop the agent runs, then the two controls that keep it in bounds, then the app-server protocol, and finally the SDKs that wrap it. The map below lays out every entry point side by side; pick a use case and the doors that fit it light up.</p>
+
+      <div class="figure" id="fig-ways-in">
+        <div class="figure-label">Figure 1 - The Ways Into Codex</div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Use case:</span>
+          <button class="ctrl-btn usecase-btn active" data-usecase="daily-coding">Daily coding</button>
+          <button class="ctrl-btn usecase-btn" data-usecase="ci">CI pipeline</button>
+          <button class="ctrl-btn usecase-btn" data-usecase="internal-tool">Internal tool</button>
+          <button class="ctrl-btn usecase-btn" data-usecase="custom-host">Custom host UI</button>
+          <button class="ctrl-btn usecase-btn" data-usecase="agent-tool">Tool for another agent</button>
+        </div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-decision-map" width="720" height="440"></canvas>
+        </div>
+        <div class="figure-caption">The entry points in three bands: <strong>interactive</strong> surfaces you drive by hand, <strong>programmatic</strong> ones you build on, and <strong>automation</strong> you fire and forget. Pick a use case and the matching doors highlight. Most use cases fit more than one; the map is about tradeoffs, not a single right answer. Hover any door for what it is.</div>
+      </div>
+
+      <div class="callout">
+        <p><strong>The one distinction that matters for this article:</strong> the app-server and the SDK are both embedding paths, and they are easy to conflate. One is a raw protocol you speak; the other is a pre-built client that speaks it for you. Everything below is about telling them apart, and knowing when the pre-built client is enough.</p>
+      </div>
+    </section>
+
+    <!-- ================= SECTION 2: WHAT A TURN REALLY IS ================= -->
+    <section id="turn">
+      <h2>The agent loop</h2>
+      <p>Before you can embed Codex, you have to know what you are embedding. Every surface in that map, from the CLI to the cloud, wraps the same thing: an agent loop. Once you can picture that loop, the app-server protocol later on stops looking like an arbitrary set of methods: each one maps onto a step of that loop.</p>
+
+      <h3>What a turn really is</h3>
+      <p>A turn is not a single model call. You send one message, and the agent runs an iterative loop: the model reads your request, proposes an action, the runtime carries it out, the result feeds back, and the model decides what to do next. It keeps cycling until it has nothing left to do and emits a final message that ends the turn. A single request like <em>diagnose the failing test and fix it</em> can fan out into many inference calls, shell commands, and file edits along the way. Behind the scenes the loop leans on prefix caching to keep repeated context cheap and compacts history once it grows past a threshold, but the pattern is what matters: propose, execute, observe, repeat.</p>
+
+      <p>Run the loop below. It plays a single turn as three trips around the cycle. On each lap the model proposes an action, the runtime carries it out, and the result comes back before the next lap starts. After the third lap the model has what it needs, and ends the turn with a final message.</p>
+
+      <div class="figure" id="fig-loop">
+        <div class="figure-label">Figure 2 - One Turn, Many Actions</div>
+        <div class="figure-controls">
+          <button class="ctrl-btn primary" id="loop-play">Play</button>
+          <button class="ctrl-btn" id="loop-step">Step</button>
+          <button class="ctrl-btn" id="loop-reset">Reset</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label" id="loop-info">Ready</span>
+        </div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-agent-loop" width="720" height="430"></canvas>
+        </div>
+        <div class="figure-caption">One turn against the prompt <em>&ldquo;diagnose the failing test and fix it.&rdquo;</em> The model proposes an action, the runtime executes it inside the sandbox, and the result returns for the next lap. Three laps here: run the tests, edit the code, run them again, then a <strong>final message</strong> ends the turn. One message in; many actions out.</div>
+      </div>
+
+      <h3>Two thin surfaces over the loop</h3>
+      <p>The plain CLI is that loop with a human at the keyboard. Run <code>codex</code> in a terminal and it reads your request, works, and pauses to show you what it is about to do. Drop the interactive part and you get <code>codex exec "&lt;prompt&gt;"</code>: the same loop, headless. No TTY, no prompts, just a run that streams progress to stdout and exits. Add <code>--json</code> and the stream becomes line-delimited events, <code>thread.started</code>, <code>turn.started</code>, <code>item.completed</code>, <code>turn.completed</code>, so a CI job can react to each item as it lands.</p>
+
+      <p>But <code>codex exec</code> gives you a subprocess, not a conversation. You get stdout and an exit code. You cannot answer an approval request mid-run, because the policy is fixed the moment the process launches. You cannot start a thread, keep it open, and steer it as new information arrives. You are outside the loop, reading its exhaust. Becoming a participant in the loop, rather than a reader of its output, is what the app-server, and the SDKs built on top of it, are for. But first, the two settings that govern what the loop is even allowed to do.</p>
+    </section>
+
+    <!-- ================= SECTION 3: TWO CONTROLS ================= -->
+    <section id="controls">
+      <h2>Two controls: sandbox and approval</h2>
+      <p>Every surface exposes the same two knobs around the loop, and they are the heart of what embedding Codex means. The two are independent. One is a fence around what the agent can touch; the other decides when it has to stop and ask before acting. Mix them up and you give the agent too much freedom or too little.</p>
+
+      <div class="epigraph">
+        <p>The sandbox defines technical boundaries. The approval policy decides when the agent must stop and ask before crossing them.</p>
+        <cite>OpenAI Codex documentation, Agent approvals &amp; security</cite>
+      </div>
+
+      <h3>The sandbox: a technical boundary</h3>
+      <p>The sandbox sets what the agent is physically able to do, enforced by the runtime rather than by good behavior. It has three settings. <code>read-only</code> lets the agent inspect files but not edit them or run commands without crossing the boundary. <code>workspace-write</code>, the default for a trusted project, lets it read, edit inside the workspace, and run routine local commands there, but network access is off unless you turn it on. <code>danger-full-access</code> removes the fence entirely: no filesystem or network restriction. The sandbox is the same idea whether you reach it through the CLI's <code>--sandbox</code> flag, the config file, or the SDK.</p>
+
+      <h3>The approval policy: when to stop and ask</h3>
+      <p>The approval policy is the other axis: given the fence, when must the agent stop and ask you before it crosses? <code>untrusted</code> asks before anything outside a small trusted set of commands. <code>on-request</code> works inside the sandbox freely and asks only to go beyond it, the pragmatic middle. <code>never</code> asks for nothing, so anything the sandbox already forbids simply does not happen. The policy is a dial on how often the loop pauses to hand you a decision, and it means nothing without knowing where the fence is.</p>
+
+      <div class="callout">
+        <p><strong>What the CLI picks for you.</strong> Run <code>codex</code> with no flags in a version-controlled folder and you get its <em>Auto</em> preset: <code>workspace-write</code> paired with <code>on-request</code> approvals. The agent reads, edits, and runs commands inside the workspace on its own, and stops to ask only to touch files outside it or reach the network. Start in a folder that is not under version control and Codex drops the sandbox to <code>read-only</code> instead.</p>
+      </div>
+
+      <h3>How they compose</h3>
+      <p>Because they are independent, the same action lands differently depending on the pair you pick. Reading a file is always fine. Editing one is free under <code>workspace-write</code> but needs a crossing under <code>read-only</code>. Reaching the network is beyond the fence unless you are at <code>danger-full-access</code>. And whether a crossing prompts you, proceeds, or is quietly refused depends entirely on the approval policy sitting next to it. The grid below lets you set both dials and watch a handful of concrete actions sort themselves into <em>runs</em>, <em>asks first</em>, or <em>blocked</em>.</p>
+
+      <div class="figure" id="fig-controls">
+        <div class="figure-label">Figure 3 - Sandbox &times; Approval</div>
+        <div class="figure-controls">
+          <span class="ctrl-label">Sandbox:</span>
+          <button class="ctrl-btn sandbox-btn" data-sandbox="read-only">read-only</button>
+          <button class="ctrl-btn sandbox-btn active" data-sandbox="workspace-write">workspace-write</button>
+          <button class="ctrl-btn sandbox-btn" data-sandbox="full-access">danger-full-access</button>
+          <div class="ctrl-separator"></div>
+          <span class="ctrl-label">Approval:</span>
+          <button class="ctrl-btn approval-btn" data-approval="untrusted">untrusted</button>
+          <button class="ctrl-btn approval-btn active" data-approval="on-request">on-request</button>
+          <button class="ctrl-btn approval-btn" data-approval="never">never</button>
+        </div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-controls" width="720" height="400"></canvas>
+        </div>
+        <div class="figure-caption">Five actions the agent might attempt, sorted by the two dials. Green <strong>runs</strong> freely, amber <strong>asks first</strong> and pauses the turn, grey is <strong>blocked</strong> by the sandbox with no prompt. Set <code>workspace-write</code> + <code>on-request</code> and edits run while a network fetch asks; set <code>read-only</code> + <code>never</code> and everything but reading is refused outright. The outcomes illustrate the documented definitions of the two controls.</div>
+      </div>
+    </section>
+
+    <!-- ================= SECTION 4: THE APP-SERVER ================= -->
+    <section id="app-server">
+      <h2>The app-server protocol</h2>
+      <p>Run <code>codex app-server</code> and nothing prints. It is waiting for you to talk to it. This is the interface Codex uses to power its rich clients, the VS Code and JetBrains IDE extensions among them: a long-lived process you drive over JSON-RPC, and a first-class embedding path in its own right. Where <code>codex exec</code> hands you exhaust, the app-server hands you a seat inside the loop.</p>
+
+      <h3>Opening a connection</h3>
+      <p>By default the app-server speaks over stdio, reading requests on stdin and writing responses and notifications on stdout as newline-delimited JSON. (Other transports exist behind <code>--listen</code>, including an experimental WebSocket, but stdio is the path the official clients use.) The protocol is JSON-RPC 2.0 in shape, close enough to the Model Context Protocol that it will feel familiar if you have written an MCP client.</p>
+      <p>One quirk to know going in: Codex leaves the <code>"jsonrpc": "2.0"</code> version field off each message, so the stream is JSON-RPC in structure rather than to the letter, and a strict off-the-shelf parser may need loosening. You do not have to reverse-engineer the message shapes, either: <code>codex app-server generate-ts</code> emits TypeScript types for every message and <code>generate-json-schema</code> emits the JSON Schema, both pinned to the exact build you have installed, so your host can track the protocol as it changes rather than chase a separate spec.</p>
+      <p>Every connection opens with a handshake. Your host sends one <code>initialize</code> request carrying its <code>clientInfo</code> (name, title, version); the server replies with its user-agent and details like <code>codexHome</code> and the platform. You then send an <code>initialized</code> notification, and only now will the server accept anything else. Too early a call gets <code>Not initialized</code>; a repeated <code>initialize</code> gets <code>Already initialized</code>. This happens once per connection, not once per request.</p>
+
+      <h3>Threads, turns, and items</h3>
+      <p>Three primitives carry everything after the handshake. A <strong>thread</strong> is a conversation. A <strong>turn</strong> is one round within it, triggered by a user input. An <strong>item</strong> is a single thing the agent produces inside a turn: a reasoning step, a shell command, a file edit, a message. You open a thread with <code>thread/start</code> (or <code>thread/resume</code> to reopen, <code>thread/fork</code> to branch), and the server confirms with <code>thread/started</code>. Threads persist, so a host can disconnect and pick the same conversation back up later by id.</p>
+      <p>To make the agent work, send <code>turn/start</code> against a thread id with the user's input. The response returns immediately with <code>status: "inProgress"</code>: accepted, not finished. From here your host stops sending requests and starts reading notifications. The server emits <code>turn/started</code>, then a stream of item events: <code>item/started</code>, item-specific deltas like <code>item/agentMessage/delta</code> as text streams in token by token, and <code>item/completed</code>. Every item follows that same sequence, so a host can render progress live instead of waiting for the whole turn. The turn ends with <code>turn/completed</code> and its token usage.</p>
+
+      <h3>The approval round-trip</h3>
+      <p>The most important moment in that stream is the one where the server asks <em>you</em> a question. When the agent wants to run a command the approval policy will not wave through, the app-server does not just proceed. It sends your host a request, <code>item/commandExecution/requestApproval</code> (or <code>item/fileChange/requestApproval</code> for an edit), carrying the command, its working directory, and a reason. The turn blocks here: nothing happens until your host replies with a decision, a single payload like <code>{ "decision": "accept" }</code>, or <code>decline</code>, or <code>acceptForSession</code>. Once you answer, the server sends <code>serverRequest/resolved</code> and the item runs to <code>item/completed</code>. Of everything the app-server gives you that <code>codex exec</code> cannot, live item streaming, resumable threads, a UI you render yourself, this is the sharpest: a live seat at the point of decision. The figure below steps through one full turn, approval and all. Its <em>Host</em> toggle switches who is speaking the protocol: <strong>Custom host</strong> is your own code, sending each request and answering the approval itself, while <strong>Python SDK as host</strong> is that SDK speaking the very same protocol on your behalf, folding the whole exchange into a single call and answering the approval from a fixed policy instead of asking you.</p>
+
+      <div class="figure" id="fig-flow">
+        <div class="figure-label">Figure 4 - One Turn, Over the Wire</div>
+        <div class="figure-controls">
+          <button class="ctrl-btn" id="flow-prev">&larr; Back</button>
+          <button class="ctrl-btn primary" id="flow-next">Next step &rarr;</button>
+          <button class="ctrl-btn" id="flow-reset">Reset</button>
+          <span class="ctrl-label" id="flow-counter">Step 1 / 15</span>
+          <span class="ctrl-separator"></span>
+          <span class="ctrl-label">Host:</span>
+          <button class="ctrl-btn mode-btn active" data-mode="custom">Custom host</button>
+          <button class="ctrl-btn mode-btn" data-mode="sdk">Python SDK as host</button>
+        </div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-message-flow" width="720" height="440"></canvas>
+        </div>
+        <div class="figure-caption">One full app-server turn between <strong>your host</strong>, the <strong>app-server</strong>, and the <strong>agent core</strong>. Step through it: the amber <strong>approval round-trip</strong> is where the turn blocks until your host answers - and flipping the host to the Python SDK is what decides who answers. The names are the app-server's own JSON-RPC methods.</div>
+      </div>
+    </section>
+
+    <!-- ================= SECTION 5: THE TWO SDKS ================= -->
+    <section id="sdks">
+      <h2>The two SDKs</h2>
+      <p>Most of the time you do not want to write a JSON-RPC host by hand. You want to call a function, pass a prompt, and get an answer back. That is what the Codex SDK is: a pre-built host so your code does not have to speak the protocol itself. It ships for both TypeScript and Python, and the two share a surface, start a thread, run a prompt, resume by id, but they are not the same thing underneath, and the difference decides what you can build.</p>
+
+      <div class="defbox">
+        <div class="defbox-title">Which door to pick</div>
+        <p>Reach for an <strong>SDK</strong> when you want a programmatic caller and are content to let a policy handle approvals: a CI job, a batch script, an internal tool that starts a task and reads the result. Prefer the <strong>Python SDK</strong> if you want typed sandboxing and the raw event stream; the <strong>TypeScript SDK</strong> if you are already in Node and want the lightest wrapper.</p>
+        <p>Reach past both to the <strong>app-server</strong> directly the moment you need any of three things: to render the agent's work live, item by item, in your own interface; to put a human in front of each approval decision; or to run on a host that is not Node or Python. Those three needs are exactly what the SDKs fold away, and the rest of this section shows where each one draws the line.</p>
+      </div>
+
+      <h3>TypeScript: a wrapper over codex exec</h3>
+      <div class="code-block"><span class="kw">import</span> { <span class="type">Codex</span> } <span class="kw">from</span> <span class="str">"@openai/codex-sdk"</span>;
+
+<span class="kw">const</span> codex = <span class="kw">new</span> <span class="type">Codex</span>();
+<span class="kw">const</span> thread = codex.<span class="fn">startThread</span>();
+<span class="kw">const</span> turn = <span class="kw">await</span> thread.<span class="fn">run</span>(<span class="str">"Diagnose the test failure and propose a fix"</span>);
+
+console.<span class="fn">log</span>(turn.finalResponse);
+console.<span class="fn">log</span>(turn.items);</div>
+      <p>Clean as that looks, the TypeScript SDK does not speak the app-server protocol at all. Its own README is explicit: it wraps the <code>codex</code> CLI, spawning <code>codex exec --experimental-json</code> and reading that command's line-delimited events. So the events it surfaces are the <code>codex exec</code> schema, the dotted <code>thread.started</code>, <code>item.completed</code>, <code>turn.completed</code> names from the baseline, not the app-server's slash-named protocol. Its <code>runStreamed()</code> gives you those structured events, but there is no approval-request event in that schema at all: approval behavior is fixed when the process spawns. Sandbox control is likewise the CLI's <code>--sandbox</code> flag, not a typed enum. The TypeScript SDK is, in effect, the ergonomic version of the baseline you already met.</p>
+
+      <h3>Python: the protocol, wrapped</h3>
+      <div class="code-block"><span class="kw">from</span> openai_codex <span class="kw">import</span> <span class="type">Codex</span>, <span class="type">Sandbox</span>
+
+<span class="kw">with</span> <span class="type">Codex</span>() <span class="kw">as</span> codex:
+    thread = codex.<span class="fn">thread_start</span>(sandbox=<span class="type">Sandbox</span>.workspace_write)
+    result = thread.<span class="fn">run</span>(<span class="str">"Explain this repository in three bullets."</span>)
+    <span class="fn">print</span>(result.final_response)</div>
+      <p>The Python SDK is a different animal. Its <code>CodexClient</code> describes itself as a JSON-RPC client for <code>codex app-server</code> over stdio, and its <code>start()</code> spawns exactly that. This is the real protocol, wrapped. It gives you a first-class <code>Sandbox</code> enum (<code>read_only</code>, <code>workspace_write</code>, <code>full_access</code>), an <code>ApprovalMode</code>, and, through <code>thread.turn(...)</code> and its <code>.stream()</code>, the raw protocol notifications rather than the coarser <code>codex exec</code> events. When the figure above is in Python-SDK mode, this is the SDK it means: the one whose <code>thread.run()</code> collapses the entire exchange, the handshake, the turn, the streaming items, into one blocking call that returns a <code>TurnResult</code>.</p>
+
+      <h3>When an SDK is enough, and when it is not</h3>
+      <p>That collapse is the tradeoff, and it is worth being precise about, because it is what tells you which door to pick. Both SDKs absorb the connection lifecycle, the message correlation, and the version pinning you would otherwise own. What they also absorb is the one message you might most want to hold: neither SDK's public API lets your code answer an individual approval request. The Python SDK auto-answers from a fixed <code>ApprovalMode</code> policy; the TypeScript SDK never sees an approval event at all.</p>
+
+      <div class="figure" id="fig-sdks">
+        <div class="figure-label">Figure 5 - Same Surface, Different Depths</div>
+        <div class="figure-controls">
+          <span class="ctrl-label">SDK:</span>
+          <button class="ctrl-btn sdk-btn active" data-sdk="ts">TypeScript</button>
+          <button class="ctrl-btn sdk-btn" data-sdk="py">Python</button>
+        </div>
+        <div class="figure-canvas-wrap">
+          <canvas id="canvas-sdk" width="720" height="430"></canvas>
+        </div>
+        <div class="figure-caption">The same six questions, asked of each SDK. The TypeScript SDK spawns <code>codex exec</code> and inherits its limits; the Python SDK speaks the app-server protocol directly and exposes far more of it. The last row, approval, is the limit they share. A greyed cell is a capability that surface does not give you.</div>
+      </div>
+
+    </section>
+
+    <!-- ================= SECTION 6: CONCLUSION ================= -->
+    <section id="conclusion">
+      <h2>One runtime, one protocol</h2>
+      <p>Step back from the protocol details and the idea is simple. Codex is not one tool with one front door; it is a single agent runtime behind many of them - CLI, IDE, desktop, cloud, and the two you build on. This whole article has been about those two. The SDK is the convenience: a pre-built client that resolves the approval for you. The app-server is the thing itself: the raw protocol where that decision stays yours.</p>
+
+      <div class="callout">
+        <p><strong>Where the runtime is heading.</strong> In June 2026 OpenAI moved to make the cloud a first-class place to build, announcing it would acquire Ona (formerly Gitpod) for its secure cloud execution technology: persistent, checkpointed environments that let Codex &ldquo;take on longer-running work, even when laptops are closed.&rdquo; What moves is <em>where</em> the agent executes, not how your code talks to it.</p>
+      </div>
+
+      <p>The interface, though, is the constant. The thread and turn model, the item stream, the approval round-trip stay put whether the agent runs on your laptop or in a datacenter you never see. Learn the protocol once, at the app-server, and that same mental model carries whether the agent is running in your terminal, behind your SDK call, or in a cloud environment you never had to keep awake.</p>
+    </section>
+
+    <footer class="article-footer">
+      <p>
+        <strong>References:</strong>
+        the Codex app-server protocol is documented in
+        <a href="https://github.com/openai/codex/blob/main/codex-rs/app-server/README.md">codex-rs/app-server/README.md</a>;
+        the SDKs in the
+        <a href="https://github.com/openai/codex/blob/main/sdk/typescript/README.md">TypeScript</a>
+        and
+        <a href="https://github.com/openai/codex/blob/main/sdk/python/README.md">Python</a>
+        SDK READMEs (packages
+        <a href="https://www.npmjs.com/package/@openai/codex-sdk">@openai/codex-sdk</a>
+        and
+        <a href="https://pypi.org/project/openai-codex/">openai-codex</a>).
+        The baseline, sandbox, and approval behavior come from the Codex docs on
+        <a href="https://learn.chatgpt.com/docs/non-interactive-mode">non-interactive mode</a>,
+        <a href="https://learn.chatgpt.com/docs/sandboxing">sandboxing</a>, and
+        <a href="https://learn.chatgpt.com/docs/agent-approvals-security">agent approvals &amp; security</a>;
+        the entry-point inventory from the
+        <a href="https://learn.chatgpt.com/docs/codex/cli">CLI</a>,
+        <a href="https://learn.chatgpt.com/docs/codex/ide">IDE</a>,
+        <a href="https://learn.chatgpt.com/docs/cloud">cloud</a>, and
+        <a href="https://learn.chatgpt.com/docs/codex-sdk">SDK</a> docs.
+        The runtime trajectory draws on OpenAI's
+        <a href="https://openai.com/index/openai-to-acquire-ona/">Ona acquisition announcement</a>
+        (June 2026) and
+        <a href="https://ona.com/stories/ona-joins-openai">Ona's own post</a>.
+        GitHub source citations were pinned to
+        <a href="https://github.com/openai/codex/tree/d5998e74522245ce6e7b746dab6c5f0ed428a8d1">openai/codex@d5998e7</a>
+        (2026-07-21).
+      </p>
+      <p>
+        Built by <a href="https://github.com/analyticalmonk">analyticalmonk</a>, inspired by
+        <a href="https://distill.pub">distill.pub</a>. Package versions, method names, and the Ona
+        acquisition reflect the sources as of July 2026. All five figures are illustrative
+        simulations of the documented behavior, not recordings of live traffic.
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+/* ============================================
+   Shared canvas helper - DPR-aware
+   ============================================ */
+function initCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return null;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.width;
+  const cssH = canvas.height;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { canvas, ctx, w: cssW, h: cssH };
+}
+function easeInOut(k) { return k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; }
+function lerp(a, b, k) { return a + (b - a) * k; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+/* ============================================
+   Sidebar active highlighting on scroll
+   ============================================ */
+(function() {
+  const links = document.querySelectorAll('.sidebar nav a');
+  const ids = Array.from(links).map(a => a.getAttribute('href').slice(1));
+  const sections = ids.map(id => document.getElementById(id)).filter(Boolean);
+  function update() {
+    let active = sections[0];
+    for (const s of sections) {
+      const rect = s.getBoundingClientRect();
+      if (rect.top < 200) active = s;
+    }
+    if (!active) return;
+    links.forEach(l => l.classList.toggle('active',
+      l.getAttribute('href').slice(1) === active.id));
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  update();
+})();
+
+(function() {
+  const init = initCanvas('canvas-decision-map');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  const BANDS = [
+    { id: 'interactive',  label: 'Interactive',  sub: 'run it yourself',      nodeW: 118, y: 70 },
+    { id: 'programmatic', label: 'Programmatic', sub: 'build on top of it',   nodeW: 150, y: 180 },
+    { id: 'automation',   label: 'Automation',   sub: 'no human in the loop', nodeW: 130, y: 290 },
+  ];
+  const nodeH = 52;
+  const areaX0 = 168, areaX1 = 706;
+  const bandGap = { interactive: 14, programmatic: 10, automation: 14 };
+
+  const NODES = [
+    { id: 'cli',        label: 'CLI',           band: 'interactive',
+      role: 'Terminal interface for editing, running commands, inspecting code' },
+    { id: 'ide',        label: 'IDE extension', band: 'interactive',
+      role: 'Brings open files into the prompt, reviews edits in place' },
+    { id: 'app',        label: 'Desktop app',   band: 'interactive',
+      role: 'Command center for running several projects or agents at once' },
+    { id: 'cloud',      label: 'Codex cloud',   band: 'interactive',
+      role: 'Runs tasks in isolated cloud environments, checked on later' },
+    { id: 'sdk',        label: 'SDK',           band: 'programmatic',
+      role: 'Python or TypeScript control of a local Codex agent from your own code' },
+    { id: 'app-server', label: 'App-server',    band: 'programmatic',
+      role: 'JSON-RPC interface underneath the IDE extension and the SDK' },
+    { id: 'exec',       label: 'codex exec',    band: 'automation',
+      role: 'Single scriptable command for CI, streams progress as JSON' },
+    { id: 'gha',        label: 'GitHub Action', band: 'automation',
+      role: 'Drops into a CI workflow, runs codex exec headlessly on a pull request' },
+    { id: 'mcp',        label: 'MCP server',    band: 'automation',
+      role: 'Experimental: exposes Codex as a tool other agents can call' },
+  ];
+
+  const USECASES = {
+    'daily-coding':  ['cli', 'ide', 'app'],
+    'ci':            ['exec', 'gha'],
+    'internal-tool': ['sdk'],
+    'custom-host':   ['app-server'],
+    'agent-tool':    ['mcp'],
+  };
+
+  const USECASE_LABELS = {
+    'daily-coding':  'Daily coding',
+    'ci':            'CI pipeline',
+    'internal-tool': 'Internal tool',
+    'custom-host':   'Custom host UI',
+    'agent-tool':    'Tool for another agent',
+  };
+
+  // Lay out nodes: one centered row per band, uniform height, per-band width/gap
+  // (SDK + App-server get a tight gap so they read as a visually adjacent pair).
+  for (const band of BANDS) {
+    const ids = NODES.filter(n => n.band === band.id);
+    const gap = bandGap[band.id];
+    const total = ids.length * band.nodeW + (ids.length - 1) * gap;
+    let x = areaX0 + ((areaX1 - areaX0) - total) / 2;
+    for (const n of ids) {
+      n.x = x;
+      n.y = band.y;
+      n.w = band.nodeW;
+      x += band.nodeW + gap;
+    }
+  }
+
+  const hub = { x: 20, y: 156, w: 132, h: 100 };
+
+  let state = { selected: 'daily-coding', t: 0 };
+  let hovered = null;
+
+  function roundRect(x, y, ww, hh, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + ww, y, x + ww, y + hh, r);
+    ctx.arcTo(x + ww, y + hh, x, y + hh, r);
+    ctx.arcTo(x, y + hh, x, y, r);
+    ctx.arcTo(x, y, x + ww, y, r);
+    ctx.closePath();
+  }
+
+  function wrapWords(text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (line && ctx.measureText(test).width > maxWidth) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function drawCenteredLines(lines, cx, cy, lineHeight) {
+    const startY = cy - ((lines.length - 1) * lineHeight) / 2;
+    lines.forEach((line, i) => ctx.fillText(line, cx, startY + i * lineHeight));
+  }
+
+  function drawTooltip(n) {
+    ctx.font = '500 10px "JetBrains Mono", monospace';
+    const boxW = 210;
+    const lines = wrapWords(n.role, boxW - 20);
+    const lineH = 14;
+    const boxH = lines.length * lineH + 14;
+    let bx = n.x + n.w / 2 - boxW / 2;
+    bx = Math.max(6, Math.min(w - boxW - 6, bx));
+    let by = n.y - boxH - 10;
+    if (by < 4) by = n.y + nodeH + 10;
+
+    ctx.fillStyle = 'rgba(20, 20, 20, 0.92)';
+    roundRect(bx, by, boxW, boxH, 6);
+    ctx.fill();
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    lines.forEach((line, i) => {
+      ctx.fillText(line, bx + boxW / 2, by + 10 + i * lineH);
+    });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    const activeIds = USECASES[state.selected] || [];
+    const pulse = 0.5 + 0.5 * Math.sin(state.t * 2.4);
+
+    // Band background rows + labels
+    for (const band of BANDS) {
+      ctx.fillStyle = 'rgba(0,0,0,0.03)';
+      roundRect(areaX0 - 14, band.y - 26, (areaX1 - areaX0) + 28, nodeH + 34, 10);
+      ctx.fill();
+
+      ctx.font = '700 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = 'rgba(0,0,0,0.34)';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(band.label.toUpperCase(), areaX0 - 4, band.y - 11);
+
+      ctx.font = '400 9px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.textAlign = 'right';
+      ctx.fillText(band.sub, areaX1 + 10, band.y - 11);
+    }
+
+    // Hub: "your use case"
+    ctx.fillStyle = '#fff';
+    ctx.strokeStyle = '#0D9488';
+    ctx.lineWidth = 1.5;
+    roundRect(hub.x, hub.y, hub.w, hub.h, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.font = '700 8.5px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('YOUR USE CASE', hub.x + hub.w / 2, hub.y + 22);
+
+    ctx.font = '600 12px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#0D9488';
+    ctx.textBaseline = 'middle';
+    const label = USECASE_LABELS[state.selected];
+    const labelLines = wrapWords(label, hub.w - 20);
+    drawCenteredLines(labelLines, hub.x + hub.w / 2, hub.y + hub.h / 2 + 14, 15);
+
+    // Connectors: hub -> each highlighted node.
+    // The first node in a band is reached with a simple side curve (nothing
+    // precedes it). Any later node in the same row routes through the gap
+    // between bands instead - a flat side-curve would otherwise cut straight
+    // through the node(s) sitting between the hub and the target.
+    ctx.lineWidth = 1.5;
+    const x0 = hub.x + hub.w, y0 = hub.y + hub.h / 2;
+    for (const id of activeIds) {
+      const n = NODES.find(nn => nn.id === id);
+      if (!n) continue;
+      const sameBand = NODES.filter(nn => nn.band === n.band).sort((a, b) => a.x - b.x);
+      const isFirst = sameBand[0].id === n.id;
+      ctx.strokeStyle = `rgba(13, 148, 136, ${0.4 + 0.3 * pulse})`;
+      ctx.fillStyle = `rgba(13, 148, 136, ${0.5 + 0.3 * pulse})`;
+
+      let x1, y1, arrowDx, arrowDy;
+      if (isFirst) {
+        x1 = n.x; y1 = n.y + nodeH / 2;
+        const midX = (x0 + x1) / 2;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.bezierCurveTo(midX, y0, midX, y1, x1, y1);
+        ctx.stroke();
+        arrowDx = -6; arrowDy = 0; // pointing right, into the left edge
+      } else {
+        const fromBelow = n.band === 'interactive'; // only band above the hub
+        const gapY = fromBelow ? (n.y + nodeH + 34) : (n.y - 34);
+        x1 = n.x + n.w / 2;
+        y1 = fromBelow ? (n.y + nodeH) : n.y;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.bezierCurveTo(x0 + 10, y0, x0 + 10, gapY, x1, gapY);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+        arrowDx = 0; arrowDy = fromBelow ? 6 : -6; // pointing into top/bottom edge
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      if (arrowDy === 0) {
+        ctx.lineTo(x1 + arrowDx, y1 - 4);
+        ctx.lineTo(x1 + arrowDx, y1 + 4);
+      } else {
+        ctx.lineTo(x1 - 4, y1 + arrowDy);
+        ctx.lineTo(x1 + 4, y1 + arrowDy);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Nodes
+    for (const n of NODES) {
+      const isActive = activeIds.includes(n.id);
+      const isHover = hovered === n.id;
+
+      ctx.globalAlpha = isActive ? 1 : 0.35;
+      if (isActive) {
+        ctx.shadowColor = 'rgba(13, 148, 136, 0.55)';
+        ctx.shadowBlur = 3 + 5 * pulse;
+      } else {
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.fillStyle = isActive ? '#F0FDFA' : '#fff';
+      ctx.strokeStyle = isActive ? '#0D9488' : (isHover ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)');
+      ctx.lineWidth = isActive ? 2 : (isHover ? 1.5 : 1);
+      roundRect(n.x, n.y, n.w, nodeH, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.font = '600 10.5px "JetBrains Mono", monospace';
+      ctx.fillStyle = isActive ? '#0F766E' : 'rgba(0,0,0,0.55)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const lines = wrapWords(n.label, n.w - 16);
+      drawCenteredLines(lines, n.x + n.w / 2, n.y + nodeH / 2, 12);
+
+      ctx.globalAlpha = 1;
+    }
+
+    // Tooltip drawn last so it isn't covered by any node
+    if (hovered) {
+      const n = NODES.find(nn => nn.id === hovered);
+      if (n) drawTooltip(n);
+    }
+
+    // Footer note - reinforces why SDK and app-server sit next to each other
+    ctx.font = 'italic 10px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    const footerLines = wrapWords(
+      'SDK and app-server sit side by side on purpose - together, they are what the rest of this article is about.',
+      areaX1 - (areaX0 - 4)
+    );
+    footerLines.forEach((line, i) => ctx.fillText(line, areaX0 - 4, 396 + i * 14));
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    state.t += 0.016;
+    draw();
+  }
+
+  document.querySelectorAll('[data-usecase]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-usecase]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.selected = btn.dataset.usecase;
+    });
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (w / rect.width);
+    const my = (e.clientY - rect.top) * (h / rect.height);
+    let found = null;
+    for (const n of NODES) {
+      if (mx >= n.x && mx <= n.x + n.w && my >= n.y && my <= n.y + nodeH) { found = n.id; break; }
+    }
+    hovered = found;
+    canvas.style.cursor = found ? 'pointer' : 'default';
+  });
+  canvas.addEventListener('mouseleave', () => { hovered = null; });
+
+  animate();
+})();
+
+/* ============================================
+   FIGURE 2 - The agent loop
+   ============================================ */
+(function() {
+  const init = initCanvas('canvas-agent-loop');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  // Three loop nodes + a scripted three-lap turn.
+  const NODES = {
+    model:   { cx: 110, label: 'Model',   sub: 'inference' },
+    action:  { cx: 360, label: 'Action',  sub: 'shell / edit' },
+    runtime: { cx: 610, label: 'Runtime', sub: 'sandbox' },
+  };
+  const boxW = 128, boxH = 54, boxTop = 54;
+  function box(cx) { return { x: cx - boxW / 2, y: boxTop, w: boxW, h: boxH }; }
+
+  const LAPS = [
+    { action: 'run   pytest -q',        result: '1 failed: test_paginate', ok: false },
+    { action: 'edit  api/paginate.py',  result: 'updated  (+1 -1)',        ok: true  },
+    { action: 'run   pytest -q',        result: '3 passed',                ok: true  },
+  ];
+  const FINAL = 'Fixed an off-by-one in paginate().';
+
+  // Edge polylines the pulse travels.
+  const EDGES = {
+    m2a:   [[174, boxTop + boxH / 2], [296, boxTop + boxH / 2]],
+    a2r:   [[424, boxTop + boxH / 2], [546, boxTop + boxH / 2]],
+    r2m:   [[610, boxTop + boxH], [610, 144], [110, 144], [110, boxTop + boxH]],
+    final: [[110, boxTop + boxH], [110, 170]],
+  };
+  // step -> {edge, lap, node}  (10 steps: 3 laps x 3 edges + final)
+  const STEPS = [];
+  for (let L = 0; L < 3; L++) {
+    STEPS.push({ edge: 'm2a', lap: L, node: 'action' });
+    STEPS.push({ edge: 'a2r', lap: L, node: 'runtime' });
+    STEPS.push({ edge: 'r2m', lap: L, node: 'model' });
+  }
+  STEPS.push({ edge: 'final', lap: 3, node: 'model' });
+
+  let state = { step: 0, t: 1, playing: false, playTimer: null, animTimer: null };
+
+  function pointOnPath(pts, t) {
+    let total = 0;
+    const segs = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const dx = pts[i + 1][0] - pts[i][0], dy = pts[i + 1][1] - pts[i][1];
+      const len = Math.hypot(dx, dy);
+      segs.push(len); total += len;
+    }
+    let d = t * total;
+    for (let i = 0; i < segs.length; i++) {
+      if (d <= segs[i] || i === segs.length - 1) {
+        const k = segs[i] === 0 ? 0 : d / segs[i];
+        return [lerp(pts[i][0], pts[i + 1][0], k), lerp(pts[i][1], pts[i + 1][1], k)];
+      }
+      d -= segs[i];
+    }
+    return pts[pts.length - 1];
+  }
+
+  function resultShown(L) { return state.step > 3 * L + 2 || (state.step === 3 * L + 2 && state.t >= 1); }
+  function finalShown() { return state.step > 9 || (state.step === 9 && state.t >= 1); }
+
+  function drawArrowhead(x, y, ang) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(-6, -4); ctx.lineTo(0, 0); ctx.lineTo(-6, 4);
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+
+  function drawPolyline(pts, lit) {
+    ctx.strokeStyle = lit ? '#0D9488' : 'rgba(0,0,0,0.16)';
+    ctx.lineWidth = lit ? 2 : 1.4;
+    ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.stroke();
+    const a = pts[pts.length - 1], b = pts[pts.length - 2];
+    ctx.fillStyle = lit ? '#0D9488' : 'rgba(0,0,0,0.16)';
+    drawArrowhead(a[0], a[1], Math.atan2(a[1] - b[1], a[0] - b[0]));
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+
+    ctx.font = 'bold 9px ' + "-apple-system, sans-serif";
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('ONE TURN  ·  "diagnose the failing test and fix it"', 40, 30);
+
+    const cur = STEPS[state.step];
+    const activeNode = state.t < 1 || state.step > 0 ? cur.node : null;
+    const lapIdx = clamp(Math.floor(state.step / 3), 0, 2);
+
+    // static edges (lit once their lap has been reached)
+    drawPolyline(EDGES.m2a, state.step >= 0);
+    drawPolyline(EDGES.a2r, state.step >= 1);
+    drawPolyline(EDGES.r2m, state.step >= 2);
+    // return-arrow label
+    ctx.font = '9px ' + "-apple-system, sans-serif";
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.textAlign = 'center';
+    ctx.fillText('result feeds back', 360, 138);
+
+    // nodes
+    Object.keys(NODES).forEach(key => {
+      const n = NODES[key]; const b = box(n.cx);
+      const isActive = (activeNode === key);
+      const finalGreen = key === 'model' && finalShown();
+      ctx.fillStyle = finalGreen ? '#ECFDF5' : (isActive ? '#F0FDFA' : '#FAFAFA');
+      ctx.strokeStyle = finalGreen ? '#059669' : (isActive ? '#0D9488' : 'rgba(0,0,0,0.14)');
+      ctx.lineWidth = isActive || finalGreen ? 2 : 1.2;
+      ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 8); ctx.fill(); ctx.stroke();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = finalGreen ? '#047857' : (isActive ? '#0F766E' : 'rgba(0,0,0,0.5)');
+      ctx.font = 'bold 12px ' + "-apple-system, sans-serif";
+      ctx.fillText(n.label, n.cx, b.y + 23);
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillStyle = isActive ? 'rgba(15,118,110,0.75)' : 'rgba(0,0,0,0.34)';
+      let sub = n.sub;
+      if (key === 'action' && !finalShown()) sub = LAPS[lapIdx].action.replace(/\s+/g, ' ');
+      if (key === 'runtime') sub = 'sandbox';
+      ctx.fillText(sub, n.cx, b.y + 40);
+    });
+
+    // traveling pulse (loop edges only; the final step is an output, not a lap)
+    if (state.t < 1 && cur.edge !== 'final') {
+      const p = pointOnPath(EDGES[cur.edge], easeInOut(state.t));
+      ctx.fillStyle = '#0D9488';
+      ctx.beginPath(); ctx.arc(p[0], p[1], 5.5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(13,148,136,0.25)'; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(p[0], p[1], 5.5, 0, Math.PI * 2); ctx.stroke();
+    }
+    // final step: the model emits its result - a ripple from the Model box, not a lap
+    if (cur.edge === 'final' && state.t < 1) {
+      const c = NODES.model.cx, cyc = boxTop + boxH / 2;
+      ctx.strokeStyle = 'rgba(5,150,105,' + (0.45 * (1 - state.t)).toFixed(3) + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(c, cyc, lerp(28, 66, easeInOut(state.t)), 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // transcript panel
+    const py = 178, ph = h - py - 16;
+    ctx.fillStyle = '#22303A';
+    ctx.beginPath(); ctx.roundRect(40, py, w - 80, ph, 8); ctx.fill();
+    ctx.font = 'bold 8px ' + "-apple-system, sans-serif";
+    ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.textAlign = 'left';
+    ctx.fillText('TURN TRANSCRIPT', 58, py + 22);
+    ctx.font = '11.5px "JetBrains Mono", monospace';
+    let ly = py + 48;
+    for (let L = 0; L < 3; L++) {
+      if (!resultShown(L) && !(state.step >= 3 * L)) continue;
+      const running = state.step >= 3 * L && !resultShown(L);
+      ctx.fillStyle = '#82AAFF';
+      ctx.fillText('▸ ' + LAPS[L].action, 58, ly);
+      if (resultShown(L)) {
+        ctx.fillStyle = LAPS[L].ok ? '#C3E88D' : '#F78C6C';
+        ctx.fillText('→ ' + LAPS[L].result, 340, ly);
+      } else if (running) {
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText('→ running…', 340, ly);
+      }
+      ly += 24;
+    }
+    if (finalShown()) {
+      const by = ly - 6;
+      ctx.fillStyle = 'rgba(13,148,136,0.16)';
+      ctx.beginPath(); ctx.roundRect(50, by, w - 100, 34, 6); ctx.fill();
+      ctx.strokeStyle = 'rgba(94,234,212,0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(50, by, w - 100, 34, 6); ctx.stroke();
+      ctx.fillStyle = '#5EEAD4';
+      ctx.font = 'bold 8px ' + "-apple-system, sans-serif";
+      ctx.fillText('◆ FINAL MESSAGE  ·  ENDS THE TURN', 60, by + 13);
+      ctx.fillStyle = '#E8E4DC';
+      ctx.font = '11.5px "JetBrains Mono", monospace';
+      ctx.fillText(FINAL, 60, by + 26);
+    }
+
+    const info = document.getElementById('loop-info');
+    if (info) info.textContent = finalShown()
+      ? 'Turn complete · 1 message in, 3 actions out'
+      : 'Lap ' + (lapIdx + 1) + ' of 3';
+  }
+
+  function animateStep() {
+    if (state.animTimer) clearInterval(state.animTimer);
+    state.t = 0;
+    state.animTimer = setInterval(() => {
+      state.t += 0.055;
+      if (state.t >= 1) { state.t = 1; clearInterval(state.animTimer); state.animTimer = null; }
+      draw();
+    }, 16);
+  }
+
+  function step() {
+    if (state.step >= STEPS.length - 1 && state.t >= 1) { if (state.playing) togglePlay(); return; }
+    // a click mid-animation snaps the current lap done, then advances
+    if (state.animTimer) { clearInterval(state.animTimer); state.animTimer = null; state.t = 1; }
+    state.step += 1;
+    animateStep();
+  }
+
+  function reset() {
+    if (state.animTimer) { clearInterval(state.animTimer); state.animTimer = null; }
+    if (state.playing) togglePlay();
+    state.step = 0; state.t = 1;
+    draw();
+  }
+
+  function togglePlay() {
+    const btn = document.getElementById('loop-play');
+    if (state.playing) {
+      clearInterval(state.playTimer); state.playing = false;
+      if (btn) btn.textContent = 'Play';
+    } else {
+      if (state.step >= STEPS.length - 1 && state.t >= 1) { state.step = 0; state.t = 1; draw(); }
+      state.playTimer = setInterval(step, 950);
+      state.playing = true;
+      if (btn) btn.textContent = 'Pause';
+    }
+  }
+
+  document.getElementById('loop-play').addEventListener('click', togglePlay);
+  document.getElementById('loop-step').addEventListener('click', step);
+  document.getElementById('loop-reset').addEventListener('click', reset);
+  draw();
+})();
+
+/* ============================================
+   FIGURE 3 - Sandbox x approval
+   ============================================ */
+(function() {
+  const init = initCanvas('canvas-controls');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  // within[sandbox]: is the action inside the technical boundary that mode draws?
+  //   ro = read-only, ww = workspace-write, fa = danger-full-access.
+  // trusted: a read the "untrusted" policy waves through without asking.
+  const ACTIONS = [
+    { label: 'Read a file in the repo',        within: { ro: true,  ww: true,  fa: true }, trusted: true  },
+    { label: 'Edit a file in the workspace',   within: { ro: false, ww: true,  fa: true }, trusted: false },
+    { label: 'Run the test suite locally',     within: { ro: false, ww: true,  fa: true }, trusted: false },
+    { label: 'Fetch a dependency (network)',   within: { ro: false, ww: false, fa: true }, trusted: false },
+    { label: 'Delete a file outside the repo', within: { ro: false, ww: false, fa: true }, trusted: false },
+  ];
+  const SBX = { 'read-only': 'ro', 'workspace-write': 'ww', 'full-access': 'fa' };
+
+  const OUT = {
+    run:   { bg: '#ECFDF5', bd: '#6EE7B7', fg: '#047857', glyph: '✓', word: 'runs' },
+    ask:   { bg: '#FEF3C7', bd: '#FCD34D', fg: '#B45309', glyph: '‖', word: 'asks first' },
+    block: { bg: '#F3F4F6', bd: '#E5E7EB', fg: '#6B7280', glyph: '✕', word: 'blocked' },
+  };
+
+  let state = { sandbox: 'workspace-write', approval: 'on-request' };
+
+  function outcome(a) {
+    const inside = a.within[SBX[state.sandbox]];
+    if (inside) {
+      if (state.approval === 'untrusted') return a.trusted ? 'run' : 'ask';
+      return 'run'; // on-request and never both run inside the fence
+    }
+    return state.approval === 'never' ? 'block' : 'ask'; // beyond the fence
+  }
+
+  const rowH = 54, top = 74;
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = 'bold 9px ' + "-apple-system, sans-serif";
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.fillText('WHAT HAPPENS WHEN THE AGENT TRIES TO…', 40, 30);
+
+    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#0F766E';
+    ctx.fillText('sandbox: ' + state.sandbox + '    ·    approval: ' + state.approval, 40, 52);
+
+    ACTIONS.forEach((a, i) => {
+      const y = top + i * rowH;
+      if (i % 2 === 0) {
+        ctx.fillStyle = 'rgba(0,0,0,0.02)';
+        ctx.beginPath(); ctx.roundRect(40, y, w - 80, rowH - 8, 6); ctx.fill();
+      }
+      ctx.font = '13px ' + "-apple-system, sans-serif";
+      ctx.fillStyle = 'rgba(0,0,0,0.78)';
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(a.label, 58, y + (rowH - 8) / 2);
+
+      const o = OUT[outcome(a)];
+      const pillW = 190, pillH = 32, px = w - 40 - pillW - 16, pyc = y + (rowH - 8) / 2;
+      ctx.fillStyle = o.bg; ctx.strokeStyle = o.bd; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.roundRect(px, pyc - pillH / 2, pillW, pillH, 16); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = o.fg;
+      ctx.font = 'bold 13px ' + "-apple-system, sans-serif";
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(o.glyph, px + 16, pyc + 0.5);
+      ctx.font = '12px ' + "-apple-system, sans-serif";
+      ctx.fillText(o.word, px + 38, pyc + 0.5);
+    });
+
+    // legend
+    const ly = h - 20;
+    const items = [['run', 'runs freely'], ['ask', 'pauses to ask you'], ['block', 'blocked by the sandbox']];
+    let lx = 44;
+    ctx.textBaseline = 'middle';
+    items.forEach(([k, txt]) => {
+      const o = OUT[k];
+      ctx.fillStyle = o.bg; ctx.strokeStyle = o.bd; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(lx, ly - 7, 14, 14, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.font = '10px ' + "-apple-system, sans-serif";
+      ctx.textAlign = 'left';
+      ctx.fillText(txt, lx + 20, ly + 0.5);
+      lx += 34 + ctx.measureText(txt).width + 22;
+    });
+  }
+
+  function wire(cls, attr, key) {
+    document.querySelectorAll(cls).forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll(cls).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state[key] = btn.getAttribute(attr);
+        draw();
+      });
+    });
+  }
+  wire('.sandbox-btn', 'data-sandbox', 'sandbox');
+  wire('.approval-btn', 'data-approval', 'approval');
+  draw();
+})();
+
+(function() {
+  const init = initCanvas('canvas-message-flow');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  const LANES = [
+    { label: 'Your host',       x: 120 },
+    { label: 'codex app-server', x: 372 },
+    { label: 'Agent core',      x: 616 },
+  ];
+
+  // Every labelled arrow is a real host <-> app-server JSON-RPC message, named
+  // exactly as the app-server documents it. `agent` marks steps where the work
+  // actually happens inside the agent core (shown as an internal, unlabelled
+  // delegation, not a wire message). `sdkAbsorbed`: the Python SDK's blocking
+  // run() call handles this message for you, so you never see it.
+  const STEPS = [
+    { from: 0, to: 1, kind: 'request',  label: 'initialize',
+      note: 'One-time per connection. Your host announces itself with clientInfo (name, title, version).',
+      sdkAbsorbed: true },
+    { from: 0, to: 1, kind: 'response', label: 'initialized',
+      note: 'Host acknowledges the handshake. Only now will the server accept other methods.',
+      sdkAbsorbed: true },
+    { from: 0, to: 1, kind: 'request',  label: 'thread/start',
+      note: 'Open a conversation. The response returns the new thread object; thread/resume would reopen one by id.',
+      sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'thread/started',
+      note: 'The server confirms the thread is open.',
+      sdkAbsorbed: true },
+    { from: 0, to: 1, kind: 'request',  label: 'turn/start',
+      note: 'Send the user input against a thread id. The response returns immediately with status "inProgress" - accepted, not finished.',
+      sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'turn/started',
+      note: 'The turn begins running. Your host now switches from sending requests to reading notifications.',
+      agent: true, agentLabel: 'inference begins', sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'item/started',
+      note: 'A pending commandExecution item appears: the agent wants to run a shell command.',
+      agent: true, agentLabel: 'plans a command', sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'approval', label: 'item/commandExecution/requestApproval',
+      note: 'The approval round-trip. The server asks permission, carrying the command, its cwd, and a reason. The turn BLOCKS here: nothing else happens until your host answers.',
+      agent: true, agentLabel: 'awaits approval', sdkAbsorbed: true,
+      sdkNote: 'The Python SDK answers this from a fixed policy. Its public API gives a host no hook to decide per command - the one message you might most want to intercept.' },
+    { from: 0, to: 1, kind: 'response', label: '{ "decision": "accept" }',
+      note: 'Your host replies with a decision: accept, decline, cancel, acceptForSession, and so on. This is the seat codex exec cannot give you.',
+      sdkAbsorbed: true,
+      sdkNote: 'Answered by policy, not by your code.' },
+    { from: 1, to: 0, kind: 'event',    label: 'serverRequest/resolved',
+      note: 'The server confirms the pending approval request is resolved.',
+      sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'item/completed',
+      note: 'The commandExecution item finalizes with its status (completed, failed, or declined) and output.',
+      agent: true, agentLabel: 'runs command', sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'item/started',
+      note: 'A new agentMessage item begins. Every item follows the same shape: started, then deltas, then completed.',
+      agent: true, agentLabel: 'composes reply', sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'item/agentMessage/delta',
+      note: 'The reply streams in as text deltas, token by token. Concatenate them by itemId to render live.',
+      agent: true, agentLabel: 'streams text', sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'item/completed',
+      note: 'The agentMessage item finalizes with its full accumulated text.',
+      agent: true, agentLabel: 'reply done', sdkAbsorbed: true },
+    { from: 1, to: 0, kind: 'event',    label: 'turn/completed',
+      note: 'The turn ends with status "completed" and token usage. The thread stays open for the next turn.',
+      sdkAbsorbed: true },
+  ];
+
+  const KIND = {
+    request:  { color: '#0D9488', dash: [],      desc: 'host request' },
+    response: { color: '#0D9488', dash: [5, 4],   desc: 'host response' },
+    event:    { color: '#6B7280', dash: [1.5, 3], desc: 'server notification' },
+    approval: { color: '#D97706', dash: [],       desc: 'approval round-trip' },
+  };
+
+  const topY = 96, rowGap = 17, headerY = 62;
+  let state = { step: 0, mode: 'custom' };
+
+  function roundRect(x, y, ww, hh, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + ww, y, x + ww, y + hh, r);
+    ctx.arcTo(x + ww, y + hh, x, y + hh, r);
+    ctx.arcTo(x, y + hh, x, y, r);
+    ctx.arcTo(x, y, x + ww, y, r);
+    ctx.closePath();
+  }
+
+  function wrap(text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      if (line && ctx.measureText(test).width > maxWidth) { lines.push(line); line = word; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function rowY(i) { return topY + i * rowGap; }
+
+  function arrowHead(x, y, dir) {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x - dir * 6, y - 3.5);
+    ctx.lineTo(x - dir * 6, y + 3.5);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, w, h);
+
+    const cur = STEPS[state.step];
+    const sdk = state.mode === 'sdk';
+    const lastRow = rowY(STEPS.length - 1);
+
+    // Lifelines
+    for (let li = 0; li < LANES.length; li++) {
+      const lane = LANES[li];
+      const agentActive = li === 2 && cur.agent;
+      ctx.strokeStyle = agentActive ? 'rgba(13,148,136,0.5)' : 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = agentActive ? 2 : 1;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(lane.x, headerY + 16);
+      ctx.lineTo(lane.x, lastRow + 12);
+      ctx.stroke();
+
+      // Header box
+      const boxW = li === 1 ? 148 : (li === 2 ? 96 : 96);
+      ctx.fillStyle = agentActive ? '#F0FDFA' : '#fff';
+      ctx.strokeStyle = agentActive ? '#0D9488' : 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = agentActive ? 1.8 : 1;
+      roundRect(lane.x - boxW / 2, headerY - 12, boxW, 26, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.font = '600 11px "JetBrains Mono", monospace';
+      ctx.fillStyle = agentActive ? '#0F766E' : 'rgba(0,0,0,0.65)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(lane.label, lane.x, headerY + 1);
+    }
+
+    // SDK-mode bracket down the host side, spanning the whole exchange
+    if (sdk) {
+      const bx = 20, y0 = rowY(0) - 6, y1 = lastRow + 6;
+      ctx.strokeStyle = 'rgba(37,99,235,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(bx + 6, y0); ctx.lineTo(bx, y0);
+      ctx.lineTo(bx, y1); ctx.lineTo(bx + 6, y1);
+      ctx.stroke();
+      ctx.save();
+      ctx.translate(bx - 4, (y0 + y1) / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.font = '600 9.5px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillStyle = 'rgba(37,99,235,0.85)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Python SDK: one blocking run() call', 0, 0);
+      ctx.restore();
+    }
+
+    // Accumulated steps
+    for (let i = 0; i <= state.step; i++) {
+      const s = STEPS[i];
+      const y = rowY(i);
+      const isCur = i === state.step;
+      const k = KIND[s.kind];
+      const ax = LANES[s.from].x, bx = LANES[s.to].x;
+      const dir = bx > ax ? 1 : -1;
+      const absorbed = sdk && s.sdkAbsorbed;
+
+      // Agent-core internal delegation (unlabelled protocol-wise; plain-word tag)
+      if (s.agent && !absorbed) {
+        ctx.strokeStyle = isCur ? 'rgba(13,148,136,0.4)' : 'rgba(13,148,136,0.16)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 3]);
+        ctx.beginPath();
+        ctx.moveTo(LANES[1].x, y);
+        ctx.lineTo(LANES[2].x, y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        if (isCur && s.agentLabel) {
+          ctx.font = 'italic 9px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillStyle = 'rgba(15,118,110,0.75)';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(s.agentLabel, LANES[2].x + 8, y - 2);
+        }
+      }
+
+      // The labelled host <-> app-server arrow
+      let alpha, color;
+      if (absorbed && s.sdkNote) { color = 'rgba(180,83,9,'; alpha = isCur ? '0.95)' : '0.6)'; }
+      else if (absorbed) { color = 'rgba(160,160,168,'; alpha = isCur ? '0.9)' : '0.5)'; }
+      else { color = null; alpha = isCur ? 1 : 0.4; }
+      ctx.strokeStyle = absorbed ? color + alpha : k.color;
+      ctx.fillStyle = absorbed ? color + alpha : k.color;
+      ctx.globalAlpha = absorbed ? 1 : alpha;
+      ctx.lineWidth = isCur ? 2 : 1.2;
+      ctx.setLineDash(k.dash);
+      ctx.beginPath();
+      ctx.moveTo(ax, y);
+      ctx.lineTo(bx, y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      arrowHead(bx, y, dir);
+
+      // Approval pause glyph on the current approval step
+      if (s.kind === 'approval' && isCur && !absorbed) {
+        const px = (ax + bx) / 2;
+        ctx.fillStyle = '#D97706';
+        ctx.fillRect(px - 5, y + 5, 3, 9);
+        ctx.fillRect(px + 2, y + 5, 3, 9);
+      }
+
+      // Label above the arrow
+      ctx.font = (isCur ? '600 ' : '400 ') + '9.5px "JetBrains Mono", monospace';
+      ctx.fillStyle = absorbed ? color + alpha : k.color;
+      ctx.globalAlpha = absorbed ? 1 : (isCur ? 1 : 0.55);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      const mid = (ax + bx) / 2;
+      let lbl = s.label;
+      const maxLbl = Math.abs(bx - ax) - 8;
+      if (ctx.measureText(lbl).width > maxLbl && !isCur) {
+        while (lbl.length > 4 && ctx.measureText(lbl + '...').width > maxLbl) lbl = lbl.slice(0, -1);
+        lbl += '...';
+      }
+      ctx.fillText(lbl, mid, y - 2);
+      ctx.globalAlpha = 1;
+    }
+
+    // Legend (kinds), top-left clear of the lane headers
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    const legend = ['request', 'response', 'event', 'approval'];
+    let lx = 24, ly = 10;
+    legend.forEach((key) => {
+      const k = KIND[key];
+      ctx.strokeStyle = k.color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash(k.dash);
+      ctx.beginPath();
+      ctx.moveTo(lx, ly); ctx.lineTo(lx + 18, ly);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.font = '400 9px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillText(k.desc, lx + 24, ly);
+      ly += 11;
+    });
+
+    // Note area below the diagram
+    const noteY = rowY(STEPS.length - 1) + 30;
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    roundRect(20, noteY - 6, w - 40, 80, 8);
+    ctx.fill();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    // persistent contrast: driving the protocol yourself vs letting the SDK do it
+    ctx.font = '600 9.5px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = sdk ? 'rgba(37,99,235,0.9)' : '#0F766E';
+    const banner = sdk
+      ? 'PYTHON SDK: thread.run() runs all of this as one call. You see none of it, and answer no approval.'
+      : 'APP-SERVER DIRECT: your host sends and receives every message below, and answers the approval itself.';
+    ctx.fillText(banner, 34, noteY + 2);
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = cur.kind === 'approval' ? '#B45309' : '#0F766E';
+    ctx.fillText('Step ' + (state.step + 1) + '  -  ' + cur.label, 34, noteY + 20);
+    ctx.font = '400 10.5px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    let noteText = cur.note;
+    if (sdk && cur.sdkNote) noteText = cur.sdkNote;
+    const noteLines = wrap(noteText, w - 60);
+    noteLines.slice(0, 2).forEach((line, i) => ctx.fillText(line, 34, noteY + 36 + i * 14));
+  }
+
+  function setStep(i) {
+    state.step = Math.max(0, Math.min(STEPS.length - 1, i));
+    const counter = document.getElementById('flow-counter');
+    if (counter) counter.textContent = 'Step ' + (state.step + 1) + ' / ' + STEPS.length;
+    draw();
+  }
+
+  document.getElementById('flow-prev').addEventListener('click', () => setStep(state.step - 1));
+  document.getElementById('flow-next').addEventListener('click', () => setStep(state.step + 1));
+  document.getElementById('flow-reset').addEventListener('click', () => setStep(0));
+
+  // Exposed so the SDK-mode toggle can drive this figure programmatically too.
+  window.__messageFlowSetMode = function(mode) {
+    state.mode = mode === 'sdk' ? 'sdk' : 'custom';
+    draw();
+  };
+
+  document.querySelectorAll('[data-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      window.__messageFlowSetMode(btn.dataset.mode);
+    });
+  });
+
+  setStep(0);
+})();
+
+/* ============================================
+   FIGURE 5 - Same surface, different depths
+   ============================================ */
+(function() {
+  const init = initCanvas('canvas-sdk');
+  if (!init) return;
+  const { canvas, ctx, w, h } = init;
+
+  const HEADER = {
+    ts: { pkg: '@openai/codex-sdk', id: 'the ergonomic codex exec' },
+    py: { pkg: 'openai-codex',      id: 'the app-server, wrapped' },
+  };
+  const ROWS = [
+    { q: 'Spawns',          ts: 'codex exec --experimental-json',           py: 'codex app-server --listen stdio://',              tsL: 'full',    pyL: 'full' },
+    { q: 'Under the hood',  ts: 'wraps the CLI JSONL stream',               py: 'a JSON-RPC client for the app-server',            tsL: 'full',    pyL: 'full' },
+    { q: 'Event schema',    ts: 'dotted · thread.started, item.completed',  py: 'slash · thread/started, item/agentMessage/delta', tsL: 'full',    pyL: 'full' },
+    { q: 'Sandbox control', ts: '--sandbox flag + config overrides',        py: 'Sandbox enum: read_only … full_access',           tsL: 'limited', pyL: 'full' },
+    { q: 'Approval',        ts: 'fixed at spawn · no approval events',      py: 'ApprovalMode policy · no per-request hook',       tsL: 'none',    pyL: 'limited' },
+    { q: 'Live streaming',  ts: 'runStreamed() · exec events',              py: 'TurnHandle.stream() · raw notifications',         tsL: 'limited', pyL: 'full' },
+  ];
+  const LEVEL = {
+    full:    { c: '#0D9488', bg: '#F0FDFA', g: '✓', t: 'full' },
+    limited: { c: '#B45309', bg: '#FEF3C7', g: '~', t: 'limited' },
+    none:    { c: '#9CA3AF', bg: '#F3F4F6', g: '✕', t: 'none' },
+  };
+
+  let state = { sdk: 'ts', fade: 1, fadeTimer: null };
+
+  const rowH = 50, top = 78;
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+
+    const sdk = state.sdk;
+    // header card
+    ctx.fillStyle = '#F0FDFA'; ctx.strokeStyle = '#99F6E4'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(40, 16, w - 80, 44, 8); ctx.fill(); ctx.stroke();
+    ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+    ctx.font = 'bold 14px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#0F766E';
+    ctx.fillText(HEADER[sdk].pkg, 58, 39);
+    ctx.font = 'italic 12px ' + "-apple-system, sans-serif";
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.textAlign = 'right';
+    ctx.fillText(HEADER[sdk].id, w - 58, 39);
+
+    ROWS.forEach((r, i) => {
+      const y = top + i * rowH, cy = y + rowH / 2;
+      if (i > 0) {
+        ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(56, y); ctx.lineTo(w - 56, y); ctx.stroke();
+      }
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.font = 'bold 11px ' + "-apple-system, sans-serif";
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillText(r.q, 58, cy);
+
+      ctx.save();
+      ctx.globalAlpha = state.fade;
+      const val = sdk === 'ts' ? r.ts : r.py;
+      const lvl = LEVEL[sdk === 'ts' ? r.tsL : r.pyL];
+      ctx.font = '11px "JetBrains Mono", monospace';
+      ctx.fillStyle = lvl.t === 'none' ? '#9CA3AF' : 'rgba(0,0,0,0.72)';
+      ctx.fillText(val, 190, cy);
+
+      // level tag pill (right)
+      const pw = 74, ph = 22, px = w - 56 - pw;
+      ctx.fillStyle = lvl.bg; ctx.strokeStyle = lvl.c; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(px, cy - ph / 2, pw, ph, 11); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = lvl.c;
+      ctx.font = 'bold 11px ' + "-apple-system, sans-serif";
+      ctx.textAlign = 'left';
+      ctx.fillText(lvl.g, px + 12, cy + 0.5);
+      ctx.font = '10px ' + "-apple-system, sans-serif";
+      ctx.fillText(lvl.t, px + 28, cy + 0.5);
+      ctx.restore();
+    });
+
+    // shared bottom note
+    const by = top + ROWS.length * rowH + 6;
+    ctx.fillStyle = '#FFFBEB'; ctx.strokeStyle = '#FCD34D'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(40, by, w - 80, 30, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#B45309';
+    ctx.fillRect(40, by, 3, 30);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.font = '11px ' + "-apple-system, sans-serif";
+    ctx.fillStyle = 'rgba(120,53,15,0.95)';
+    ctx.fillText('Answer one specific approval request from your code?  Neither public API can - that seat belongs to the app-server.', 56, by + 15);
+  }
+
+  function setSdk(sdk) {
+    state.sdk = sdk;
+    state.fade = 0;
+    if (state.fadeTimer) clearInterval(state.fadeTimer);
+    state.fadeTimer = setInterval(() => {
+      state.fade += 0.12;
+      if (state.fade >= 1) { state.fade = 1; clearInterval(state.fadeTimer); state.fadeTimer = null; }
+      draw();
+    }, 16);
+  }
+
+  document.querySelectorAll('.sdk-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.sdk-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      setSdk(btn.getAttribute('data-sdk'));
+    });
+  });
+  draw();
+})();
+
+</script>
+</body>
+</html>

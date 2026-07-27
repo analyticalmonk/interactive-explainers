@@ -241,6 +241,28 @@ body {
     <li class="article-entry">
       <div class="article-content">
         <h2 class="article-title">
+          <a href="codex-embedding/">Embedding OpenAI Codex: The App Server and SDKs</a>
+        </h2>
+        <p class="article-excerpt">
+          Codex is not just a CLI. Under every surface sits an app-server speaking
+          JSON-RPC, plus two programmatic doors into it: the protocol itself and
+          the SDKs built on top.
+        </p>
+        <div class="article-meta">
+          <span class="article-tag">Interactive</span>
+          <span>July 2026</span>
+          <span>17 min read</span>
+          <span>5 figures</span>
+        </div>
+      </div>
+      <div class="article-thumbnail">
+        <canvas id="thumb-codex-embedding" width="480" height="280"></canvas>
+      </div>
+    </li>
+
+    <li class="article-entry">
+      <div class="article-content">
+        <h2 class="article-title">
           <a href="stagehand/">Stagehand: Inside the AI-Driven Browser Automation Framework</a>
         </h2>
         <p class="article-excerpt">
@@ -406,6 +428,115 @@ body {
 </footer>
 
 <script>
+// Thumbnail: Codex embedding — three lifelines with JSON-RPC messages in flight
+(function() {
+  const canvas = document.getElementById('thumb-codex-embedding');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = 480, cssH = 280;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const w = cssW, h = cssH;
+
+  const lanes = [
+    { x: 0.20 * w, label: 'host' },
+    { x: 0.50 * w, label: 'app-server' },
+    { x: 0.80 * w, label: 'agent' },
+  ];
+  const laneTop = 0.24 * h, laneBot = 0.86 * h;
+
+  // Each message: which segment (0 = host<->app-server, 1 = app-server<->agent),
+  // direction, a normalized launch time, and whether it is an approval (amber).
+  const messages = [
+    { seg: 0, dir: 1, start: 0.00, approval: false },
+    { seg: 1, dir: 1, start: 0.16, approval: false },
+    { seg: 1, dir: -1, start: 0.34, approval: false },
+    { seg: 0, dir: -1, start: 0.50, approval: true },
+    { seg: 0, dir: 1, start: 0.66, approval: false },
+    { seg: 1, dir: 1, start: 0.80, approval: false },
+  ];
+  const teal = '#0D9488', amber = '#D97706';
+  let time = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#FAF8F4';
+    ctx.fillRect(0, 0, w, h);
+
+    // Lifelines + header chips
+    for (const lane of lanes) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(lane.x, laneTop);
+      ctx.lineTo(lane.x, laneBot);
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.lineWidth = 1;
+      const cw = 78, ch = 26;
+      ctx.beginPath();
+      ctx.roundRect(lane.x - cw / 2, laneTop - ch - 6, cw, ch, 6);
+      ctx.fill();
+      ctx.stroke();
+      ctx.font = '600 11px "JetBrains Mono", ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(lane.label, lane.x, laneTop - ch / 2 - 6);
+    }
+
+    // Messages travel along their segment on a repeating cycle
+    const cycle = (time * 0.10) % 1;
+    for (const m of messages) {
+      let p = cycle - m.start;
+      if (p < 0) p += 1;
+      if (p > 0.16) continue; // only visible briefly after launch
+      const t = p / 0.16;
+      const a = lanes[m.seg], b = lanes[m.seg + 1];
+      const x0 = m.dir > 0 ? a.x : b.x;
+      const x1 = m.dir > 0 ? b.x : a.x;
+      const y = laneTop + 0.12 * h + m.seg * 0.30 * h + Math.sin(m.start * 9) * 8;
+      const px = x0 + (x1 - x0) * t;
+      const col = m.approval ? amber : teal;
+
+      // trailing line
+      ctx.strokeStyle = col + '33';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(px, y);
+      ctx.stroke();
+
+      // glow + dot
+      ctx.fillStyle = col + '30';
+      ctx.beginPath();
+      ctx.arc(px, y, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(px, y, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // approval pause glyph at the destination
+      if (m.approval && t > 0.7) {
+        ctx.fillStyle = amber;
+        ctx.fillRect(x1 - 5, y + 8, 2.5, 8);
+        ctx.fillRect(x1 + 1, y + 8, 2.5, 8);
+      }
+    }
+
+    time += 0.016;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
 // Thumbnail: Stagehand - a cursor that keeps finding the button, wherever it moves
 (function() {
   const canvas = document.getElementById('thumb-stagehand');
